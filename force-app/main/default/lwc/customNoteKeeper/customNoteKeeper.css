@@ -8,6 +8,7 @@
 
 /* Style the list items (notes) */
 li.slds-box {
+    width: 100%;
     background-color: white;
     border-radius: 0.75rem;
     border: 1px solid #e0e5ec;
@@ -72,7 +73,7 @@ lightning-button.button-new {
 .filter-bar{
     display: flex;
     width: 100%;
-    justify-content: space-evenly;
+    justify-content: space-around;
     align-items: center;
 }
 .filter-button-wrapper {
@@ -156,4 +157,11 @@ lightning-button.button-new {
 .btns{
     background: none;
     border: none;
+}
+.edit-icon lightning-icon {
+    --sds-c-icon-color-foreground-default: green;
+}
+
+.delete-icon lightning-icon {
+    --sds-c-icon-color-foreground-default: red;
 }

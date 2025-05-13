@@ -3,6 +3,8 @@
     <types>
         <members>NotesController</members>
         <members>NotesService</members>
+        <members>MilestoneRecipientDTO</members>
+        <members>MilestoneMarkerController</members>
         <name>ApexClass</name>
     </types>
     

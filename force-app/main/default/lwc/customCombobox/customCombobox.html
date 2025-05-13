@@ -1,0 +1,30 @@
+<template>
+    <div class="slds-form-element" >
+        <label class="slds-form-element__label" for="userSearch">Filter By User</label>
+        <div class="slds-form-element__control">
+            <input
+                type="text"
+                id="userSearch"
+                class="slds-input"
+                placeholder="Search users"
+                value={searchTerm}
+                oninput={handleSearch}
+                onclick={toggleDropdown}
+            />
+        </div>
+
+        <!-- Dropdown list -->
+        <template if:true={showDropdown}>
+            <ul class="dropdown slds-box slds-theme_default">
+                <template for:each={filteredOptions} for:item="user">
+                    <li key={user.value} class="dropdown-item" onclick={handleSelect} data-id={user.value}>
+                        {user.label}
+                    </li>
+                </template>
+                <template if:true={noResults}>
+                    <li class="dropdown-item slds-text-color_weak">No users found</li>
+                </template>
+            </ul>
+        </template>
+    </div>
+</template>

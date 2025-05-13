@@ -1,0 +1,35 @@
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 05-12-2025
+  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+-->
+<template>
+    <lightning-card title="Milestones">
+        <div class="slds-m-around_medium">
+            <template if:true={milestones}>
+                <ul>
+                    <template for:each={milestones} for:item="ms">
+                        <li key={ms.Id}>{ms.Name}</li>
+                    </template>
+                </ul>
+            </template>
+            <p class="slds-text-color_error" if:true={error}>{error}</p>
+        </div>
+
+        <lightning-button label="Add New Recipient" onclick={handleOpenModal}></lightning-button>
+
+        <template if:true={isModalOpen}>
+            <c-add-recipient-modal loan-id={recordId} onclosemodal={handleCloseModal}  onrecipientadded={refreshData}></c-add-recipient-modal>
+        </template>
+
+
+
+        <!-- Milestones section starts -->
+        <section class="milestone-section">
+
+        </section>
+        <!-- Milestones section ends-->
+    </lightning-card>
+</template>

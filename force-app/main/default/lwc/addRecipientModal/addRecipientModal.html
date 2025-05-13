@@ -1,0 +1,54 @@
+<template>
+    <section role="dialog" tabindex="-1" aria-modal="true" class="slds-modal slds-fade-in-open">
+        <div class="slds-modal__container">
+            <header class="slds-modal__header">
+                <h2 class="slds-modal__title">Add New Recipient</h2>
+            </header>
+
+            <div class="slds-modal__content slds-p-around_medium">
+                <lightning-input 
+                    label="Name" 
+                    value={name} 
+                    onchange={handleNameChange}>
+                </lightning-input>
+
+                <lightning-input 
+                    type="email" 
+                    label="Email" 
+                    value={email} 
+                    onchange={handleEmailChange}>
+                </lightning-input>
+
+                <lightning-combobox
+                    label="Type"
+                    value={type}
+                    options={typeOptions}
+                    onchange={handleTypeChange}>
+                </lightning-combobox>
+
+                <lightning-dual-listbox
+                    name="channel"
+                    label="Channel"
+                    source-label="Available Channels"
+                    selected-label="Selected Channels"
+                    options={channelOptions}
+                    value={selectedChannels}
+                    onchange={handleChannelChange}>
+                </lightning-dual-listbox>
+            </div>
+
+            <footer class="slds-modal__footer">
+                <lightning-button 
+                    label="Cancel" 
+                    onclick={handleCancel}>
+                </lightning-button>
+                <lightning-button 
+                    variant="brand" 
+                    label="Save" 
+                    onclick={handleSave}>
+                </lightning-button>
+            </footer>
+        </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+</template>
