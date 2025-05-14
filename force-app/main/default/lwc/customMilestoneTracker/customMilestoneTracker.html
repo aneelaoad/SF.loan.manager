@@ -9,12 +9,8 @@
     <section class="milestone-wrapper">
         <div class="milestone-header slds-m-bottom_medium">
             <h1>
-                <lightning-icon 
-                    icon-name="standard:entity_milestone" 
-                    alternative-text="milestones" 
-                    size="small" 
-                    title="Milestones"
-                    variant="inverse">
+                <lightning-icon icon-name="standard:entity_milestone" alternative-text="milestones" size="small"
+                    title="Milestones" variant="inverse">
                 </lightning-icon>
                 <span style="font-size: 15px; margin-left:10px">Milestones</span>
             </h1>
@@ -30,88 +26,65 @@
         </template> -->
 
         <template if:true={isModalOpen}>
-    <section role="dialog" tabindex="-1" aria-modal="true" class="slds-modal slds-fade-in-open">
-        <div class="slds-modal__container">
-            <header class="slds-modal__header">
-                <h2 class="slds-modal__title">
-                    {modalTitle}
-                </h2>
-            </header>
+            <section role="dialog" tabindex="-1" aria-modal="true" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <h2 class="slds-modal__title">
+                            {modalTitle}
+                        </h2>
+                    </header>
 
-            <div class="slds-modal__content slds-p-around_medium">
-                <lightning-input 
-                    label="Name" 
-                    value={name} 
-                    onchange={handleNameChange}>
-                </lightning-input>
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <lightning-input label="Name" value={name} onchange={handleNameChange}>
+                        </lightning-input>
 
-                <lightning-input 
-                    type="email" 
-                    label="Email" 
-                    value={email} 
-                    onchange={handleEmailChange}>
-                </lightning-input>
+                        <lightning-input type="email" label="Email" value={email} onchange={handleEmailChange}>
+                        </lightning-input>
 
-                <lightning-combobox
-                    label="Type"
-                    value={type}
-                    options={typeOptions}
-                    onchange={handleTypeChange}>
-                </lightning-combobox>
+                        <lightning-combobox label="Type" value={type} options={typeOptions} onchange={handleTypeChange}>
+                        </lightning-combobox>
 
-                <lightning-dual-listbox
-                    name="channel"
-                    label="Channel"
-                    source-label="Available Channels"
-                    selected-label="Selected Channels"
-                    options={channelOptions}
-                    value={selectedChannels}
-                    onchange={handleChannelChange}>
-                </lightning-dual-listbox>
-            </div>
+                        <lightning-dual-listbox name="channel" label="Channel" source-label="Available Channels"
+                            selected-label="Selected Channels" options={channelOptions} value={selectedChannels}
+                            onchange={handleChannelChange}>
+                        </lightning-dual-listbox>
+                    </div>
 
-            <footer class="slds-modal__footer">
-                <lightning-button 
-                    label="Cancel" 
-                    onclick={handleCancel}>
-                </lightning-button>
-                <lightning-button 
-                    variant="brand" 
-                    label="Save" 
-                    onclick={handleSave}>
-                </lightning-button>
-            </footer>
-        </div>
-    </section>
-    <div class="slds-backdrop slds-backdrop_open"></div>
-</template>
+                    <footer class="slds-modal__footer">
+                        <lightning-button label="Cancel" onclick={handleCancel}>
+                        </lightning-button>
+                        <lightning-button variant="brand" label="Save" onclick={handleSave}>
+                        </lightning-button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
 
 
         <!-- Milestone Table -->
         <template if:true={milestones}>
-            <div class="slds-scrollable_x">
-                <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+            <div class="slds-scrollable_x slds-box slds-theme_default" style="border-radius: 0.5rem;">
+                <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_col-bordered">
                     <thead>
-                        <tr>
-                            <th scope="col">Milestone</th>
+                        <tr class="slds-line-height_reset">
+                            <th scope="col">
+                                <div class="slds-truncate" title="Milestone">Milestone</div>
+                            </th>
                             <template for:each={recipients} for:item="recipient">
-                                <th key={recipient.id}>
-                                    <div>
+                                <th key={recipient.id} scope="col">
+                                    <div class="slds-truncate" title={recipient.name}>
                                         <strong>{recipient.name}</strong><br />
-                                        <span style="font-size: 12px;">{recipient.email}</span>
-                                      <lightning-button-icon icon-name="utility:edit" title="Edit"
-    onclick={editRecipient}
-    data-recipient-id={recipient.id}
-    class="slds-m-left_x-small"
-    variant="bare">
-</lightning-button-icon>
+                                        <span style="font-size: 12px; color: #555;">{recipient.email}</span>
+                                        <div class="slds-m-top_xx-small" style="text-align: center;">
+                                            <lightning-button-icon icon-name="utility:edit" title="Edit"
+                                                onclick={editRecipient} data-recipient-id={recipient.id}
+                                                class="slds-m-right_xx-small" variant="bare"></lightning-button-icon>
 
-                                        <lightning-button-icon icon-name="utility:delete" title="Delete"
-                                            onclick={deleteRecipient}
-                                            data-recipient-id={recipient.id}
-                                            class="slds-m-left_x-small"
-                                            variant="bare">
-                                        </lightning-button-icon>
+                                            <lightning-button-icon icon-name="utility:delete" title="Delete"
+                                                onclick={deleteRecipient} data-recipient-id={recipient.id}
+                                                variant="bare"></lightning-button-icon>
+                                        </div>
                                     </div>
                                 </th>
                             </template>
@@ -119,18 +92,17 @@
                     </thead>
                     <tbody>
                         <template for:each={milestones} for:item="milestone">
-                            <tr key={milestone.id}>
-                                <td>{milestone.name}</td>
+                            <tr key={milestone.id} class="slds-hint-parent">
+                                <td>
+                                    <div class="slds-truncate" title={milestone.name}>{milestone.name}</div>
+                                </td>
                                 <template for:each={recipients} for:item="recipient">
-                                    <td key={recipient.id}>
-                                        <lightning-button-icon icon-name="utility:email"
-                                            alternative-text="Send Email"
-                                            title="Send Email"
-                                            variant="border-filled"
-                                            onclick={sendEmail}
-                                            data-milestone-id={milestone.id}
-                                            data-recipient-id={recipient.id}>
-                                        </lightning-button-icon>
+                                    <td key={recipient.id} class="center-email-icons">
+                                        <!-- Beautiful email icon with hover effect -->
+                                        <lightning-button-icon icon-name="utility:email" alternative-text="Send Email"
+                                            title="Send Email" variant="border-filled" onclick={sendEmail}
+                                            data-milestone-id={milestone.id} data-recipient-id={recipient.id}
+                                            class="slds-m-around_xx-small email-icon"></lightning-button-icon>
                                     </td>
                                 </template>
                             </tr>
@@ -141,6 +113,7 @@
         </template>
 
 
-     
+
+
     </section>
 </template>

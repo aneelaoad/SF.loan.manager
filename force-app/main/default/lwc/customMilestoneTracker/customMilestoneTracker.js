@@ -63,8 +63,8 @@ export default class CustomMilestoneTracker extends LightningElement {
     loadData() {
         getMilestoneGridData({ loanId: this.recordId })
             .then(data => {
-                this.milestones = data.milestones;
-                this.recipients = data.recipients;
+                 this.milestones = [...data.milestones];
+                  this.recipients = [...data.recipients];
             })
             .catch(error => {
                 this.showToast('Error loading data', this.getErrorMessage(error), 'error');
@@ -95,18 +95,20 @@ export default class CustomMilestoneTracker extends LightningElement {
             });
     }
 
-    deleteRecipient(event) {
-        const recipientId = event.target.dataset.recipientId;
+   deleteRecipient(event) {
+    const recipientId = event.target.dataset.recipientId;
 
-        deleteRecipientApex({ recipientId })
-            .then(() => {
-                this.showToast('Deleted', 'Recipient deleted successfully', 'success');
-                this.loadData();
-            })
-            .catch(error => {
-                this.showToast('Error deleting recipient', this.getErrorMessage(error), 'error');
-            });
-    }
+    deleteRecipientApex({ recipientId })
+        .then(() => {
+            this.showToast('Deleted', 'Recipient deleted successfully', 'success');
+
+            // ✅ Remove recipient from the in-memory list
+            this.recipients = this.recipients.filter(recipient => recipient.id !== recipientId);
+        })
+        .catch(error => {
+            this.showToast('Error deleting recipient', this.getErrorMessage(error), 'error');
+        });
+}
 
     editRecipient(event) {
         const recipientId = event.target.dataset.recipientId;
@@ -140,48 +142,58 @@ export default class CustomMilestoneTracker extends LightningElement {
     }
 
     handleCancel() {
+    //      if (this.name || this.email || this.type || this.selectedChannels.length) {
+    //     if (!confirm('Discard unsaved changes?')) return;
+    // }
         this.handleCloseModal();
     }
 
+    
+
     handleSave() {
-       const payload = {
+    const payload = {
         name: this.name,
         email: this.email,
         type: this.type,
-        channel: this.selectedChannels.join(';'), 
+        channel: this.selectedChannels.join(';'),
         loan: this.recordId
     };
 
+    if (this.editingRecipientId) {
+        // Edit mode
+        updateRecipient({
+            recipientId: this.editingRecipientId,
+            jsonData: JSON.stringify(payload)
+        })
+        .then((updatedRecipient) => {
+            this.showToast('Updated', 'Recipient updated successfully', 'success');
+            this.handleCloseModal();
 
-        if (this.editingRecipientId) {
-            // Edit mode
-            updateRecipient({
-                recipientId: this.editingRecipientId,
-                jsonData: JSON.stringify(payload)
-            })
-                .then(() => {
-                    this.showToast('Updated', 'Recipient updated successfully', 'success');
-                    this.handleCloseModal();
-                    this.loadData();
-                })
-                .catch(error => {
-                    this.showToast('Error updating recipient', this.getErrorMessage(error), 'error');
-                });
-        } else {
-            // Add mode
-            addRecipient({
-                jsonData: JSON.stringify(payload)
-            })
-                .then(() => {
-                    this.showToast('Added', 'Recipient added successfully', 'success');
-                    this.handleCloseModal();
-                    this.loadData();
-                })
-                .catch(error => {
-                    this.showToast('Error adding recipient', this.getErrorMessage(error), 'error');
-                });
-        }
+            // ✅ Update the in-memory recipient
+            this.recipients = this.recipients.map(rec => 
+                rec.id === updatedRecipient.id ? updatedRecipient : rec
+            );
+        })
+        .catch(error => {
+            this.showToast('Error updating recipient', this.getErrorMessage(error), 'error');
+        });
+    } else {
+        // Add mode
+        addRecipient({
+            jsonData: JSON.stringify(payload)
+        })
+        .then((newRecipient) => {
+            this.showToast('Added', 'Recipient added successfully', 'success');
+            this.handleCloseModal();
+
+            // ✅ Push the new recipient to the in-memory list
+            this.recipients = [...this.recipients, newRecipient];
+        })
+        .catch(error => {
+            this.showToast('Error adding recipient', this.getErrorMessage(error), 'error');
+        });
     }
+}
 
     resetModalFields() {
         this.name = '';

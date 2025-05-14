@@ -7,3 +7,46 @@
     display: flex;
     justify-content: center;
 } */
+
+/* Add in component's CSS file if needed */
+.slds-table_bordered td, 
+.slds-table_bordered th {
+    border: 1px solid #d8dde6;
+}
+
+.slds-table th, 
+.slds-table td {
+    vertical-align: middle;
+}
+/* CSS to center the email icon column */
+.center-email-icons {
+    text-align: center;
+}
+
+/* Styling for the email icon to make it look beautiful */
+.email-icon {
+    background-color: #f4f6f9; /* Light background for the icon */
+    border-radius: 50%; /* Make the button round */
+    padding: 8px; /* Add some padding around the icon */
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; /* Smooth transition for effects */
+    display: inline-block;
+    margin: 0 auto;
+}
+
+/* Hover effect for the email icon */
+.email-icon:hover {
+    transform: scale(1.1); /* Slightly enlarge the icon when hovered */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); /* Add a subtle shadow on hover */
+}
+
+/* Optional: Adjust size of the icon for a larger look */
+.email-icon lightning-icon {
+    height: 1.25rem; /* Increase icon size */
+    width: 1.25rem;  /* Increase icon size */
+}
+
+/* Optional: Focus effect for accessibility */
+.email-icon:focus {
+    outline: none; /* Remove the default focus outline */
+    box-shadow: 0 0 0 2px #005fb2; /* Blue focus ring */
+}

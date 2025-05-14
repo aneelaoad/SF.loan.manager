@@ -2,7 +2,7 @@
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
         <members>NotesController</members>
-        <members>NotesService</members>
+        <members>NoteService</members>
         <members>MilestoneRecipientDTO</members>
         <members>MilestoneMarkerController</members>
         <name>ApexClass</name>
@@ -10,9 +10,34 @@
     
     <types>
         <members>customNoteKeeper</members>
+        <members>customMilestoneTracker</members>
         <members>notesAccordion</members>
         <name>LightningComponentBundle</name>
     </types>
     
+
+     <types>
+        <members>Cust_Milestone_Marker__c</members>
+        <members>Cust_Milestone_Recipient__c</members>
+        <members>Cust_RecipientMarkerAssociation__c</members>
+        <name>CustomObject</name>
+    </types>
+
+      <types>
+        <members>Cust_Milestone_Marker__c.Lead__c</members>
+        <members>Cust_Milestone_Marker__c.Loan__c</members>
+        <members>Cust_Milestone_Marker__c.Order__c</members>
+        <members>Cust_Milestone_Marker__c.Sent_DateTime__c</members>
+        <members>Cust_Milestone_Marker__c.Available_Channels__c</members>
+        <members>Cust_Milestone_Recipient__c.Channel__c</members>
+        <members>Cust_Milestone_Recipient__c.Email__c</members>
+        <members>Cust_Milestone_Recipient__c.Phone_Number__c</members>
+        <members>Cust_Milestone_Recipient__c.Type__c</members>
+        <members>Cust_RecipientMarkerAssociation__c.Milestone_Marker__c</members>
+        <members>Cust_RecipientMarkerAssociation__c.Milestone_Recipient__c</members>
+
+        <name>CustomField</name>
+    </types>
+
     <version>63.0</version>
 </Package>

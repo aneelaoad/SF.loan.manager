@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Type__c</fullName>
+    <label>Type</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Borrower</fullName>
+                <default>false</default>
+                <label>Borrower</label>
+            </value>
+            <value>
+                <fullName>Realtor</fullName>
+                <default>false</default>
+                <label>Realtor</label>
+            </value>
+            <value>
+                <fullName>Buyers Agent</fullName>
+                <default>false</default>
+                <label>Buyers Agent</label>
+            </value>
+            <value>
+                <fullName>Listing Agent</fullName>
+                <default>false</default>
+                <label>Listing Agent</label>
+            </value>
+            <value>
+                <fullName>Co Borrower</fullName>
+                <default>false</default>
+                <label>Co Borrower</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>
