@@ -1,57 +1,29 @@
-import { LightningElement, api, wire } from 'lwc';
+import { LightningElement, api } from 'lwc';
 import addRecipient from '@salesforce/apex/MilestoneMarkerController.addRecipient';
-import { getPicklistValues, getObjectInfo } from 'lightning/uiObjectInfoApi';
-
-// Schema imports
-import RECIPIENT_OBJECT from '@salesforce/schema/Cust_Milestone_Recipient__c';
-import TYPE_FIELD from '@salesforce/schema/Cust_Milestone_Recipient__c.Type__c';
-import CHANNEL_FIELD from '@salesforce/schema/Cust_Milestone_Recipient__c.Channel__c';
+import updateRecipient from '@salesforce/apex/MilestoneMarkerController.updateRecipient'; // Add this Apex
 
 export default class AddRecipientModal extends LightningElement {
     @api loanId;
+    @api recipient;
+    @api isEditMode;
 
     name = '';
     email = '';
     type = '';
-    channel = '';
+    selectedChannels = [];
 
     typeOptions = [];
     channelOptions = [];
 
-    // Get object metadata to extract recordTypeId
-    @wire(getObjectInfo, { objectApiName: RECIPIENT_OBJECT })
-    objectInfo;
-
-    // Get Type__c picklist values
-    @wire(getPicklistValues, {
-        recordTypeId: '$objectInfo.data.defaultRecordTypeId',
-        fieldApiName: TYPE_FIELD
-    })
-    wiredTypeValues({ data, error }) {
-        if (data) {
-            this.typeOptions = data.values;
-        if (data.values.length > 0 && !this.type) {
-            this.type = data.values[0].value; // Set default to first value
-        }
-        } else if (error) {
-            console.error('Error loading Type__c picklist:', error);
+    connectedCallback() {
+        if (this.isEditMode && this.recipient) {
+            this.name = this.recipient.Name;
+            this.email = this.recipient.Email__c;
+            this.type = this.recipient.Type__c;
+            this.selectedChannels = this.recipient.Channel__c?.split(';') || [];
         }
     }
 
-    // Get Channel__c multipicklist values
-    @wire(getPicklistValues, {
-        recordTypeId: '$objectInfo.data.defaultRecordTypeId',
-        fieldApiName: CHANNEL_FIELD
-    })
-    wiredChannelValues({ data, error }) {
-        if (data) {
-            this.channelOptions = data.values;
-        } else if (error) {
-            console.error('Error loading Channel__c multipicklist:', error);
-        }
-    }
-
-    // Input handlers
     handleNameChange(event) {
         this.name = event.target.value;
     }
@@ -65,31 +37,46 @@ export default class AddRecipientModal extends LightningElement {
     }
 
     handleChannelChange(event) {
-        // Multi-picklist values need to be joined as a semicolon-separated string
-        this.channel = event.detail.value.join(';');
+        this.selectedChannels = event.detail.value;
     }
 
     handleCancel() {
-        this.dispatchEvent(new CustomEvent('close'));
+        this.dispatchEvent(new CustomEvent('closemodal'));
     }
 
     handleSave() {
-        const recipient = {
+        const payload = {
             loan: this.loanId,
             name: this.name,
             email: this.email,
             type: this.type,
-            channel: this.channel
+            channel: this.selectedChannels.join(';')
         };
 
-        console.log('recipient:', recipient);
+        if (this.isEditMode && this.recipient) {
+            updateRecipient({ recipientId: this.recipient.Id, jsonData: JSON.stringify(payload) })
+                .then(() => {
+                    this.fireSuccess();
+                })
+                .catch(error => {
+                    console.error('Error updating recipient:', error);
+                });
+        } else {
+            addRecipient({ jsonData: JSON.stringify(payload) })
+                .then(() => {
+                    this.fireSuccess();
+                })
+                .catch(error => {
+                    console.error('Error adding recipient:', error);
+                });
+        }
+    }
 
-        addRecipient({ jsonData: JSON.stringify(recipient) })
-            .then(() => {
-                this.dispatchEvent(new CustomEvent('recipientadded'));
-            })
-            .catch(error => {
-                console.error('Error adding recipient:', error);
-            });
+    fireSuccess() {
+        this.dispatchEvent(new CustomEvent('recipientadded', {
+            bubbles: true,
+            composed: true
+        }));
+        this.dispatchEvent(new CustomEvent('closemodal'));
     }
 }
