@@ -1,0 +1,27 @@
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 05-14-2025
+  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+-->
+<template>
+  <lightning-card title="Operations Conditions">
+    <lightning-button label="Add Condition" onclick={handleAdd}></lightning-button>
+    <lightning-button label="Mass Update" onclick={handleMassUpdate}></lightning-button>
+    <lightning-button label="Send Conditions Email" onclick={handleSendEmail}></lightning-button>
+
+    <lightning-tabset>
+      <lightning-tab label="Outstanding Conditions">
+        <c-condition-list conditions={outstanding}></c-condition-list>
+      </lightning-tab>
+      <lightning-tab label="Ready for Lender Conditions">
+        <lightning-button label="Download Submission Documents" icon-name="utility:download" class="slds-m-bottom_small"></lightning-button>
+        <c-condition-list conditions={ready}></c-condition-list>
+      </lightning-tab>
+      <lightning-tab label="Cleared Conditions">
+        <c-condition-list conditions={cleared}></c-condition-list>
+      </lightning-tab>
+    </lightning-tabset>
+  </lightning-card>
+</template>
