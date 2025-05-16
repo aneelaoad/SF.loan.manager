@@ -1,5 +1,5 @@
 <template>
-    <lightning-tabset size="large" class="">
+    <lightning-tabset size="large" class="" variant="scoped">
         <!-- Campaigns Tab -->
         <lightning-tab label="Campaigns" title="Campaigns" size="large">
             <div class="slds-grid slds-wrap">
@@ -23,19 +23,10 @@
                             </div>
                         </div>
                     </div>
-                        <!-- <div class="slds-grid slds-gutters slds-m-bottom_small">
-                <div class="slds-col">
-                    <lightning-input label="Start Date (From)" type="date" value={campaignStartDateFrom}
-                        onchange={handleCampaignDateChange}></lightning-input>
-                </div>
-                <div class="slds-col">
-                    <lightning-input label="Start Date (To)" type="date" value={campaignStartDateTo}
-                        onchange={handleCampaignDateChange}></lightning-input>
-                </div>
-            </div> -->
+                 
                         <div class="main-header">
                             <div style="float:left;">
-                                <!-- <div style="font-size:24px; margin-top:-20px; ">DRIP CAMPAIGNS</div> -->
+                                <div style="font-size:24px; margin-top:-20px; ">Recent Campaigns</div>
                             </div>
                             <div style="float:right; margin-top:-20px; margin-bottom:0px;">
 
@@ -66,7 +57,7 @@
 
                                                 <th>Name</th>
                                                 <th>Group</th>
-                                                <th>Start Date Time</th>
+                                                <th>Start Date</th>
                                                 <th>Type</th>
                                                 <th>Active </th>
                                                 <th>Status</th>
@@ -106,15 +97,15 @@
                                                     <td>{item.Campaign_Type__c}</td>
                                                     <td>
                                                         <template if:true={item.Is_Active__c}>
-                                                            <lightning-icon icon-name="action:approval"
-                                                                alternative-text="CampaignStep" size="xx-small"
-                                                                title="Campaign Step"></lightning-icon>
+                                                              <lightning-icon icon-name="utility:check" size="x-small"
+                                                                title="Active" variant="success"></lightning-icon>
                                                         </template>
                                                         <template if:false={item.Is_Active__c}>
-                                                            <lightning-icon icon-name="action:reject"
-                                                                alternative-text="CampaignStep" size="xx-small"
-                                                                title="Campaign Step"></lightning-icon>
+                                                            <lightning-icon icon-name="utility:close" size="x-small"
+                                                                title="Inactive" variant="error"></lightning-icon>
                                                         </template>
+
+                                                        
                                                     </td>
                                                     <td>
                                                         <div class="tooltip-wrapper">
@@ -203,14 +194,15 @@
 
 
                                                             <lightning-button data-id={item.Id} variant="neutral"
-                                                                label="Step" title="Step" onclick={showNewStepModal}
+                                                                label="Add Step" title="Add Step" onclick={showNewStepModal}
                                                                 class="slds-button_icon"></lightning-button>
                                                             <!-- <button class="btn" data-id={item.Id} onclick={showNewStepModal}><span>Step</span></button> -->
                                                         </template>
                                                         <template if:true={item.Events__c}>
-                                                            <lightning-button data-id={item.Id} variant="neutral"
+                                                            <!-- <lightning-button data-id={item.Id} variant="neutral"
                                                                 label="Delete" title="Delete"
-                                                                onclick={deleteCampaignEventBased}></lightning-button>
+                                                                onclick={deleteCampaignEventBased}></lightning-button> -->
+                                                                  <button class="btn" data-id={item.id} onclick={showNewMemberModal}><span>Add Members</span></button>
 
                                                             <!-- <button class="btn" data-id={item.Id} onclick={deleteCampaignEventBased}><span>Delete</span></button> -->
                                                         </template>
@@ -296,8 +288,8 @@
                                             <tr>
                                                 <th>Group Name</th>
                                                 <th>Based on</th>
-                                                <th>Active Status</th>
-                                                <th></th>
+                                                <th>Active </th>
+                                                <th>Status</th>
                                                 <th></th>
                                             </tr>
                                         </thead>
@@ -312,12 +304,12 @@
                                                     <td>{item.based}</td>
                                                     <td>
                                                         <template if:true={item.isActive}>
-                                                            <lightning-icon icon-name="action:approval" size="xx-small"
-                                                                title="Active"></lightning-icon>
+                                                            <lightning-icon icon-name="utility:check" size="x-small"
+                                                                title="Active" variant="success"></lightning-icon>
                                                         </template>
                                                         <template if:false={item.isActive}>
-                                                            <lightning-icon icon-name="action:reject" size="xx-small"
-                                                                title="Inactive"></lightning-icon>
+                                                            <lightning-icon icon-name="utility:close" size="x-small"
+                                                                title="Inactive" variant="error"></lightning-icon>
                                                         </template>
                                                     </td>
                                                     <td>
@@ -353,9 +345,10 @@
                                                         </div>
                                                     </td>
                                                     <td>
-                                                        <lightning-button variant="neutral" label="Delete"
-                                                            title="Delete" data-id={item.id} onclick={deleteGroup}>
+                                                        <lightning-button variant="neutral" label="Add Members"
+                                                            title="Add Members" data-id={item.id} onclick={showNewMemberModal}>
                                                         </lightning-button>
+
                                                     </td>
                                                 </tr>
                                             </template>
