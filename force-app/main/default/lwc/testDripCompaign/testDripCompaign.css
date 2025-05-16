@@ -1,0 +1,107 @@
+/* Headings */
+h1 {
+  font-size: 1.5rem;
+  font-weight: 300;
+  color: var(--slds-c-text-color-default, #080707);
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+/* Table styles */
+table {
+  width: 100%;
+  /* table-layout: fixed; */
+}
+
+.tbl-header {
+  background-color: var(--slds-c-table-header-background-color, #f3f2f2);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.tbl-content {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--slds-c-table-border-color, #dddbda);
+}
+
+th, td {
+  padding: 0.75rem;
+  font-size: 0.75rem;
+  text-align: left;
+  color: var(--slds-c-text-color-default, #080707);
+  font-weight: 400;
+}
+
+th {
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 1rem;
+  text-align: center;
+
+  background: var(--slds-c-table-header-background-color, #f3f2f2);
+}
+th:last-child(){
+  text-align: center;
+}
+
+td {
+  border-bottom: 1px solid var(--slds-c-table-border-color, #dddbda);
+  vertical-align: middle;
+  font-size: .9rem;
+}
+
+/* Container */
+.datatable-container {
+  /* font-family: var(--slds-c-typography-font-family, 'Salesforce Sans', Arial, sans-serif); */
+  background-color: var(--slds-c-card-color-background, #ffffff);
+  padding: 1rem;
+}
+
+/* Tooltip */
+.tooltip-wrapper {
+  position: relative;
+}
+
+.tooltip-box {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 600px;
+  height: auto;
+  background-color: #fff;
+  color: #080707;
+  padding: 1rem;
+  border: 1px solid #d8dde6;
+  border-radius: 0.25rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+/* Button */
+.btn {
+  @apply slds-button slds-button_neutral;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 0.5rem 1rem;
+}
+
+/* Header section */
+.main-header {
+  background-color: var(--slds-c-card-header-color-background, #f3f2f2);
+  padding: 2rem 1rem;
+  border-radius: 0.25rem 0.25rem 0 0;
+  color: var(--slds-c-text-color-default, #080707);
+}
+
+/* Scrollbar override for minimal webkit enhancement */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}

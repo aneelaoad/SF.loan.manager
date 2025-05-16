@@ -64,7 +64,12 @@
                                     
                                    
                                     <td>{item.Campaign_Name__c} </td>
-                                    <td>{item.Group__r.Name}</td>
+                                    <template if:true={item.Group__r}>
+                                        <td>{item.Group__r.Name}</td>
+                                    </template>
+                                    <template if:false={item.Group__r}>
+                                        <td></td>
+                                    </template>
                                     <td>{item.Start_Date_Time__c}</td>
                                     <td>{item.Campaign_Type__c}</td>
                                     <td>
@@ -456,7 +461,7 @@
                                 <lightning-input-field field-name="Name"></lightning-input-field>
                              </div>
                               <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12">
-                                <lightning-input-field field-name="Cust_Campaign__c" value={campaignIdForStep}></lightning-input-field>
+                                <lightning-input-field field-name="Cust_Campaign__c" value={campaignIdForStep} disabled></lightning-input-field>
                              </div>
                               <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12">
                                 <lightning-input-field field-name="Cust_Days_After_Last_Send__c"></lightning-input-field>

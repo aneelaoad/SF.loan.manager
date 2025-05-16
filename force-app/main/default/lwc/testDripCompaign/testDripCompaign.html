@@ -1,0 +1,568 @@
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 05-16-2025
+  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+-->
+<template>
+    <div class="slds-grid slds-wrap">
+        <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12" style="padding:5px;">
+            <div class="slds-grid slds-gutters slds-m-bottom_small">
+                <div class="slds-col">
+                    <lightning-input label="Start Date (From)" type="date" value={campaignStartDateFrom}
+                        onchange={handleCampaignDateChange}></lightning-input>
+                </div>
+                <div class="slds-col">
+                    <lightning-input label="Start Date (To)" type="date" value={campaignStartDateTo}
+                        onchange={handleCampaignDateChange}></lightning-input>
+                </div>
+            </div>
+            <div class="main-header">
+                <div style="float:left;">
+                    <div style="font-size:24px; margin-top:-20px; ">DRIP CAMPAIGNS</div>
+                </div>
+                <div style="float:right; margin-top:-20px; margin-bottom:0px;">
+
+                    <!-- <div class="button_base b07_3d_double_roll" onclick={showNewModel} style="margin-bottom:0px;">
+                    <div>New Drip Campaign</div>
+                    <div>New Drip Campaign</div>
+                    <div>New Drip Campaign</div>
+                    <div>New Drip Campaign</div>
+            </div> -->
+
+                    <lightning-button variant="brand" label="New Drip Campaign" title=""
+                        onclick={showNewModel}></lightning-button>
+
+                </div>
+
+
+            </div>
+
+            <div class="datatable-container">
+                <template if:true={isLoading}>
+                    <div class="exampleHolder">
+                        <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+                    </div>
+                </template>
+                <template if:true={campaigns}>
+
+                    <div class="tbl-header">
+                        <table cellpadding="0" cellspacing="0" border="0">
+                            <thead>
+                                <tr>
+
+                                    <th>Campaign Name</th>
+                                    <th>Group</th>
+                                    <th>Start Date Time</th>
+                                    <th>Type</th>
+                                    <th>Active Status</th>
+                                    <th></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                    <div class="tbl-content">
+                        <template if:true={showAnimation}>
+                            <div class="celebration-animation">
+
+                            </div>
+                        </template>
+                        <table cellpadding="0" cellspacing="0" border="0">
+                            <tbody>
+                                <template for:each={campaigns} for:item="item">
+                                    <tr key={item.id}>
+
+
+                                        <td>{item.Campaign_Name__c} </td>
+                                         <template if:true={item.Group__r}>
+                                        <td>{item.Group__r.Name}</td>
+                                    </template>
+                                    <template if:false={item.Group__r}>
+                                        <td></td>
+                                    </template>
+                                        <!-- <td>{item.Group__r.Name}</td> -->
+                                        <td>
+                                            <!-- <lightning-formatted-date-time value={item.Start_Date_Time__c} year="numeric" month="short" day="2-digit" hour="numeric"
+                                       weekday="long" era="short"></lightning-formatted-date-time> -->
+                                            <lightning-formatted-date-time
+                                                value={item.Start_Date_Time__c}></lightning-formatted-date-time>
+                                        </td>
+
+                                        <!-- <td>{item.Start_Date_Time__c}</td> -->
+                                        <td>{item.Campaign_Type__c}</td>
+                                        <td>
+                                            <template if:true={item.Is_Active__c}>
+                                                <lightning-icon icon-name="action:approval"
+                                                    alternative-text="CampaignStep" size="xx-small"
+                                                    title="Campaign Step"></lightning-icon>
+                                            </template>
+                                            <template if:false={item.Is_Active__c}>
+                                                <lightning-icon icon-name="action:reject"
+                                                    alternative-text="CampaignStep" size="xx-small"
+                                                    title="Campaign Step"></lightning-icon>
+                                            </template>
+                                        </td>
+                                        <td>
+                                            <div class="tooltip-wrapper">
+                                                <lightning-icon icon-name="action:info" alternative-text="Help"
+                                                    size="xx-small" class="help-icon white-icon"
+                                                    onmouseover={handleMouseOver} onmouseout={handleMouseOut}
+                                                    data-id={item.Id}
+                                                    style="--sds-c-icon-color-foreground-default: #ffffff;">
+                                                </lightning-icon>
+
+                                                <template if:true={item.isHovered}>
+                                                    <template if:true={item.Cust_Campaign_Steps__r}>
+                                                        <div class={item.tooltipBoxClass}>
+                                                            <p style="margin-bottom:0px !important;"><b> <lightning-icon
+                                                                        icon-name="action:new_campaign"
+                                                                        alternative-text="CampaignStep" size="xx-small"
+                                                                        title="Campaign Step"></lightning-icon> Campaign
+                                                                    Steps</b></p>
+                                                            <hr>
+                                                            <table
+                                                                style="border-collapse: collapse; font-size: 11px; width: 100%; font-size:7px !important; padding:0px !important; color:#777 !important;">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th
+                                                                            style="padding: 4px;  color: #000; border: 1px solid transparent;">
+                                                                            <b>#</b></th>
+                                                                        <th
+                                                                            style="padding: 4px;  color: #000; border: 1px solid transparent;">
+                                                                            <b>Name</b></th>
+                                                                        <th
+                                                                            style="padding: 4px;  color: #000; border: 1px solid transparent;">
+                                                                            <b>Type</b></th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <template for:each={item.Cust_Campaign_Steps__r}
+                                                                        for:item="step">
+                                                                        <tr key={step.Id}>
+                                                                            <td style="padding: 0;">
+                                                                                <div style=" padding: 1px;">
+                                                                                    <div
+                                                                                        style="background: white; padding: 4px; font-size: 11px; color:#000;">
+                                                                                        <b>{step.Cust_Step__c}</b>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </td>
+                                                                            <td style="padding: 0;">
+                                                                                <div style=" padding: 1px;">
+                                                                                    <div
+                                                                                        style="background: white; padding: 4px; font-size: 11px; color:#000">
+                                                                                        <b>{step.Name}</b>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </td>
+                                                                            <td style="padding: 0;">
+                                                                                <div style=" padding: 1px;">
+                                                                                    <div
+                                                                                        style="background: white; padding: 4px; font-size: 11px; color:#000">
+                                                                                        <b>{step.Cust_Type__c}</b>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </td>
+                                                                        </tr>
+                                                                    </template>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </template>
+                                                    <template if:true={item.Events__c}>
+
+                                                        <div class="eventCard" style={backgroundStyle}>
+                                                            <b>{item.Events__c}</b>
+                                                        </div>
+
+                                                    </template>
+                                                </template>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <template if:false={item.Events__c}>
+                                                <lightning-button data-id={item.Id} variant="neutral" label="Step"
+                                                    title="Step" onclick={showNewStepModal}></lightning-button>
+                                                <!-- <button class="btn" data-id={item.Id} onclick={showNewStepModal}><span>Step</span></button> -->
+                                            </template>
+                                            <template if:true={item.Events__c}>
+                                                <lightning-button data-id={item.Id} variant="neutral" label="Delete"
+                                                    title="Delete"
+                                                    onclick={deleteCampaignEventBased}></lightning-button>
+
+                                                <!-- <button class="btn" data-id={item.Id} onclick={deleteCampaignEventBased}><span>Delete</span></button> -->
+                                            </template>
+                                        </td>
+                                    </tr>
+                                </template>
+
+                            </tbody>
+                        </table>
+                    </div>
+
+                </template>
+
+                <template if:true={error}>
+                    <p class="slds-text-color_error">Error: {error.body.message}</p>
+                </template>
+            </div>
+
+
+        </div>
+
+        <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12" style="padding:5px;">
+            <div class="slds-grid slds-gutters slds-m-bottom_small">
+                <div class="slds-col">
+                    <lightning-input label="Group Name" onchange={handleGroupNameChange}></lightning-input>
+                </div>
+                <div class="slds-col">
+                    <lightning-combobox label="Based On" value={basedOnFilter} placeholder="Select Based On"
+                        options={basedOnOptions} onchange={handleBasedOnChange}>
+                    </lightning-combobox>
+                </div>
+            </div>
+            <div class="main-header">
+                <div style="float:left;">
+                    <div style="font-size:24px; margin-top:-20px; ">GROUPS</div>
+                </div>
+                <div style="float:right; margin-top:-20px; margin-bottom:0px;">
+
+
+                    <lightning-button variant="brand" label="New Group" title=""
+                        onclick={showGroupModal}></lightning-button>
+
+                </div>
+
+
+            </div>
+
+
+            <div class="datatable-container">
+                <template if:true={isLoading}>
+                    <div class="exampleHolder">
+                        <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+                    </div>
+                </template>
+                <template if:true={groups}>
+
+                    <div class="tbl-header">
+                        <table cellpadding="0" cellspacing="0" border="0">
+                            <thead>
+                                <tr>
+
+                                    <th>Group Name</th>
+                                    <th>Based on</th>
+                                    <th>Active Status</th>
+
+                                    <th></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                    <div class="tbl-content">
+                        <table cellpadding="0" cellspacing="0" border="0">
+                            <tbody>
+                                <template for:each={groups} for:item="item">
+                                    <tr key={item.id}>
+
+
+                                        <td>{item.name} </td>
+                                        <td>{item.based}</td>
+                                        <td>
+                                            <template if:true={item.isActive}>
+                                                <lightning-icon icon-name="action:approval"
+                                                    alternative-text="CampaignStep" size="xx-small"
+                                                    title="Campaign Step"></lightning-icon>
+                                            </template>
+                                            <template if:false={item.isActive}>
+                                                <lightning-icon icon-name="action:reject"
+                                                    alternative-text="CampaignStep" size="xx-small"
+                                                    title="Campaign Step"></lightning-icon>
+                                            </template>
+                                        </td>
+
+                                        <td>
+                                            <div class="tooltip-wrapper">
+                                                <lightning-icon icon-name="action:info" alternative-text="Help"
+                                                    size="xx-small" class="help-icon white-icon"
+                                                    onmouseover={handleMouseOverGroup} onmouseout={handleMouseOutGroup}
+                                                    data-id={item.id}
+                                                    style="--sds-c-icon-color-foreground-default: #ffffff;">
+                                                </lightning-icon>
+
+                                                <template if:true={item.isHovered}>
+                                                    <template if:true={item.members}>
+                                                        <div class={item.memberTooltipClass}
+                                                            style="height:auto; width:200px;">
+                                                            <p style="margin-bottom:0px !important;">
+                                                                <b>
+                                                                    <lightning-icon icon-name="action:new_group"
+                                                                        alternative-text="Group Member" size="xx-small"
+                                                                        title="Campaign Step"></lightning-icon>
+                                                                    Group Members
+                                                                </b>
+                                                            </p>
+                                                            <hr>
+                                                            <table
+                                                                style="border-collapse: collapse; font-size: 11px; width: 100%; font-size:7px !important; padding:0px !important; color:#777 !important;">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th
+                                                                            style="padding: 4px; background: linear-gradient(to right, #25c481, #25b7c4); color: #000; border: 1px solid transparent;">
+                                                                            <b>Name</b></th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <template for:each={item.members} for:item="step">
+                                                                        <template lwc:if={step.name}>
+                                                                            <tr key={step.id}>
+                                                                                <td style="padding: 0;">
+                                                                                    <div
+                                                                                        style="background: linear-gradient(to right, #25c481, #25b7c4); padding: 1px;">
+                                                                                        <div
+                                                                                            style="background: white; padding: 4px; font-size: 11px; color:#000;">
+                                                                                            <b>{step.name}</b>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </td>
+                                                                            </tr>
+                                                                        </template>
+                                                                    </template>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </template>
+                                                </template>
+
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <lightning-button data-id={item.id} variant="neutral" label="Add Members"
+                                                title="Add Members" onclick={showNewMemberModal}></lightning-button>
+
+                                            <!-- <button class="btn" data-id={item.id} onclick={showNewMemberModal}><span>Add Members</span></button> -->
+                                        </td>
+                                    </tr>
+                                </template>
+
+                            </tbody>
+                        </table>
+                    </div>
+
+                </template>
+
+                <template if:true={error}>
+                    <p class="slds-text-color_error">Error: {error.body.message}</p>
+                </template>
+            </div>
+
+
+        </div>
+    </div>
+
+
+    <template if:true={showNewModeal}>
+        <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modal-heading-01"
+            class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <button class="slds-button slds-button_icon slds-modal__close" onclick={closeNewModal}>
+                    X
+                </button>
+                <div class="slds-modal__header">
+                    <h1 id="modal-heading-01" class="slds-modal__title slds-hyphenate" style="color:#000;"
+                        tabindex="-1">Create New Drip Campaign</h1>
+                </div>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    <lightning-record-edit-form object-api-name="Campaign__c" record-id={recordId}
+                        onsuccess={handleSuccess}>
+                        <lightning-messages></lightning-messages>
+                        <div class="slds-grid slds-wrap slds-p-around_medium formcard">
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_12-of-12">
+                                <lightning-input-field field-name="Campaign_Name__c"></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_3-of-12">
+                                <lightning-input-field field-name="Is_Active__c"></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_3-of-12">
+                                <lightning-input-field field-name="Campaign_Type__c"></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_3-of-12">
+                                <lightning-input-field field-name="Events__c"></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_3-of-12">
+                                <lightning-input-field field-name="Group__c"></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_12-of-12">
+                                <lightning-input-field field-name="Description__c"></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12">
+                                <lightning-input-field field-name="Start_Date_Time__c"></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12">
+                                <lightning-input-field field-name="End_Date_Time__c"></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_12-of-12" style="display:none;">
+                                <lightning-input-field field-name="Brand__c"
+                                    value="a0n7z000005EnlxAAC"></lightning-input-field>
+                            </div>
+
+                        </div>
+                        <lightning-button-group class="slds-float_right">
+                            <button class="slds-button slds-button_neutral" onclick={closeNewModal}
+                                aria-label="Cancel and close">Cancel</button>
+                            <button class="slds-button slds-button_brand" type="submit">Save</button>
+                        </lightning-button-group>
+                    </lightning-record-edit-form>
+                </div>
+                <div class="slds-modal__footer">
+
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open" role="presentation"></div>
+    </template>
+
+
+
+    <template if:true={showNewGroupModal}>
+        <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modal-heading-001"
+            class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <button class="slds-button slds-button_icon slds-modal__close" onclick={closeGroupModal}>
+                    X
+                </button>
+                <div class="slds-modal__header">
+                    <h1 id="modal-heading-001" class="slds-modal__title slds-hyphenate" style="color:#000;"
+                        tabindex="-1">Create New Group</h1>
+                </div>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-01">
+                    <lightning-record-edit-form object-api-name="Group__c" record-id={recordId}
+                        onsuccess={handleSuccessGroup}>
+                        <lightning-messages></lightning-messages>
+                        <div class="slds-grid slds-wrap slds-p-around_medium formcard">
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_12-of-12">
+                                <lightning-input-field field-name="Group_Display_Name__c"></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12">
+                                <lightning-input-field field-name="Is_Active__c"></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12">
+                                <lightning-input-field field-name="Based_On__c"></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_12-of-12">
+                                <lightning-input-field field-name="Description__c"></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_12-of-12">
+                                <lightning-input-field field-name="Apply_Members_Limit__c"></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12">
+                                <lightning-input-field field-name="Maximum_Members_Limit__c"></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12">
+                                <lightning-input-field field-name="Minimum_Members_Limit__c"></lightning-input-field>
+                            </div>
+
+                        </div>
+                        <lightning-button-group class="slds-float_right">
+                            <button class="slds-button slds-button_neutral" onclick={closeGroupModal}
+                                aria-label="Cancel and close">Cancel</button>
+                            <button class="slds-button slds-button_brand" type="submit">Save</button>
+                        </lightning-button-group>
+                    </lightning-record-edit-form>
+                </div>
+                <div class="slds-modal__footer">
+
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open" role="presentation"></div>
+    </template>
+
+
+
+    <template if:true={showStepModal}>
+        <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modal-heading-0001"
+            class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <button class="slds-button slds-button_icon slds-modal__close" onclick={closeStepModal}>
+                    X
+                </button>
+                <div class="slds-modal__header">
+                    <h1 id="modal-heading-0001" class="slds-modal__title slds-hyphenate" style="color:#000;"
+                        tabindex="-1">Create New Campaign Step</h1>
+                </div>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-001">
+                    <lightning-record-edit-form object-api-name="Cust_Campaign_Step__c" record-id={recordId}
+                        onsuccess={handleSuccessStep}>
+                        <lightning-messages></lightning-messages>
+                        <div class="slds-grid slds-wrap slds-p-around_medium formcard">
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_12-of-12">
+                                <lightning-input-field field-name="Name"></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12">
+                                <lightning-input-field field-name="Cust_Campaign__c" value={campaignIdForStep}
+                                    disabled></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12">
+                                <lightning-input-field
+                                    field-name="Cust_Days_After_Last_Send__c"></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_12-of-12">
+                                <lightning-input-field field-name="Cust_Email_Template__c"></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_12-of-12">
+                                <lightning-input-field field-name="Cust_Step__c"></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12">
+                                <lightning-input-field field-name="Cust_Type__c"></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12">
+                                <lightning-input-field field-name="Cust_Step_Description__c"></lightning-input-field>
+                            </div>
+
+                        </div>
+                        <lightning-button-group class="slds-float_right">
+                            <button class="slds-button slds-button_neutral" onclick={closeStepModal}
+                                aria-label="Cancel and close">Cancel</button>
+                            <button class="slds-button slds-button_brand" type="submit">Save</button>
+                        </lightning-button-group>
+                    </lightning-record-edit-form>
+                </div>
+                <div class="slds-modal__footer">
+
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open" role="presentation"></div>
+    </template>
+
+
+    <template if:true={showMemberModal}>
+        <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modal-heading-00001"
+            class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <button class="slds-button slds-button_icon slds-modal__close" onclick={closeNewMemberModal}>
+                    X
+                </button>
+                <div class="slds-modal__header">
+                    <h1 id="modal-heading-00001" class="slds-modal__title slds-hyphenate" style="color:#000;"
+                        tabindex="-1">ADD GROUP MEMBERS</h1>
+                </div>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-0001">
+                    <lightning-flow flow-api-name="Add_Members_To_Groups" flow-input-variables={flowVariables}
+                        onstatuschange={handleFlowStatusChange}>
+                    </lightning-flow>
+                </div>
+                <div class="slds-modal__footer">
+
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open" role="presentation"></div>
+    </template>
+
+
+</template>
