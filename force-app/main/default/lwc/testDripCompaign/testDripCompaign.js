@@ -15,7 +15,7 @@ const CAMPAIGNCOLUMNS = [
     { label: 'Start Date Time', fieldName: 'Start_Date_Time__c', type: 'date' }
 ];
 export default class DripCampaginCreation extends LightningElement {
-
+  
     @track campaignName = '';
     @track startDate = '';
     @track endDate = '';
@@ -35,6 +35,10 @@ export default class DripCampaginCreation extends LightningElement {
     @track groupNameFilter = '';
     @track basedOnFilter = '';
     filteredGroups = [];
+
+
+     @track isCampaignSidebarOpen = false;
+    @track isGroupSidebarOpen = false;
 
     // Campaign filters
     campaignStartDateFrom;
@@ -64,6 +68,33 @@ export default class DripCampaginCreation extends LightningElement {
 
     flowVariables = [];
 
+
+     get campaignSidebarClass() {
+        return `custom-sidebar ${this.isCampaignSidebarOpen ? 'open' : ''}`;
+    }
+
+    get groupSidebarClass() {
+        return `custom-sidebar ${this.isGroupSidebarOpen ? 'open' : ''}`;
+    }
+
+    toggleCampaignFilterSidebar() {
+        this.isCampaignSidebarOpen = !this.isCampaignSidebarOpen;
+        this.isGroupSidebarOpen = false;
+    }
+
+    toggleGroupFilterSidebar() {
+        this.isGroupSidebarOpen = !this.isGroupSidebarOpen;
+        this.isCampaignSidebarOpen = false;
+    }
+
+    closeCampaignSidebar() {
+        this.isCampaignSidebarOpen = false;
+    }
+
+    closeGroupSidebar() {
+        this.isGroupSidebarOpen = false;
+    }
+
     handleGroupNameChange(event) {
         this.groupNameFilter = event.target.value;
         this.filterGroups();
@@ -78,6 +109,7 @@ export default class DripCampaginCreation extends LightningElement {
             console.error('Combobox Change Error:', error);
         }
     }
+   
 
     get backgroundStyle() {
         return `background-image: url(${CELEBRATION_GIF}); background-size: cover;`;
