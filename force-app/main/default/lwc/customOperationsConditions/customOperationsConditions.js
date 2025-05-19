@@ -8,6 +8,22 @@ export default class OperationsConditions extends LightningElement {
     ready = [];
     cleared = [];
 
+
+ columns = [
+        { label: 'Name', fieldName: 'name' },
+        { label: 'Type', fieldName: 'type' },
+        { label: 'Description', fieldName: 'description' },
+        { label: 'Assigned To', fieldName: 'assignedToName' },
+        { label: 'Status', fieldName: 'status' },
+        { label: 'Notes', fieldName: 'notes' },
+        { label: 'Requested Date', fieldName: 'requestedDate', type: 'date' },
+        { label: 'ETA', fieldName: 'eta', type: 'date' },
+        { label: 'Satisfaction Date', fieldName: 'satisfactionDate', type: 'date' },
+        { label: 'Category', fieldName: 'category' },
+        { label: 'Include In Email', fieldName: 'includeInEmail', type: 'boolean' },
+        { label: 'Can Borrower See', fieldName: 'canBorrowerSee', type: 'boolean' }
+    ];
+    
     @wire(getConditionsByLoanId, { loanId: '$recordId' })
     wiredConditions({ error, data }) {
         if (data && data.groupedConditions) {
