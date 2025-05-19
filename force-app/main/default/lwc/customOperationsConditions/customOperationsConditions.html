@@ -1,27 +1,139 @@
-<!--
-  @description       : 
-  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
-  @group             : 
-  @last modified on  : 05-14-2025
-  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
--->
 <template>
-  <lightning-card title="Operations Conditions">
-    <lightning-button label="Add Condition" onclick={handleAdd}></lightning-button>
-    <lightning-button label="Mass Update" onclick={handleMassUpdate}></lightning-button>
-    <lightning-button label="Send Conditions Email" onclick={handleSendEmail}></lightning-button>
+    <lightning-card title="Operations Conditions">
+        <lightning-tabset variant="scoped">
 
-    <lightning-tabset>
-      <lightning-tab label="Outstanding Conditions">
-        <c-condition-list conditions={outstanding}></c-condition-list>
-      </lightning-tab>
-      <lightning-tab label="Ready for Lender Conditions">
-        <lightning-button label="Download Submission Documents" icon-name="utility:download" class="slds-m-bottom_small"></lightning-button>
-        <c-condition-list conditions={ready}></c-condition-list>
-      </lightning-tab>
-      <lightning-tab label="Cleared Conditions">
-        <c-condition-list conditions={cleared}></c-condition-list>
-      </lightning-tab>
-    </lightning-tabset>
-  </lightning-card>
+            <!-- Outstanding Tab -->
+            <lightning-tab label="Outstanding Conditions">
+                <template if:true={outstanding}>
+                    <div class="slds-scrollable_x">
+                        <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Type</th>
+                                    <th scope="col">Description</th>
+                                    <th scope="col">Assigned To</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Notes</th>
+                                    <th scope="col">Requested Date</th>
+                                    <th scope="col">ETA</th>
+                                    <th scope="col">Satisfaction Date</th>
+                                    <th scope="col">Category</th>
+                                    <th scope="col">Include In Email</th>
+                                    <th scope="col">Can Borrower See</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template for:each={outstanding} for:item="condition">
+                                    <tr key={condition.id}>
+                                        <td>{condition.name}</td>
+                                        <td>{condition.type}</td>
+                                        <td>{condition.description}</td>
+                                        <td>{condition.assignedToName}</td>
+                                        <td>{condition.status}</td>
+                                        <td>{condition.notes}</td>
+                                        <td>{condition.requestedDate}</td>
+                                        <td>{condition.eta}</td>
+                                        <td>{condition.satisfactionDate}</td>
+                                        <td>{condition.category}</td>
+                                        <td>{condition.includeInEmail}</td>
+                                        <td>{condition.canBorrowerSee}</td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
+            </lightning-tab>
+
+            <!-- Ready for Lender Tab -->
+            <lightning-tab label="Ready for Lender Conditions">
+                <template if:true={ready}>
+                    <div class="slds-scrollable_x">
+                        <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Type</th>
+                                    <th scope="col">Description</th>
+                                    <th scope="col">Assigned To</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Notes</th>
+                                    <th scope="col">Requested Date</th>
+                                    <th scope="col">ETA</th>
+                                    <th scope="col">Satisfaction Date</th>
+                                    <th scope="col">Category</th>
+                                    <th scope="col">Include In Email</th>
+                                    <th scope="col">Can Borrower See</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template for:each={ready} for:item="condition">
+                                    <tr key={condition.id}>
+                                        <td>{condition.name}</td>
+                                        <td>{condition.type}</td>
+                                        <td>{condition.description}</td>
+                                        <td>{condition.assignedToName}</td>
+                                        <td>{condition.status}</td>
+                                        <td>{condition.notes}</td>
+                                        <td>{condition.requestedDate}</td>
+                                        <td>{condition.eta}</td>
+                                        <td>{condition.satisfactionDate}</td>
+                                        <td>{condition.category}</td>
+                                        <td>{condition.includeInEmail}</td>
+                                        <td>{condition.canBorrowerSee}</td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
+            </lightning-tab>
+
+            <!-- Cleared Tab -->
+            <lightning-tab label="Cleared Conditions">
+                <template if:true={cleared}>
+                    <div class="slds-scrollable_x">
+                        <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Type</th>
+                                    <th scope="col">Description</th>
+                                    <th scope="col">Assigned To</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Notes</th>
+                                    <th scope="col">Requested Date</th>
+                                    <th scope="col">ETA</th>
+                                    <th scope="col">Satisfaction Date</th>
+                                    <th scope="col">Category</th>
+                                    <th scope="col">Include In Email</th>
+                                    <th scope="col">Can Borrower See</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template for:each={cleared} for:item="condition">
+                                    <tr key={condition.id}>
+                                        <td>{condition.name}</td>
+                                        <td>{condition.type}</td>
+                                        <td>{condition.description}</td>
+                                        <td>{condition.assignedToName}</td>
+                                        <td>{condition.status}</td>
+                                        <td>{condition.notes}</td>
+                                        <td>{condition.requestedDate}</td>
+                                        <td>{condition.eta}</td>
+                                        <td>{condition.satisfactionDate}</td>
+                                        <td>{condition.category}</td>
+                                        <td>{condition.includeInEmail}</td>
+                                        <td>{condition.canBorrowerSee}</td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
+            </lightning-tab>
+
+        </lightning-tabset>
+    </lightning-card>
 </template>

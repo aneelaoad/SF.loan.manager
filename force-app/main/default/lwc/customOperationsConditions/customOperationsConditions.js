@@ -1,39 +1,50 @@
-import { LightningElement, track, wire} from 'lwc';
+import { LightningElement, api, wire } from 'lwc';
+import getConditionsByLoanId from '@salesforce/apex/ConditionController.getConditionsByLoanId';
 
-export default class CustomOperationsConditions extends LightningElement {
+export default class OperationsConditions extends LightningElement {
+    @api recordId;
 
+    outstanding = [];
+    ready = [];
+    cleared = [];
 
-@track allConditions = [];
-@track outstanding = [];
-@track ready = [];
-@track cleared = [];
+    @wire(getConditionsByLoanId, { loanId: '$recordId' })
+    wiredConditions({ error, data }) {
+        if (data && data.groupedConditions) {
+            // Use flatMap correctly on the actual array
+            const allConditions = data.groupedConditions.flatMap(group => group.conditions || []);
+            const normalized = allConditions.map(this.normalizeCondition);
 
-// @wire(getConditions, { loanId: '$recordId' })
-// wiredConditions({ data, error }) {
-//     if (data) {
-//         this.allConditions = data;
-//         this.outstanding = data.filter(c => c.Condition_Type__c === 'Outstanding');
-//         this.ready = data.filter(c => c.Condition_Type__c === 'ReadyForLender');
-//         this.cleared = data.filter(c => c.Condition_Type__c === 'Cleared');
-//     }
-// }
+            this.outstanding = normalized.filter(c =>
+                ['New', 'Review', 'Requested'].includes(c.status)
+            );
+            this.ready = normalized.filter(c =>
+                ['Approved', 'Submitted'].includes(c.status)
+            );
+            this.cleared = normalized.filter(c =>
+                ['Cleared'].includes(c.status)
+            );
+        } else if (error) {
+            console.error('Error fetching conditions:', error);
+        }
+    }
 
-
-connectedCallback() {
-    // Hardcoded condition records
-    const data = [
-        { Id: '001', Name: 'Condition 1', Condition_Type__c: 'Outstanding' },
-        { Id: '002', Name: 'Condition 2', Condition_Type__c: 'ReadyForLender' },
-        { Id: '003', Name: 'Condition 3', Condition_Type__c: 'Cleared' },
-        { Id: '004', Name: 'Condition 4', Condition_Type__c: 'Outstanding' },
-        { Id: '005', Name: 'Condition 5', Condition_Type__c: 'Cleared' }
-    ];
-
-    this.allConditions = data;
-    this.outstanding = data.filter(c => c.Condition_Type__c === 'Outstanding');
-    this.ready = data.filter(c => c.Condition_Type__c === 'ReadyForLender');
-    this.cleared = data.filter(c => c.Condition_Type__c === 'Cleared');
+  normalizeCondition(raw) {
+    return {
+        id: raw.id || raw.Id,
+        name: raw.name || raw.Name,
+        type: raw.type || raw.Cust_Type__c,
+        description: raw.description || raw.Cust_Description__c,
+        notes: raw.notes || raw.Cust_Notes__c,
+        assignedToName: raw.assignedToName || raw.Cust_Assigned_To__c || '',
+        status: raw.status || raw.Cust_Status__c,
+        requestedDate: raw.Cust_Requested_Date__c,
+        satisfactionDate: raw.Cust_Condition_Satisfaction_Date__c,
+        eta: raw.Cust_ETA__c,
+        category: raw.Cust_Category__c,
+        includeInEmail: raw.Cust_Include_In_Email__c,
+        canBorrowerSee: raw.Cust_Can_Borrower_See__c
+    };
 }
-
 
 }
