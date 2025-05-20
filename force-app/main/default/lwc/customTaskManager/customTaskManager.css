@@ -1,0 +1,193 @@
+.chip {
+  margin-right: 0.5rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 1rem;
+}
+
+.chip.income { background-color: #cce5ff; }
+.chip.assets { background-color: #d9edf7; }
+.chip.credit { background-color: #dff0d8; }
+.chip.reo { background-color: #c3e6cb; }
+.chip.other { background-color: #d1ecf1; }
+.chip.disclosures { background-color: #e2d6f3; }
+.chip.compliance { background-color: #d6c1f0; }
+.empty-state{
+	display: flex;
+    flex-direction: column;
+	height: 400px;
+}
+/* customTaskManager.css */
+.chip {
+  margin-right: 0.5rem;
+  font-weight: 500;
+}
+
+.empty-state p {
+  margin: 0.25rem 0;
+}
+.button-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.template-group {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.flat-button {
+  background-color: #0176d3;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.flat-button:hover {
+  background-color: #015cab;
+}
+
+.flat-chevron lightning-button-menu {
+  border-radius: 0;
+}
+
+.icon-left {
+  margin-right: 0.3rem;
+}
+
+.category-filters {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0 1rem 1rem 1rem;
+}
+
+.filter-chip {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  background-color: #f3f3f3;
+  padding: 0.3rem 0.75rem;
+  border-radius: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.circle {
+  width: 10px;
+  height: 10px;
+  background-color: #ccc;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+}
+
+.circle.selected {
+  background-color: #0176d3;
+}
+
+.chip-label {
+  font-size: 0.85rem;
+  color: #444;
+}
+
+.selected-label {
+  font-weight: bold;
+  color: #0176d3;
+}
+.no-radius {
+  border-radius: 0 !important;
+}
+
+.no-radius lightning-icon {
+  border-radius: 0 !important;
+}
+
+/* Optional: Make sure menu dropdown also has sharp edges */
+.custom-chevron-button .slds-button {
+  border-radius: 0 !important;
+}
+.flat-button {
+  background-color: #e6f0ff;
+  color: #0070d2;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-weight: 500;
+  margin-right: 8px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 14px;
+}
+
+.flat-button:hover {
+  background-color: #d0e7ff;
+  cursor: pointer;
+}
+
+.icon-left {
+  margin-right: 4px;
+}
+
+.template-group {
+  display: flex;
+  align-items: center;
+}
+
+.flat-chevron .slds-button_icon {
+  background: #e6f0ff;
+  border-radius: 6px;
+  margin-left: -6px;
+}
+.category-filters {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 16px;
+  background-color: #f4f6f9;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.filter-chip:hover {
+  background-color: #e1e7f0;
+}
+
+.filter-chip span:first-child {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+/* Dot Colors (match Salesforce style) */
+.income-dot     { background-color: #5b8def; }
+.assets-dot     { background-color: #5bc0de; }
+.credit-dot     { background-color: #4caf50; }
+.reo-dot        { background-color: #66bb6a; }
+.other-dot      { background-color: #9c27b0; }
+.disclosures-dot{ background-color: #ab47bc; }
+.compliance-dot { background-color: #3f51b5; }
+.empty-state {
+  text-align: center;
+  color: #8c8c8c;
+}
+
+.empty-state img {
+  margin-bottom: 10px;
+  opacity: 0.6;
+}
