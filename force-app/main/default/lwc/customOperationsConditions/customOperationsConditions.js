@@ -1,5 +1,6 @@
 import { LightningElement, api, wire } from 'lwc';
 import getConditionsByLoanId from '@salesforce/apex/ConditionController.getConditionsByLoanId';
+import getActiveUsers from '@salesforce/apex/NotesController.getActiveUsers';
 
 export default class OperationsConditions extends LightningElement {
     @api recordId;
@@ -7,8 +8,11 @@ export default class OperationsConditions extends LightningElement {
     outstanding = [];
     ready = [];
     cleared = [];
-
-
+    assignedOptions = []
+    newCount = 0;
+    requestedCount = 0;
+    reviewCount = 0;
+    selectedUserId;
  columns = [
         { label: 'Name', fieldName: 'name' },
         { label: 'Type', fieldName: 'type' },
@@ -40,6 +44,11 @@ export default class OperationsConditions extends LightningElement {
             this.cleared = normalized.filter(c =>
                 ['Cleared'].includes(c.status)
             );
+
+            this.newCount = normalized.filter(c => c.status === 'New').length;
+            this.requestedCount = normalized.filter(c => c.status === 'Requested').length;
+            this.reviewCount = normalized.filter(c => c.status === 'Review').length;
+
         } else if (error) {
             console.error('Error fetching conditions:', error);
         }
@@ -63,4 +72,20 @@ export default class OperationsConditions extends LightningElement {
     };
 }
 
+
+ handleUserFilterChange(event) {
+    this.selectedUserId = event.detail.userId;
+    console.log('selectedUserId : ',this.selectedUserId);
+    // this.applyFilters(); // Apply your filtering logic here
+}
+
+ // Display a toast message
+    showToast(title, message, variant) {
+        const evt = new ShowToastEvent({
+            title: title,
+            message: message,
+            variant: variant
+        });
+        this.dispatchEvent(evt);
+    }
 }

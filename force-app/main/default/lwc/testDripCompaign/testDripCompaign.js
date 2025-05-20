@@ -7,6 +7,7 @@ import getGroupsWithMembers from '@salesforce/apex/CampaignController.getGroupsW
 import getCampaignsWithStepsByDate from '@salesforce/apex/CampaignController.getCampaignsWithStepsByDate';
 import deleteEvent from '@salesforce/apex/CampaignController.deleteCampaignEventBased';
 import CELEBRATION_GIF from '@salesforce/resourceUrl/celebrationGif';
+import { NavigationMixin } from 'lightning/navigation';
 const CAMPAIGNCOLUMNS = [
     { label: 'Name', fieldName: 'Name' },
     { label: 'Campaign Name', fieldName: 'Campaign_Name__c' },
@@ -14,7 +15,7 @@ const CAMPAIGNCOLUMNS = [
     { label: 'Last Sent', fieldName: 'Last_Sent__c', type: 'date' },
     { label: 'Start Date Time', fieldName: 'Start_Date_Time__c', type: 'date' }
 ];
-export default class DripCampaginCreation extends LightningElement {
+export default class TestDripCampagin extends NavigationMixin(LightningElement){
   
     @track campaignName = '';
     @track startDate = '';
@@ -23,7 +24,8 @@ export default class DripCampaginCreation extends LightningElement {
     @track budget = '';
     @track currentStep = 1;
     @track isLoading = false;
-    
+    @track totalSteps = 0;
+    @track totalMembers=0;
     @track campaigns = [];
     @track campaignsteps = [];
     @track groups = [];
@@ -35,6 +37,8 @@ export default class DripCampaginCreation extends LightningElement {
     @track groupNameFilter = '';
     @track basedOnFilter = '';
     filteredGroups = [];
+
+     saveAndNewClicked = false;
 
 
      @track isCampaignSidebarOpen = false;
@@ -321,46 +325,134 @@ export default class DripCampaginCreation extends LightningElement {
         this.getGroupWithMemberSync();
     }
 
-    handleSuccess(event) {
-        this.getCampaignsSync();
-        this.dispatchEvent(
-            new ShowToastEvent({
-                title: 'Success',
-                message: 'Campaign created successfully!',
-                variant: 'success',
-            })
-        );
+   async handleSuccess(event) {
+        const recordId = event.detail.id;
 
-        this.closeNewModal();
+        if (this.saveAndNewClicked && this.lastSubmittedFormName === 'drip-campaign') {
+            this.saveAndNewClicked = false;
+
+            // Reset only the drip campaign form
+            const form = this.template.querySelector(`lightning-record-edit-form[data-form-name="drip-campaign"]`);
+            if (form) {
+                const inputFields = form.querySelectorAll('lightning-input-field');
+                inputFields.forEach(field => field.reset());
+            }
+
+            // Refresh campaign list
+            await this.getCampaignsSyncWithSteps();
+
+            // Show success toast
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Success',
+                    message: 'Campaign created. You can add another.',
+                    variant: 'success'
+                })
+            );
+
+            // Reset recordId for new entry
+            this.recordId = null;
+
+        } else {
+            // Standard save behavior
+            await this.getCampaignsSyncWithSteps();
+
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Success',
+                    message: 'Campaign created successfully!',
+                    variant: 'success'
+                })
+            );
+
+            this.closeNewModal();
+
+            // Optional page reload
+            window.location.reload();
+        }
     }
 
-    handleSuccessStep(event) {
+     async handleSuccessStep(event) {
+        const recordId = event.detail.id;
 
-        this.getCampaignsSyncWithSteps();
-        this.dispatchEvent(
-            new ShowToastEvent({
-                title: 'Success',
-                message: 'Step created successfully!',
-                variant: 'success',
-            })
-        );
+        if (this.saveAndNewClicked && this.lastSubmittedFormName === 'compaign-step') {
+            this.saveAndNewClicked = false;
 
-        this.closeStepModal();
+            const form = this.template.querySelector(`lightning-record-edit-form[data-form-name="compaign-step"]`);
+            if (form) {
+                const inputFields = form.querySelectorAll('lightning-input-field');
+                inputFields.forEach(field => field.reset());
+            }
+
+            await this.getCampaignsSyncWithSteps();
+
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Success',
+                    message: 'Step created. You can add another.',
+                    variant: 'success',
+                })
+            );
+
+            this.recordId = null;
+
+        } else {
+            await this.getCampaignsSyncWithSteps();
+
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Success',
+                    message: 'Step created successfully!',
+                    variant: 'success',
+                })
+            );
+
+            this.closeStepModal();
+        }
     }
 
-    handleSuccessGroup(event) {
+      async handleSuccessGroup(event) {
+        this.isLoading=true;
+        const recordId = event.detail.id;
 
-        this.getGroupsSync();
-        this.dispatchEvent(
-            new ShowToastEvent({
-                title: 'Success',
-                message: 'Group created successfully!',
-                variant: 'success',
-            })
-        );
+        if (this.saveAndNewClicked && this.lastSubmittedFormName === 'group-form') {
+            this.saveAndNewClicked = false;
 
-        this.closeGroupModal();
+            const form = this.template.querySelector(`lightning-record-edit-form[data-form-name="group-form"]`);
+            if (form) {
+                const inputFields = form.querySelectorAll('lightning-input-field');
+                inputFields.forEach(field => field.reset());
+            }
 
+            // Refresh group list
+            await this.getGroupWithMemberSync();
+
+            // Show toast
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Success',
+                    message: 'Group created. You can add another.',
+                    variant: 'success'
+                })
+            );
+
+            this.recordId = null;
+
+        } else {
+            await this.getGroupWithMemberSync();
+
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Success',
+                    message: 'Group created successfully!',
+                    variant: 'success'
+                })
+            );
+
+            this.closeGroupModal();
+             this.isLoading=false;
+            window.location.reload();
+        }
     }
 
     getStepsForCampaign(campaignId) {
@@ -368,6 +460,7 @@ export default class DripCampaginCreation extends LightningElement {
     }
 
     handleMouseOver(event) {
+        
         const hoveredId = event.currentTarget.dataset.id;
         const icon = event.currentTarget;
 
@@ -377,13 +470,25 @@ export default class DripCampaginCreation extends LightningElement {
 
         const spaceBelow = containerRect.bottom - iconRect.bottom;
         const position = spaceBelow < 250 ? 'top' : 'bottom';
-
-        this.campaigns = this.campaigns.map(item => ({
-            ...item,
-            isHovered: item.Id === hoveredId,
-            tooltipPosition: item.Id === hoveredId ? position : 'bottom',
-            tooltipBoxClass: item.Id === hoveredId ? `tooltip-box tooltip-${position}` : ''
-        }));
+        
+        this.campaigns = this.campaigns.map(item => {
+            if (item.Id === hoveredId) {
+                this.totalSteps = item.Cust_Campaign_Steps__r ? item.Cust_Campaign_Steps__r.length : 0;
+                return {
+                    ...item,
+                    isHovered: true,
+                    tooltipPosition: position,
+                    tooltipBoxClass: `tooltip-box tooltip-${position}`
+                };
+            } else {
+                return {
+                    ...item,
+                    isHovered: false,
+                    tooltipPosition: 'bottom',
+                    tooltipBoxClass: ''
+                };
+            }
+        });
 
        
 
@@ -394,6 +499,7 @@ export default class DripCampaginCreation extends LightningElement {
 
 
     }
+    
 
     handleMouseOut() {
         this.campaigns = this.campaigns.map(item => ({
@@ -429,11 +535,30 @@ export default class DripCampaginCreation extends LightningElement {
         const position = spaceBelow < 250 ? 'top' : 'bottom';
         const className = `tooltip-box tooltip-${position}`;
 
-        this.groups = this.groups.map(item => ({
-            ...item,
-            isHovered: item.id === hoveredId,
-            memberTooltipClass: item.id === hoveredId ? className : ''
-        }));
+        // this.groups = this.groups.map(item => ({
+        //     ...item,
+        //     isHovered: item.id === hoveredId,
+        //     memberTooltipClass: item.id === hoveredId ? className : ''
+        // }));
+
+           this.groups = this.groups.map(item => {
+            if (item.id === hoveredId) {
+                this.totalMembers = item.members ? item.members.length : 0;
+                return {
+                    ...item,
+                    isHovered: true,
+                    tooltipPosition: position,
+                    tooltipBoxClass: `tooltip-box tooltip-${position}`
+                };
+            } else {
+                return {
+                    ...item,
+                    isHovered: false,
+                    tooltipPosition: 'bottom',
+                    tooltipBoxClass: ''
+                };
+            }
+        });
     }
 
     handleMouseOutGroup() {
@@ -461,7 +586,8 @@ export default class DripCampaginCreation extends LightningElement {
             .then(result => {
                 this.allGroups = result.map((item) => ({
                     ...item,
-                    isHovered: this.hoveredRowIdGroup === item.id
+                    isHovered: this.hoveredRowIdGroup === item.id,
+                    recordLink: '/' + item.id
                 }));
                 console.log('Groups With Members Result->' + JSON.stringify(result));
                 this.error = undefined;
@@ -503,7 +629,8 @@ export default class DripCampaginCreation extends LightningElement {
                 //this.campaigns = result;
                 this.campaigns = result.map((item) => ({
                     ...item,
-                    isHovered: this.hoveredRowId === item.Id
+                    isHovered: this.hoveredRowId === item.Id,
+                    recordLink: '/' + item.Id // <-- add record link here
                 }));
                 console.log('Campaigns Result With Steps->' + JSON.stringify(result));
                 this.error = undefined;
@@ -562,6 +689,49 @@ export default class DripCampaginCreation extends LightningElement {
             }));
         } finally {
             this.isLoading = false;
+        }
+    }
+
+
+    handleViewAllCampaigns() {
+        this[NavigationMixin.Navigate]({
+            type: 'standard__objectPage',
+            attributes: {
+                objectApiName: 'Campaign__c', // Replace with your object API name
+                actionName: 'list'
+            },
+            state: {
+                filterName: 'All' // Use 'Recent' or your list view API name
+            }
+        });
+    }
+
+
+    handleViewAllGroups() {
+        this[NavigationMixin.Navigate]({
+            type: 'standard__objectPage',
+            attributes: {
+                objectApiName: 'Group__c', // Replace with your object API name
+                actionName: 'list'
+            },
+            state: {
+                filterName: 'All' // Use 'Recent' or your list view API name
+            }
+        });
+    }
+
+    handleSaveAndNewClick(event) {
+        this.saveAndNewClicked = true;
+        const formName = event.currentTarget.dataset.form;
+        this.lastSubmittedFormName = formName;
+
+        const form = this.template.querySelector(`lightning-record-edit-form[data-form-name="${formName}"]`);
+
+        if (form) {
+            console.log(`Submitting Save & New for form: ${formName}`, form);
+            form.submit();
+        } else {
+            console.error(`Form with data-form-name="${formName}" not found.`);
         }
     }
 }

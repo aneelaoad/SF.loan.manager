@@ -8,13 +8,15 @@
 lightning-datatable {
     width: 100%;
 }
-.table-scroll {
-    overflow-x: auto;
-}
+
 .table-scroll {
     overflow-x: auto;
     width: 100%;
     margin-top: 1rem;
+     max-height: 300px;
+}
+table{
+    height: 200px;
 }
 
 table.slds-table {
@@ -50,4 +52,20 @@ table.slds-table {
 lightning-icon {
     margin-right: 0.25rem;
     cursor: pointer;
+}
+.section {
+    margin-bottom: 5rem;
+}
+
+.table-scroll {
+    overflow-x: auto;
+}
+.slds-box {
+    padding: 1rem;
+}
+.slds-table thead th {
+    position: sticky;
+    top: 0;
+    background: #f3f2f2; /* Match SLDS header background */
+    z-index: 1;
 }

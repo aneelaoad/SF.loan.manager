@@ -1,3 +1,10 @@
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 05-20-2025
+  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+-->
 <template>
     <lightning-tabset size="large" class="" variant="scoped">
         <!-- Campaigns Tab -->
@@ -32,6 +39,9 @@
 
                                 <lightning-button variant="brand" label="New Drip Campaign" title=""
                                     onclick={showNewModel}></lightning-button>
+                                   &nbsp;&nbsp;&nbsp;&nbsp;
+                                    <lightning-button variant="brand" label="View All Campaign" title=""
+                                    onclick={handleViewAllCampaigns}></lightning-button>
                                 <!-- <lightning-button-icon variant="brand" size="medium" icon-name="action:filter" alternative-text="Filters"  onclick={handleFilters}>   </lightning-button-icon> -->
                                 <lightning-button-icon icon-name="utility:filterList" variant="border-filled"
                                     alternative-text="Filter Campaigns" onclick={toggleCampaignFilterSidebar}
@@ -55,10 +65,10 @@
                                         <thead>
                                             <tr>
 
-                                                <th>Name</th>
-                                                <th>Group</th>
-                                                <th>Start Date</th>
-                                                <th>Type</th>
+                                                <th style="text-align:left;">Name</th>
+                                                <th style="text-align:left;">Group</th>
+                                                <th style="text-align:left;">Start Date</th>
+                                                <th style="text-align:left;">Type</th>
                                                 <th>Active </th>
                                                 <th>Status</th>
                                                 <th></th>
@@ -78,23 +88,27 @@
                                                 <tr key={item.id}>
 
 
-                                                    <td>{item.Campaign_Name__c} </td>
+                                                    <td style="text-align:left;">
+                                                        <a href={item.recordLink} target="_blank" style="color: #0070d2; text-decoration: underline;">
+                                                            {item.Campaign_Name__c}
+                                                        </a>
+                                                    </td>
                                                     <template if:true={item.Group__r}>
-                                                        <td>{item.Group__r.Name}</td>
+                                                        <td style="text-align:left;">{item.Group__r.Name}</td>
                                                     </template>
                                                     <template if:false={item.Group__r}>
                                                         <td></td>
                                                     </template>
                                                     <!-- <td>{item.Group__r.Name}</td> -->
-                                                    <td>
+                                                    <td style="text-align:left;">
                                                         <!-- <lightning-formatted-date-time value={item.Start_Date_Time__c} year="numeric" month="short" day="2-digit" hour="numeric"
                                        weekday="long" era="short"></lightning-formatted-date-time> -->
-                                                        <lightning-formatted-date-time value={item.Start_Date_Time__c}>
+                                                        <lightning-formatted-date-time style="text-align:left;" value={item.Start_Date_Time__c}>
                                                         </lightning-formatted-date-time>
                                                     </td>
 
                                                     <!-- <td>{item.Start_Date_Time__c}</td> -->
-                                                    <td>{item.Campaign_Type__c}</td>
+                                                    <td style="text-align:left;">{item.Campaign_Type__c}</td>
                                                     <td>
                                                         <template if:true={item.Is_Active__c}>
                                                               <lightning-icon icon-name="utility:check" size="x-small"
@@ -123,10 +137,11 @@
                                                                         <p style="margin-bottom:0px !important;"><b> <lightning-icon
                                                                         icon-name="action:new_campaign"
                                                                         alternative-text="CampaignStep" size="xx-small"
-                                                                        title="Campaign Step"></lightning-icon> Campaign
-                                                                    Steps</b></p>
-                                                                        <hr>
-                                                                        <table
+                                                                        title="Campaign Step"></lightning-icon> Total Campaign
+                                                                    Steps</b>: {totalSteps}</p>
+                                                                        <!-- <hr> -->
+                                                                         
+                                                                        <!-- <table
                                                                             style="border-collapse: collapse; font-size: 11px; width: 100%; font-size:7px !important; padding:0px !important; color:#777 !important;">
                                                                             <thead>
                                                                                 <tr>
@@ -176,7 +191,7 @@
                                                                                     </tr>
                                                                                 </template>
                                                                             </tbody>
-                                                                        </table>
+                                                                        </table> -->
                                                                     </div>
                                                                 </template>
                                                                 <template if:true={item.Events__c}>
@@ -199,12 +214,10 @@
                                                             <!-- <button class="btn" data-id={item.Id} onclick={showNewStepModal}><span>Step</span></button> -->
                                                         </template>
                                                         <template if:true={item.Events__c}>
-                                                            <!-- <lightning-button data-id={item.Id} variant="neutral"
+                                                            <lightning-button data-id={item.Id} variant="neutral"
                                                                 label="Delete" title="Delete"
-                                                                onclick={deleteCampaignEventBased}></lightning-button> -->
-                                                                  <button class="btn" data-id={item.id} onclick={showNewMemberModal}><span>Add Members</span></button>
-
-                                                            <!-- <button class="btn" data-id={item.Id} onclick={deleteCampaignEventBased}><span>Delete</span></button> -->
+                                                                onclick={deleteCampaignEventBased}></lightning-button>
+                                                                 
                                                         </template>
                                                     </td>
                                                 </tr>
@@ -248,24 +261,17 @@
             <div class="slds-grid slds-wrap">
                 <div class="slds-col slds-size_1-of-1" style="padding:5px;">
                     <div style="padding:5px;">
-                        <!-- <div class="slds-grid slds-gutters slds-m-bottom_small">
-                            <div class="slds-col">
-                                <lightning-input label="Group Name" onchange={handleGroupNameChange}></lightning-input>
-                            </div>
-                            <div class="slds-col">
-                                <lightning-combobox label="Based On" value={basedOnFilter} placeholder="Select Based On"
-                                    options={basedOnOptions} onchange={handleBasedOnChange}>
-                                </lightning-combobox>
-                            </div>
-                        </div> -->
-
+                   
                         <div class="main-header">
                             <div style="float:left;">
-                                <!-- <div style="font-size:24px; margin-top:-20px;">GROUPS</div> -->
+                                <div style="font-size:24px; margin-top:-20px;">Recent Groups</div>
                             </div>
                             <div style="float:right; margin-top:-20px; margin-bottom:0px;">
                                 <lightning-button variant="brand" label="New Group" onclick={showGroupModal}>
                                 </lightning-button>
+                                 &nbsp;&nbsp;&nbsp;&nbsp;
+                                <lightning-button variant="brand" label="View All Groups" title=""
+                                    onclick={handleViewAllGroups}></lightning-button>
 
                                 <lightning-button-icon icon-name="utility:filterList" variant="border-filled"
                                     alternative-text="Filter Groups" onclick={toggleGroupFilterSidebar}
@@ -286,8 +292,8 @@
                                     <table cellpadding="0" cellspacing="0" border="0">
                                         <thead>
                                             <tr>
-                                                <th>Group Name</th>
-                                                <th>Based on</th>
+                                                <th style="text-align:left;">Group Name</th>
+                                                <th style="text-align:left;">Based on</th>
                                                 <th>Active </th>
                                                 <th>Status</th>
                                                 <th></th>
@@ -300,8 +306,13 @@
                                         <tbody>
                                             <template for:each={groups} for:item="item">
                                                 <tr key={item.id}>
-                                                    <td>{item.name}</td>
-                                                    <td>{item.based}</td>
+                                                    
+                                                    <td style="text-align:left;">
+                                                        <a href={item.recordLink} target="_blank" style="color: #0070d2; text-decoration: underline;">
+                                                            {item.name}
+                                                        </a>
+                                                    </td>
+                                                    <td style="text-align:left;">{item.based}</td>
                                                     <td>
                                                         <template if:true={item.isActive}>
                                                             <lightning-icon icon-name="utility:check" size="x-small"
@@ -331,6 +342,7 @@
                                                                             size="xx-small" title="Group Member"></lightning-icon>
                                                                         Group Members
                                                                     </b>
+                                                                   
                                                                         </p>
                                                                         <hr />
                                                                         <ul>
@@ -366,6 +378,41 @@
             </div>
         </lightning-tab>
 
+        <lightning-tab label="Newsletter" title="Newsletter" size="large">
+
+            <div class="slds-grid slds-wrap">
+                <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12">
+                    <div class="card-container">
+                        <div class="card leads-card">
+                            <div class="icon-container">
+                                <lightning-icon icon-name="standard:letterhead" alternative-text="Leads" size="large" class="icon-white"></lightning-icon> <div class="letterTitle">NEWSLETTER</div>
+                                <br>
+                                <button class="slds-button slds-button_neutral">SEND NOW</button>
+                                
+                            </div>
+                            
+                        </div>
+                        
+                    </div>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12">
+                 <div class="card-container">
+                        
+                        <div class="card loans-card">
+                            <div class="icon-container">
+                                <lightning-icon icon-name="standard:letterhead" alternative-text="Test Newsletter" size="large" class="icon-white"></lightning-icon> <div class="letterTitle" style="color:#066afe;">TEST NEWSLETTER</div>
+                                <br>
+                                <button class="slds-button slds-button_outline-brand">SEND NOW</button>
+                                
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+             
+        </lightning-tab>
+
     </lightning-tabset>
 
 
@@ -374,20 +421,21 @@
     <!-- ----------extra content--- -->
 
 
-    <template if:true={showNewModeal}>
-        <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modal-heading-01"
-            class="slds-modal slds-fade-in-open">
-            <div class="slds-modal__container">
-                <button class="slds-button slds-button_icon slds-modal__close" onclick={closeNewModal}>
-                    X
-                </button>
-                <div class="slds-modal__header">
-                    <h1 id="modal-heading-01" class="slds-modal__title slds-hyphenate" style="color:#000;"
-                        tabindex="-1">Create New Drip Campaign</h1>
-                </div>
-                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
-                    <lightning-record-edit-form object-api-name="Campaign__c" record-id={recordId}
-                        onsuccess={handleSuccess}>
+     <template if:true={showNewModeal}>
+        <lightning-record-edit-form object-api-name="Campaign__c" record-id={recordId} onsuccess={handleSuccess}
+            data-form-name="drip-campaign">
+            <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modal-heading-01"
+                class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container custom-modal">
+                    <button class="slds-button slds-button_icon slds-modal__close" onclick={closeNewModal}>
+            X
+        </button>
+                    <div class="slds-modal__header custom-modal-header">
+                        <h1 id="modal-heading-01" class="slds-modal__title slds-hyphenate custom-modal-heading"
+                            tabindex="-1">Create New Drip Campaign</h1>
+                    </div>
+                    <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+
                         <lightning-messages></lightning-messages>
                         <div class="slds-grid slds-wrap slds-p-around_medium formcard">
                             <div class="slds-col slds-size_1-of-1 slds-large-size_12-of-12">
@@ -420,37 +468,45 @@
                             </div>
 
                         </div>
+
+
+                    </div>
+                    <div class="slds-modal__footer">
                         <lightning-button-group class="slds-float_right">
-                            <button class="slds-button slds-button_neutral" onclick={closeNewModal}
-                                aria-label="Cancel and close">Cancel</button>
+                            <button class="slds-button slds-button_neutral" onclick={closeNewModal} aria-label="Cancel and close">Cancel</button>
+                            <button
+  class="slds-button slds-button_brand"
+  data-button-type="save-new"
+  data-form="drip-campaign"
+  onclick={handleSaveAndNewClick}>
+  Save & New
+</button>
                             <button class="slds-button slds-button_brand" type="submit">Save</button>
                         </lightning-button-group>
-                    </lightning-record-edit-form>
+                    </div>
                 </div>
-                <div class="slds-modal__footer">
-
-                </div>
-            </div>
-        </section>
+            </section>
+        </lightning-record-edit-form>
         <div class="slds-backdrop slds-backdrop_open" role="presentation"></div>
     </template>
 
 
 
     <template if:true={showNewGroupModal}>
-        <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modal-heading-001"
-            class="slds-modal slds-fade-in-open">
-            <div class="slds-modal__container">
-                <button class="slds-button slds-button_icon slds-modal__close" onclick={closeGroupModal}>
-                    X
-                </button>
-                <div class="slds-modal__header">
-                    <h1 id="modal-heading-001" class="slds-modal__title slds-hyphenate" style="color:#000;"
-                        tabindex="-1">Create New Group</h1>
-                </div>
-                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-01">
-                    <lightning-record-edit-form object-api-name="Group__c" record-id={recordId}
-                        onsuccess={handleSuccessGroup}>
+        <lightning-record-edit-form object-api-name="Group__c" record-id={recordId} onsuccess={handleSuccessGroup}
+            data-form-name="group-form">
+            <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modal-heading-001"
+                class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container custom-modal">
+                    <button class="slds-button slds-button_icon slds-modal__close" onclick={closeGroupModal}>
+            X
+        </button>
+                    <div class="slds-modal__header custom-modal-header">
+                        <h1 id="modal-heading-001" class="slds-modal__title slds-hyphenate custom-modal-heading"
+                            tabindex="-1">Create New Group</h1>
+                    </div>
+                    <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-01">
+
                         <lightning-messages></lightning-messages>
                         <div class="slds-grid slds-wrap slds-p-around_medium formcard">
                             <div class="slds-col slds-size_1-of-1 slds-large-size_12-of-12">
@@ -463,7 +519,7 @@
                                 <lightning-input-field field-name="Based_On__c"></lightning-input-field>
                             </div>
                             <div class="slds-col slds-size_1-of-1 slds-large-size_12-of-12">
-                                <lightning-input-field field-name="Description__c"></lightning-input-field>
+                                <lightning-input-field field-name="Description__c" rows="25"></lightning-input-field>
                             </div>
                             <div class="slds-col slds-size_1-of-1 slds-large-size_12-of-12">
                                 <lightning-input-field field-name="Apply_Members_Limit__c"></lightning-input-field>
@@ -476,37 +532,45 @@
                             </div>
 
                         </div>
+
+
+                    </div>
+                    <div class="slds-modal__footer">
                         <lightning-button-group class="slds-float_right">
-                            <button class="slds-button slds-button_neutral" onclick={closeGroupModal}
-                                aria-label="Cancel and close">Cancel</button>
+                            <button class="slds-button slds-button_neutral" onclick={closeGroupModal} aria-label="Cancel and close">Cancel</button>
+                            <button
+                            class="slds-button slds-button_brand"
+                            data-button-type="save-new"
+                            data-form="group-form"
+                            onclick={handleSaveAndNewClick}>
+                            Save & New
+                        </button>
                             <button class="slds-button slds-button_brand" type="submit">Save</button>
                         </lightning-button-group>
-                    </lightning-record-edit-form>
+                    </div>
                 </div>
-                <div class="slds-modal__footer">
-
-                </div>
-            </div>
-        </section>
+            </section>
+        </lightning-record-edit-form>
         <div class="slds-backdrop slds-backdrop_open" role="presentation"></div>
     </template>
 
 
 
     <template if:true={showStepModal}>
-        <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modal-heading-0001"
-            class="slds-modal slds-fade-in-open">
-            <div class="slds-modal__container">
-                <button class="slds-button slds-button_icon slds-modal__close" onclick={closeStepModal}>
-                    X
-                </button>
-                <div class="slds-modal__header">
-                    <h1 id="modal-heading-0001" class="slds-modal__title slds-hyphenate" style="color:#000;"
-                        tabindex="-1">Create New Campaign Step</h1>
-                </div>
-                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-001">
-                    <lightning-record-edit-form object-api-name="Cust_Campaign_Step__c" record-id={recordId}
-                        onsuccess={handleSuccessStep}>
+        <lightning-record-edit-form object-api-name="Cust_Campaign_Step__c" record-id={recordId}
+            onsuccess={handleSuccessStep} data-form-name="compaign-step">
+            <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modal-heading-0001"
+                class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container custom-modal">
+                    <button class="slds-button slds-button_icon slds-modal__close" onclick={closeStepModal}>
+            X
+        </button>
+                    <div class="slds-modal__header custom-modal-header">
+                        <h1 id="modal-heading-0001" class="slds-modal__title slds-hyphenate custom-modal-heading"
+                            tabindex="-1">Create New Campaign Step</h1>
+                    </div>
+                    <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-001">
+
                         <lightning-messages></lightning-messages>
                         <div class="slds-grid slds-wrap slds-p-around_medium formcard">
                             <div class="slds-col slds-size_1-of-1 slds-large-size_12-of-12">
@@ -529,23 +593,37 @@
                             <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12">
                                 <lightning-input-field field-name="Cust_Type__c"></lightning-input-field>
                             </div>
-                            <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12">
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12 ">
                                 <lightning-input-field field-name="Cust_Step_Description__c"></lightning-input-field>
                             </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12 ">
+                                <lightning-input-field field-name="Cust_Task_Subject__c"></lightning-input-field>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_6-of-12 ">
+                                <lightning-input-field field-name="Cust_Task_Description__c"></lightning-input-field>
+                            </div>
+                            	
 
                         </div>
+
+
+                    </div>
+                    <div class="slds-modal__footer">
                         <lightning-button-group class="slds-float_right">
-                            <button class="slds-button slds-button_neutral" onclick={closeStepModal}
-                                aria-label="Cancel and close">Cancel</button>
+                            <button class="slds-button slds-button_neutral" onclick={closeStepModal} aria-label="Cancel and close">Cancel</button>
+                            <button
+                            class="slds-button slds-button_brand"
+                            data-button-type="save-new"
+                             data-form="compaign-step"
+                            onclick={handleSaveAndNewClick}>
+                            Save & New
+                        </button>
                             <button class="slds-button slds-button_brand" type="submit">Save</button>
                         </lightning-button-group>
-                    </lightning-record-edit-form>
+                    </div>
                 </div>
-                <div class="slds-modal__footer">
-
-                </div>
-            </div>
-        </section>
+            </section>
+        </lightning-record-edit-form>
         <div class="slds-backdrop slds-backdrop_open" role="presentation"></div>
     </template>
 
@@ -553,12 +631,12 @@
     <template if:true={showMemberModal}>
         <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modal-heading-00001"
             class="slds-modal slds-fade-in-open">
-            <div class="slds-modal__container">
+            <div class="slds-modal__container custom-modal">
                 <button class="slds-button slds-button_icon slds-modal__close" onclick={closeNewMemberModal}>
-                    X
-                </button>
-                <div class="slds-modal__header">
-                    <h1 id="modal-heading-00001" class="slds-modal__title slds-hyphenate" style="color:#000;"
+            X
+        </button>
+                <div class="slds-modal__header custom-modal-header">
+                    <h1 id="modal-heading-00001" class="slds-modal__title slds-hyphenate custom-modal-heading"
                         tabindex="-1">ADD GROUP MEMBERS</h1>
                 </div>
                 <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-0001">
@@ -573,5 +651,4 @@
         </section>
         <div class="slds-backdrop slds-backdrop_open" role="presentation"></div>
     </template>
-
 </template>
