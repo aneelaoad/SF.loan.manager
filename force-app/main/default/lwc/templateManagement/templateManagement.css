@@ -1,0 +1,33 @@
+.add-template-container {
+    width: 300px;
+}
+
+.add-template-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.left-icon {
+    margin-right: 0.5rem;
+}
+
+.right-icon {
+    margin-left: auto;
+}
+
+.category-item {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.category-header {
+    display: flex;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+.add-icon {
+    cursor: pointer;
+}
