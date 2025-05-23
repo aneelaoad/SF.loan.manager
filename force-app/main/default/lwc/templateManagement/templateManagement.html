@@ -1,5 +1,5 @@
 <template>
-  <div class="slds-box slds-theme_default">
+  <div class="slds-box slds-theme_default relative-container">
     <button class="slds-button slds-button_neutral" onclick={toggleDropdown}>
       <lightning-icon icon-name="utility:add" size="x-small" class="slds-m-right_x-small"></lightning-icon>
       Add Template
@@ -9,25 +9,68 @@
     <template if:true={isDropdownOpen}>
       <ul class="slds-m-top_small slds-box slds-box_x-small">
         <template for:each={categories} for:item="cat">
-          <li key={cat.name} class="slds-m-bottom_x-small">
-            <div class="slds-grid slds-grid_align-spread slds-p-xx-small slds-border_bottom">
+          <li key={cat.name} class="slds-m-bottom_x-small category-row">
+            <div class="slds-grid slds-grid_align-spread slds-p-xx-small slds-border_bottom slds-grid_vertical-align-center">
               <span class="slds-text-title_bold slds-button" onclick={handleCategoryClick} data-category={cat.name}>
                 {cat.name}
               </span>
-              <button class="slds-button slds-button_icon" title="Add Condition" onclick={handleAddCondition} data-category={cat.name}>
-                <lightning-icon icon-name="utility:add" size="x-small"></lightning-icon>
-              </button>
+              <div class="slds-grid">
+                <button class="slds-button slds-button_icon" title="Add Condition" onclick={openAddConditionModal} data-category={cat.name}>
+                  <lightning-icon icon-name="utility:add" size="x-small"></lightning-icon>
+                </button>
+              </div>
             </div>
+
+            <!-- Right-side floating condition list -->
             <template if:true={cat.showConditions}>
-              <ul class="slds-p-left_medium slds-m-top_xx-small">
-                <template for:each={cat.conditions} for:item="condition">
-                  <li key={condition}>{condition}</li>
-                </template>
-              </ul>
+              <div class="condition-dropdown">
+                <ul class="slds-box slds-box_xx-small">
+                  <template for:each={cat.conditions} for:item="condition">
+                    <li key={condition} class="slds-p-xx-small">{condition}</li>
+                  </template>
+                </ul>
+              </div>
             </template>
           </li>
         </template>
       </ul>
+    </template>
+
+    <!-- Modal -->
+    <template if:true={isModalOpen}>
+      <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+        <div class="slds-modal__container">
+          <header class="slds-modal__header">
+            <h2 class="slds-modal__title">Add Condition</h2>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium">
+            <lightning-input label="Item name" value={modalItemName} onchange={handleItemNameChange} required></lightning-input>
+            <lightning-combobox
+              name="category"
+              label="Category"
+              value={modalCategory}
+              placeholder="Select Category"
+              options={categoryOptions}
+              onchange={handleCategoryChange}
+              required>
+            </lightning-combobox>
+            <lightning-textarea label="Comments" value={modalComments} onchange={handleCommentsChange}></lightning-textarea>
+            <lightning-combobox
+              name="status"
+              label="Default Status"
+              value={modalStatus}
+              placeholder="Select Status"
+              options={statusOptions}
+              onchange={handleStatusChange}>
+            </lightning-combobox>
+          </div>
+          <footer class="slds-modal__footer">
+            <button class="slds-button slds-button_neutral" onclick={closeModal}>Cancel</button>
+            <button class="slds-button slds-button_brand" onclick={submitCondition}>Add</button>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
     </template>
   </div>
 </template>

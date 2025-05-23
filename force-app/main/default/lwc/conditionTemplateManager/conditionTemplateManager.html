@@ -1,0 +1,46 @@
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 05-23-2025
+  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+-->
+<template>
+    <div class="template-menu">
+        <lightning-button
+            label="+ Template"
+            onclick={toggleCategoryMenu}
+            variant="brand">
+        </lightning-button>
+
+        <template if:true={showCategoryMenu}>
+            <div class="dropdown category-menu">
+                <template for:each={categoryOptions} for:item="category">
+                    <div
+                        key={category.value}
+                        class="menu-item"
+                        data-value={category.value}
+                        onclick={handleCategoryClick}>
+                        {category.label}
+                        <span class="submenu-indicator">▶</span>
+
+                        <template if:true={category.isSelected}>
+                            <div class="dropdown submenu">
+                                <template if:true={templates.length}>
+                                    <template for:each={templates} for:item="template">
+                                        <div key={template.Id} class="menu-item template-item">
+                                            {template.Name}
+                                        </div>
+                                    </template>
+                                </template>
+                                <template if:true={isLoadingTemplates}>
+                                    <div class="menu-item">Loading...</div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+        </template>
+    </div>
+</template>

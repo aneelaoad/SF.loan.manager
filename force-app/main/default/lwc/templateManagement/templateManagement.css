@@ -31,3 +31,22 @@
 .add-icon {
     cursor: pointer;
 }
+
+.relative-container {
+  position: relative;
+}
+
+.category-row {
+  position: relative;
+}
+
+.condition-dropdown {
+  position: absolute;
+  top: 0;
+  right: -220px; /* Adjust based on your layout */
+  background-color: white;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  width: 200px;
+  border-radius: 4px;
+}

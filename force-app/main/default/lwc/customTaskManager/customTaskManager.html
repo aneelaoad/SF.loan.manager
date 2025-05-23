@@ -4,15 +4,17 @@
  <!-- Top Buttons Row -->
   <div class="button-row">
     <div class="template-group">
-      <button class="flat-button" onclick={handleAddTemplateClick}>
+      <!-- <button class="flat-button" onclick={handleAddTemplateClick}>
         <lightning-icon icon-name="utility:add" size="x-small" class="icon-left" alternative-text="Add"></lightning-icon>
         Template
-      </button>
+      </button> -->
+    <c-template-management></c-template-management>
+
       <lightning-button-menu
         icon-name="utility:chevrondown"
         alternative-text="Show Template Options"
         menu-alignment="left"
-        onselect={handleTemplateOptionSelect}
+        onselect={handleMenuSelect}
         class="flat-chevron"
       >
         <lightning-menu-item value="fromExisting" label="From Existing"></lightning-menu-item>
