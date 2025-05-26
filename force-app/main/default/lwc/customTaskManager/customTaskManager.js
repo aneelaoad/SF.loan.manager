@@ -1,46 +1,43 @@
 import { LightningElement, track } from 'lwc';
+import getAllTemplates from '@salesforce/apex/TemplateController.getAllTemplates';
 
 export default class CustomTaskManager extends LightningElement {
-    @track selectedCategory = '';
+    @track selectedCategories = [];
     @track showVerification = false;
-    @track allRows = [];
+    @track templateItemRows = [];
     @track filteredRows = [];
 
-    // Sample data
+    categoryList = [
+        { name: 'Income', circleClass: 'income-dot', labelClass: 'category-label' },
+        { name: 'Assets', circleClass: 'assets-dot', labelClass: 'category-label' },
+        { name: 'Credit', circleClass: 'credit-dot', labelClass: 'category-label' },
+        { name: 'REO', circleClass: 'reo-dot', labelClass: 'category-label' },
+        { name: 'Other', circleClass: 'other-dot', labelClass: 'category-label' },
+        { name: 'Disclosures', circleClass: 'disclosures-dot', labelClass: 'category-label' },
+        { name: 'Compliance', circleClass: 'compliance-dot', labelClass: 'category-label' },
+        { name: 'Reset', icon: 'utility:refresh', isReset: true, labelClass: 'category-label' }
+    ];
+
     connectedCallback() {
-        this.allRows = [
-            { id: '1', itemName: 'Template A', assignee: 'John Doe', category: 'Income', status: 'In Progress', team: 'Team A', isChecked: false },
-            { id: '2', itemName: 'Task B', assignee: 'Jane Smith', category: 'Assets', status: 'Completed', team: 'Team B', isChecked: true },
-            { id: '3', itemName: 'Verification C', assignee: 'Bob Johnson', category: 'Credit', status: 'Not Started', team: 'Team C', isChecked: false }
-        ];
-        this.filteredRows = [...this.allRows]; // Initialize view
+        this.fetchTemplates();
     }
 
-    // categoryOptions = [
-    //     { label: 'Income', value: 'Income' },
-    //     { label: 'Assets', value: 'Assets' },
-    //     { label: 'Credit', value: 'Credit' },
-    //     { label: 'REO', value: 'REO' },
-    //     { label: 'Other', value: 'Other' },
-    //     { label: 'Disclosures', value: 'Disclosures' },
-    //     { label: 'Compliance', value: 'Compliance' }
-    // ];
-    categoryList = [
-  { name: 'Income', circleClass: 'income-dot', labelClass: 'category-label' },
-  { name: 'Assets', circleClass: 'assets-dot', labelClass: 'category-label' },
-  { name: 'Credit', circleClass: 'credit-dot', labelClass: 'category-label' },
-  { name: 'REO', circleClass: 'reo-dot', labelClass: 'category-label' },
-  { name: 'Other', circleClass: 'other-dot', labelClass: 'category-label' },
-  { name: 'Disclosures', circleClass: 'disclosures-dot', labelClass: 'category-label' },
-  { name: 'Compliance', circleClass: 'compliance-dot', labelClass: 'category-label' }
-];
-
+    fetchTemplates() {
+        getAllTemplates()
+            .then((data) => {
+                console.log('Templates:', JSON.stringify(data));
+                // Template fetching is retained but not used for table filtering
+            })
+            .catch((error) => {
+                console.error('Error fetching templates:', error);
+            });
+    }
 
     get isEmpty() {
         return this.filteredRows.length === 0;
     }
 
-    // Handle + Template menu actions
+    // Dropdown handler
     handleMenuSelect(event) {
         const selected = event.detail.value;
         if (selected === 'newTemplate') {
@@ -51,17 +48,14 @@ export default class CustomTaskManager extends LightningElement {
     }
 
     handleNewTemplate() {
-        // TODO: Open modal or launch new template flow
         console.log('Creating new template...');
     }
 
     handleFromExisting() {
-        // TODO: Logic for creating from existing template
         console.log('Creating template from existing...');
     }
 
     handleNewTask() {
-        // TODO: Logic to add a new task
         console.log('Adding new task...');
     }
 
@@ -69,36 +63,79 @@ export default class CustomTaskManager extends LightningElement {
         this.showVerification = !this.showVerification;
     }
 
-    handleCategoryChange(event) {
-        this.selectedCategory = event.detail.value;
+    // Handle category filter clicks, filters templateItemRows
+    handleCategoryClick(event) {
+        const clickedCategory = event.currentTarget.dataset.name;
 
-        if (this.selectedCategory) {
-            this.filteredRows = this.allRows.filter(row => row.category === this.selectedCategory);
+        if (clickedCategory === 'Reset') {
+            this.selectedCategories = [];
+            this.filteredRows = [...this.templateItemRows];
         } else {
-            this.filteredRows = [...this.allRows];
+            if (this.selectedCategories.includes(clickedCategory)) {
+                this.selectedCategories = this.selectedCategories.filter(cat => cat !== clickedCategory);
+            } else {
+                this.selectedCategories = [...this.selectedCategories, clickedCategory];
+            }
+
+            if (this.selectedCategories.length > 0) {
+                this.filteredRows = this.templateItemRows.filter(row =>
+                    this.selectedCategories.includes(row.category)
+                );
+            } else {
+                this.filteredRows = [...this.templateItemRows];
+            }
         }
+
+        this.categoryList = this.categoryList.map(cat => ({
+            ...cat,
+            labelClass: this.selectedCategories.includes(cat.name)
+                ? 'category-label selected'
+                : 'category-label'
+        }));
     }
 
-    // Checkbox handler
     handleCheckboxChange(event) {
         const rowId = event.target.dataset.id;
         const isChecked = event.target.checked;
 
-        const row = this.allRows.find(r => r.id === rowId);
+        const row = this.templateItemRows.find(r => r.id === rowId);
         if (row) {
             row.isChecked = isChecked;
         }
     }
 
-    // Input field change (e.g., inline edit support)
     handleInputChange(event) {
         const rowId = event.target.dataset.id;
         const field = event.target.dataset.field;
         const value = event.target.value;
 
-        const row = this.allRows.find(r => r.id === rowId);
+        const row = this.templateItemRows.find(r => r.id === rowId);
         if (row && field) {
             row[field] = value;
         }
+    }
+
+    // Receive template items from child component
+    handleTemplateItems(event) {
+        const items = event.detail;
+
+        this.templateItemRows = items.map(item => ({
+            id: item.id,
+            name: item.name,
+            category: item.category || 'N/A',
+            status: item.status || 'Pending',
+            createdBy: item.createdBy || 'N/A',
+            owner: item.assignedToName || 'Unassigned'
+        }));
+
+        // Default to show all when first received
+        this.filteredRows = [...this.templateItemRows];
+        this.selectedCategories = [];
+
+        // Reset category label classes
+        this.categoryList = this.categoryList.map(cat => ({
+            ...cat,
+            labelClass: 'category-label'
+        }));
     }
 }

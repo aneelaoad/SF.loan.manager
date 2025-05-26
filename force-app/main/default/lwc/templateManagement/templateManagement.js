@@ -1,65 +1,48 @@
 import { LightningElement, track } from 'lwc';
-import createConditionTemplate from '@salesforce/apex/LoanConditionTemplateController.createConditionTemplate';
-import getConditionTemplatesByCategory from '@salesforce/apex/LoanConditionTemplateController.getConditionTemplatesByCategory';
+import getActiveCategories from '@salesforce/apex/DocumentTemplateController.getActiveCategories';
+import getTemplatesByCategory from '@salesforce/apex/DocumentTemplateController.getTemplatesByCategory';
+import createTemplate from '@salesforce/apex/DocumentTemplateController.createTemplate';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
 export default class AddTemplate extends LightningElement {
     @track isDropdownOpen = false;
     @track isModalOpen = false;
-
-    @track modalItemName = '';
-    @track modalCategory = '';
-    @track modalComments = '';
-    @track modalStatus = 'Upcoming';
-
     @track categories = [];
-    // @track categories = [
-    //     { name: 'Income', showConditions: false, conditions: [] },
-    //     { name: 'Credit', showConditions: false, conditions: [] },
-    //     { name: 'REO', showConditions: false, conditions: [] },
-    //     { name: 'ID', showConditions: false, conditions: [] },
-    //     { name: 'Disclosures', showConditions: false, conditions: [] },
-    //     { name: 'Other', showConditions: false, conditions: [] }
-    // ];
+
+    @track modalTemplateName = '';
+    @track modalCategoryId = '';
+    @track modalAppliesTo = 'Lead';
+
+    @track selectedCategory = '';
 
     get categoryOptions() {
-        return this.categories.map(cat => ({ label: cat.name, value: cat.name }));
+        return this.categories.map(cat => ({ label: cat.Name, value: cat.Id }));
     }
 
-    get statusOptions() {
+    get appliesToOptions() {
         return [
-            { label: 'Upcoming', value: 'Upcoming' },
-            { label: 'Completed', value: 'Completed' },
-            { label: 'Pending', value: 'Pending' }
+            { label: 'Lead', value: 'Lead' },
+            { label: 'Opportunity', value: 'Opportunity' },
+            { label: 'Both', value: 'Both' }
         ];
     }
 
-       connectedCallback() {
-        this.fetchConditions();
+    connectedCallback() {
+        this.loadCategories();
     }
 
-
-    fetchConditions() {
-        getConditionTemplatesByCategory()
+    loadCategories() {
+        getActiveCategories()
             .then(result => {
-                const categoryNames = ['Income', 'Credit', 'REO', 'ID', 'Disclosures', 'Other'];
-                this.categories = categoryNames.map(catName => ({
-                    name: catName,
-                    showConditions: false,
-                    conditions: result[catName] || []
+                this.categories = result.map(cat => ({
+                    ...cat,
+                    showTemplates: false,
+                    templates: []
                 }));
             })
             .catch(error => {
-                console.error('Error loading condition templates:', error);
-                this.dispatchEvent(new ShowToastEvent({
-                    title: 'Error',
-                    message: error.body?.message || 'Failed to load templates.',
-                    variant: 'error'
-                }));
+                this.showError('Failed to load categories', error);
             });
-
-            console.log(' this.categoryNames : ', JSON.stringify(this.categoryNames));
-            console.log(' this.categories : ', JSON.stringify(this.categories));
     }
 
     toggleDropdown() {
@@ -67,74 +50,84 @@ export default class AddTemplate extends LightningElement {
     }
 
     handleCategoryClick(event) {
-        const category = event.currentTarget.dataset.category;
-        this.categories = this.categories.map(cat => ({
-            ...cat,
-            showConditions: cat.name === category ? !cat.showConditions : cat.showConditions
-        }));
+        const categoryId = event.currentTarget.dataset.category;
+
+        this.categories = this.categories.map(cat => {
+            if (cat.Id === categoryId) {
+                cat.showTemplates = !cat.showTemplates;
+                if (cat.showTemplates && cat.templates.length === 0) {
+                    getTemplatesByCategory({ categoryId: cat.Id })
+                        .then(result => {
+                            cat.templates = result;
+                        })
+                        .catch(error => {
+                            this.showError('Failed to load templates', error);
+                        });
+                }
+            } else {
+                cat.showTemplates = false;
+            }
+            return cat;
+        });
     }
 
     openAddConditionModal(event) {
-        this.modalCategory = event.currentTarget.dataset.category;
+        this.modalCategoryId = event.currentTarget.dataset.category;
         this.isModalOpen = true;
     }
 
     closeModal() {
         this.isModalOpen = false;
-        this.modalItemName = '';
-        this.modalCategory = '';
-        this.modalComments = '';
-        this.modalStatus = 'Upcoming';
+        this.modalTemplateName = '';
+        this.modalCategoryId = '';
+        this.modalAppliesTo = 'Lead';
     }
 
-    handleItemNameChange(event) {
-        this.modalItemName = event.target.value;
+    handleNameChange(event) {
+        this.modalTemplateName = event.target.value;
+    }
+
+    handleAppliesToChange(event) {
+        this.modalAppliesTo = event.detail.value;
     }
 
     handleCategoryChange(event) {
-        this.modalCategory = event.detail.value;
+        this.modalCategoryId = event.detail.value;
     }
 
-    handleCommentsChange(event) {
-        this.modalComments = event.target.value;
-    }
+    submitTemplate() {
+        if (!this.modalTemplateName || !this.modalCategoryId || !this.modalAppliesTo) {
+            this.showError('Please complete all fields');
+            return;
+        }
 
-    handleStatusChange(event) {
-        this.modalStatus = event.detail.value;
-    }
-
-    submitCondition() {
-        createConditionTemplate({
-            itemName: this.modalItemName,
-            category: this.modalCategory,
-            comments: this.modalComments,
-            defaultStatus: this.modalStatus
+        createTemplate({
+            name: this.modalTemplateName,
+            categoryId: this.modalCategoryId,
+            appliesTo: this.modalAppliesTo
         })
             .then(result => {
-                // Add new condition to category
-                this.categories = this.categories.map(cat => {
-                    if (cat.name === this.modalCategory) {
-                        return {
-                            ...cat,
-                            conditions: [...cat.conditions, this.modalItemName]
-                        };
-                    }
-                    return cat;
-                });
-
-                this.dispatchEvent(new ShowToastEvent({
-                    title: 'Success',
-                    message: 'Condition template added!',
-                    variant: 'success'
-                }));
+                this.showSuccess('Template created!');
                 this.closeModal();
+                this.loadCategories();
             })
             .catch(error => {
-                this.dispatchEvent(new ShowToastEvent({
-                    title: 'Error',
-                    message: error.body.message || 'Something went wrong.',
-                    variant: 'error'
-                }));
+                this.showError('Error creating template', error);
             });
+    }
+
+    showSuccess(message) {
+        this.dispatchEvent(new ShowToastEvent({ title: 'Success', message, variant: 'success' }));
+    }
+
+    showError(title, error) {
+        console.error(error);
+        this.dispatchEvent(
+            new ShowToastEvent({
+                title,
+                message: error?.body?.message || 'Something went wrong.',
+                variant: 'error'
+            })
+        );
     }
 }

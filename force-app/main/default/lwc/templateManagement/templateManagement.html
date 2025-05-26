@@ -1,40 +1,38 @@
 <template>
   <div class="slds-box slds-theme_default relative-container">
+   <div class="dropdown-button-wrapper">
     <button class="slds-button slds-button_neutral" onclick={toggleDropdown}>
       <lightning-icon icon-name="utility:add" size="x-small" class="slds-m-right_x-small"></lightning-icon>
       Add Template
       <lightning-icon icon-name="utility:chevrondown" size="x-small" class="slds-m-left_x-small"></lightning-icon>
     </button>
 
+    <!-- Floating Dropdown -->
     <template if:true={isDropdownOpen}>
-      <ul class="slds-m-top_small slds-box slds-box_x-small">
+      <ul class="template-dropdown ">
         <template for:each={categories} for:item="cat">
-          <li key={cat.name} class="slds-m-bottom_x-small category-row">
-            <div class="slds-grid slds-grid_align-spread slds-p-xx-small slds-border_bottom slds-grid_vertical-align-center">
+          <li key={cat.name} class="slds-m-bottom_x-small">
+            <div class="slds-grid slds-grid_align-spread slds-p-xx-small slds-border_bottom">
               <span class="slds-text-title_bold slds-button" onclick={handleCategoryClick} data-category={cat.name}>
                 {cat.name}
               </span>
-              <div class="slds-grid">
-                <button class="slds-button slds-button_icon" title="Add Condition" onclick={openAddConditionModal} data-category={cat.name}>
-                  <lightning-icon icon-name="utility:add" size="x-small"></lightning-icon>
-                </button>
-              </div>
+              <button class="slds-button slds-button_icon" title="Add Condition" onclick={openAddConditionModal} data-category={cat.name}>
+                <lightning-icon icon-name="utility:add" size="x-small"></lightning-icon>
+              </button>
             </div>
-
-            <!-- Right-side floating condition list -->
             <template if:true={cat.showConditions}>
-              <div class="condition-dropdown">
-                <ul class="slds-box slds-box_xx-small">
-                  <template for:each={cat.conditions} for:item="condition">
-                    <li key={condition} class="slds-p-xx-small">{condition}</li>
-                  </template>
-                </ul>
-              </div>
+              <ul class="slds-p-left_medium slds-m-top_xx-small condition-dropdown">
+                <template for:each={cat.conditions} for:item="condition">
+                  <li key={condition}>{condition}</li>
+                </template>
+              </ul>
             </template>
           </li>
         </template>
       </ul>
     </template>
+  </div>
+
 
     <!-- Modal -->
     <template if:true={isModalOpen}>

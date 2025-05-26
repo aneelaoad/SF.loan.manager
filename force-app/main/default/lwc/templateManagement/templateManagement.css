@@ -41,12 +41,34 @@
 }
 
 .condition-dropdown {
+    background-color: yellow;
   position: absolute;
   top: 0;
-  right: -220px; /* Adjust based on your layout */
+  right: -201px;
   background-color: white;
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.15);
   z-index: 10;
   width: 200px;
   border-radius: 4px;
+}
+.add-template-wrapper {
+    position: relative;
+}
+
+.dropdown-button-wrapper {
+    display: inline-block;
+    position: relative;
+}
+
+.template-dropdown {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    z-index: 10;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    width: 300px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }

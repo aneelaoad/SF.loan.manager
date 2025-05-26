@@ -1,0 +1,41 @@
+<template>
+  <lightning-card title="Add Template">
+    <div class="slds-p-around_medium">
+      <!-- Step 1: Category Selection -->
+      <lightning-combobox
+        name="category"
+        label="Select Category"
+        value={selectedCategoryId}
+        placeholder="Select a Category"
+        options={categoryOptions}
+        onchange={handleCategoryChange}>
+      </lightning-combobox>
+
+      <!-- Step 2: Template Selection -->
+      <template if:true={templateOptions.length}>
+        <div class="slds-m-top_medium">
+          <p class="slds-text-title_bold">Templates in this category:</p>
+          <lightning-layout multiple-rows>
+            <template for:each={templateOptions} for:item="template">
+              <lightning-layout-item key={template.Id} class="slds-box slds-m-around_x-small template-card" onclick={handleTemplateClick} data-id={template.Id}>
+                <strong>{template.Name}</strong>
+              </lightning-layout-item>
+            </template>
+          </lightning-layout>
+        </div>
+      </template>
+
+      <!-- Step 3: Document Items Table -->
+      <template if:true={templateItems.length}>
+        <div class="slds-m-top_medium">
+          <p class="slds-text-title_bold">Template Items:</p>
+          <lightning-datatable
+            key-field="Id"
+            data={templateItems}
+            columns={columns}>
+          </lightning-datatable>
+        </div>
+      </template>
+    </div>
+  </lightning-card>
+</template>

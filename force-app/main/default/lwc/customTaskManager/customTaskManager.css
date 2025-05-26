@@ -191,3 +191,32 @@
   margin-bottom: 10px;
   opacity: 0.6;
 }
+
+.category-label.selected {
+  font-weight: bold;
+  color: #0070d2; /* Salesforce blue */
+  text-decoration: underline;
+}
+.category-label {
+    padding: 4px 8px;
+    border-radius: 12px;
+    background-color: #f3f2f2;
+    cursor: pointer;
+}
+
+.category-label.selected {
+    background-color: #0070d2;
+    color: white;
+}
+.category-chip {
+    display: flex;
+    align-items: center;
+    padding: 6px 10px;
+    margin: 4px;
+    border-radius: 12px;
+    background-color: #f4f6f9;
+    cursor: pointer;
+}
+.refresh-icon {
+    margin: 0 auto;
+}

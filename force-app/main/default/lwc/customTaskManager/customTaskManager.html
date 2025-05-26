@@ -1,34 +1,32 @@
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 05-27-2025
+  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+-->
 <template>
   <!-- Top Buttons Row -->
   <div class="slds-p-around_medium slds-grid slds-wrap slds-grid_align-spread">
  <!-- Top Buttons Row -->
   <div class="button-row">
     <div class="template-group">
-      <!-- <button class="flat-button" onclick={handleAddTemplateClick}>
-        <lightning-icon icon-name="utility:add" size="x-small" class="icon-left" alternative-text="Add"></lightning-icon>
-        Template
-      </button> -->
-    <c-template-management></c-template-management>
+     
+             <!-- <c-template-manager></c-template-manager> -->
+<c-template-manager ontemplateitemsloaded={handleTemplateItems}></c-template-manager>
 
-      <lightning-button-menu
-        icon-name="utility:chevrondown"
-        alternative-text="Show Template Options"
-        menu-alignment="left"
-        onselect={handleMenuSelect}
-        class="flat-chevron"
-      >
-        <lightning-menu-item value="fromExisting" label="From Existing"></lightning-menu-item>
-        <lightning-menu-item value="newTemplate" label="New Template"></lightning-menu-item>
-      </lightning-button-menu>
+
     </div>
 
     <button class="flat-button">+ Task</button>
-    <button class="flat-button">+ Verification</button>
+  
   </div>
 
   <!-- Category Filters -->
   <div class="category-filters">
     <span style="margin-right:10px">Sort by category</span>
+  
+
     <template for:each={categoryList} for:item="cat">
       <div
         key={cat.name}
@@ -36,67 +34,63 @@
         onclick={handleCategoryClick}
         data-name={cat.name}
       >
-        <span class={cat.circleClass}></span>
-        <span class={cat.labelClass}>{cat.name}</span>
+        
+        <template if:true={cat.isReset}>
+            <lightning-icon icon-name={cat.icon} size="x-small" class="refresh-icon" alternative-text="Reset Filters"></lightning-icon>
+        </template>
+          
+        <template if:false={cat.isReset}>
+<span class={cat.circleClass}></span>
+        <span class={cat.labelClass}>{cat.name}</span>        </template>
+        
       </div>
     </template>
   </div>
 
-
-    <div class="slds-button-group" role="group">
-      <lightning-button-icon icon-name="utility:refresh" alternative-text="Refresh"></lightning-button-icon>
-      <lightning-button-icon icon-name="utility:archive" alternative-text="Archived"></lightning-button-icon>
-      <lightning-button-icon icon-name="utility:apps" alternative-text="Mortgage App"></lightning-button-icon>
-    </div>
   </div>
 
-  <!-- Filter Chips -->
-  <!-- <div class="slds-p-horizontal_medium slds-m-bottom_small">
-    <span style="margin-right:10px">Sort by category</span>
-    <lightning-badge label="Income" class="chip income"></lightning-badge>
-    <lightning-badge label="Assets" class="chip assets"></lightning-badge>
-    <lightning-badge label="Credit" class="chip credit"></lightning-badge>
-    <lightning-badge label="REO" class="chip reo"></lightning-badge>
-    <lightning-badge label="Other" class="chip other"></lightning-badge>
-    <lightning-badge label="Disclosures" class="chip disclosures"></lightning-badge>
-    <lightning-badge label="Compliance" class="chip compliance"></lightning-badge>
-  </div> -->
+
 
   <!-- Table Section -->
   
     <div class="slds-p-horizontal_medium">
-      <table class="slds-table slds-table_bordered slds-table_cell-buffer slds-table_fixed-layout">
-        <thead>
-          <tr class="slds-text-title_caps">
-            <th scope="col">Item Name</th>
-            <th scope="col">Assignee(s)</th>
-            <th scope="col">Category</th>
-            <th scope="col">Status</th>
-            <th scope="col">Team</th>
-          </tr>
-        </thead>
-        <tbody>
-          <template for:each={filteredRows} for:item="row">
-            <tr key={row.id}>
-              <td>{row.itemName}</td>
-              <td>{row.assignee}</td>
-              <td>{row.category}</td>
-              <td>{row.status}</td>
-              <td>{row.team}</td>
-            </tr>
-          </template>
-        </tbody>
-      </table>
+      <template if:false={isEmpty}>
+        <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <!-- <th>Created By</th> -->
+                    <th>Owner</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template for:each={filteredRows} for:item="row">
+                    <tr key={row.id}>
+                        <td>{row.name}</td>
+                        <td>{row.category}</td>
+                        <td>{row.status}</td>
+                        <!-- <td>{row.createdBy}</td> -->
+                        <td>{row.owner}</td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </template>
 
       <!-- Empty State (No Data) -->
-      <!-- <template if:true={isEmpty}> -->
+      <template if:true={isEmpty}>
         <div class="slds-align_absolute-center slds-text-align_center slds-p-vertical_large empty-state">
           <img src="/assets/empty-state-ghost.svg" alt="No Data" style="width: 48px; height: 48px;" />
           <p class="slds-text-heading_small">No items or Templates</p>
           <p>Select a template or add item needed</p>
-          <lightning-button label="+ Template" class="slds-m-top_medium"></lightning-button>
-        </div>
-      <!-- </template> -->
+          <!-- <lightning-button label="+ Template" class="slds-m-top_medium"></lightning-button>
+            -->
+         <!-- <c-condition-template-manager></c-condition-template-manager> -->
+        
+          </div>
+      </template>
     </div>
 
 </template>

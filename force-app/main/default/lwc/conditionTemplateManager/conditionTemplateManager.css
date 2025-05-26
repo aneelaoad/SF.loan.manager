@@ -36,3 +36,131 @@
 .submenu-indicator {
     float: right;
 }
+.template-menu {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown {
+    background: white;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    position: absolute;
+    z-index: 10;
+    margin-top: 5px;
+}
+
+.category-menu {
+    width: 250px;
+}
+
+.submenu {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    width: 250px;
+}
+
+.menu-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.menu-item:hover {
+    background-color: #f3f3f3;
+}
+
+.submenu-indicator {
+    margin-left: auto;
+}
+
+.add-icon {
+    margin-left: 8px;
+    color: #0070d2;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.category-label {
+    flex-grow: 1;
+}
+.template-menu {
+    position: relative; /* Key: this anchors absolute dropdowns */
+    display: inline-block;
+    z-index: 9; /* Optional: ensures modal stacking too */
+}
+
+.dropdown {
+    background: white;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    position: absolute;
+    z-index: 1001; /* Key: must be higher than the button’s container */
+    margin-top: 5px;
+}
+
+.category-menu {
+    width: 250px;
+}
+
+.submenu {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    width: 250px;
+    z-index: 1002; /* submenu should also be above */
+}
+
+.menu-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    background: white;
+    text-align: left;
+}
+
+.menu-item:hover {
+    background-color: #f3f3f3;
+}
+
+.add-icon {
+    margin-left: 8px;
+    color: #0070d2;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.category-label {
+    flex-grow: 1;
+    cursor: pointer;
+}
+.flat-button {
+  background-color: #0176d3;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.flat-button:hover {
+  background-color: #015cab;
+}
+
+.flat-chevron lightning-button-menu {
+  border-radius: 0;
+}
+
+.icon-left {
+  margin-right: 0.3rem;
+}

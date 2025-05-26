@@ -2,39 +2,45 @@
   @description       : 
   @author            : ChangeMeIn@UserSettingsUnder.SFDoc
   @group             : 
-  @last modified on  : 05-23-2025
+  @last modified on  : 05-24-2025
   @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 -->
 <template>
     <div class="template-menu">
-        <lightning-button
+        <!-- <lightning-button
             label="+ Template"
             onclick={toggleCategoryMenu}
             variant="brand">
-        </lightning-button>
+        </lightning-button> -->
+    <button class="flat-button" onclick={toggleCategoryMenu}>+ Template</button>
 
         <template if:true={showCategoryMenu}>
             <div class="dropdown category-menu">
                 <template for:each={categoryOptions} for:item="category">
-                    <div
-                        key={category.value}
-                        class="menu-item"
-                        data-value={category.value}
-                        onclick={handleCategoryClick}>
-                        {category.label}
-                        <span class="submenu-indicator">▶</span>
+                    <div key={category.value} class="menu-item">
+                        <span
+                            class="category-label"
+                            data-value={category.value}
+                            onclick={handleCategoryClick}>
+                            {category.label}
+                        </span>
+                        <span
+                            class="add-icon"
+                            title="Add Template"
+                            data-value={category.value}
+                            onclick={handleAddTemplateClick}>
+                            +
+                        </span>
 
                         <template if:true={category.isSelected}>
                             <div class="dropdown submenu">
-                                <template if:true={templates.length}>
-                                    <template for:each={templates} for:item="template">
-                                        <div key={template.Id} class="menu-item template-item">
-                                            {template.Name}
-                                        </div>
-                                    </template>
-                                </template>
                                 <template if:true={isLoadingTemplates}>
                                     <div class="menu-item">Loading...</div>
+                                </template>
+                                <template for:each={templates} for:item="template">
+                                    <div key={template.Id} class="menu-item template-item">
+                                        {template.Name}
+                                    </div>
                                 </template>
                             </div>
                         </template>
@@ -42,5 +48,43 @@
                 </template>
             </div>
         </template>
+
+        <!-- Modal -->
+   
+<template if:true={showModal}>
+    <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+        <div class="slds-modal__container">
+            <header class="slds-modal__header">
+                <h2 class="slds-modal__title">New Template</h2>
+            </header>
+            <div class="slds-modal__content slds-p-around_medium">
+                <lightning-input
+                    label="Template Name"
+                    value={newTemplateName}
+                    onchange={handleNameChange}>
+                </lightning-input>
+
+                <lightning-combobox
+                    label="Status"
+                    value={newTemplateStatus}
+                    options={statusOptions}
+                    onchange={handleStatusChange}>
+                </lightning-combobox>
+
+                <lightning-input
+                    label="Category"
+                    value={selectedCategory}
+                    disabled>
+                </lightning-input>
+            </div>
+            <footer class="slds-modal__footer">
+                <lightning-button variant="neutral" label="Cancel" onclick={closeModal}></lightning-button>
+                <lightning-button variant="brand" label="Save" onclick={createNewTemplate}></lightning-button>
+            </footer>
+        </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+</template>
+
     </div>
 </template>
