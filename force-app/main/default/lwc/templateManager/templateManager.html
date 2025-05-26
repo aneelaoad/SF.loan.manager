@@ -1,40 +1,40 @@
 <template>
   <lightning-card title="Add Template">
     <div class="slds-p-around_medium">
-      <!-- Step 1: Category Selection -->
-      <lightning-combobox
-        name="category"
-        label="Select Category"
-        value={selectedCategoryId}
-        placeholder="Select a Category"
-        options={categoryOptions}
-        onchange={handleCategoryChange}>
-      </lightning-combobox>
+      <div class="button-group">
+        <!-- Add Template Button -->
+        <button class="template-button no-radius-right">
+          + Add Template
+        </button>
 
-      <!-- Step 2: Template Selection -->
-      <template if:true={templateOptions.length}>
-        <div class="slds-m-top_medium">
-          <p class="slds-text-title_bold">Templates in this category:</p>
-          <lightning-layout multiple-rows>
-            <template for:each={templateOptions} for:item="template">
-              <lightning-layout-item key={template.Id} class="slds-box slds-m-around_x-small template-card" onclick={handleTemplateClick} data-id={template.Id}>
-                <strong>{template.Name}</strong>
-              </lightning-layout-item>
-            </template>
-          </lightning-layout>
-        </div>
-      </template>
+        <!-- Chevron Button -->
+        <button class="template-button no-radius-left" onclick={toggleCategoryDropdown}>
+          ▼
+        </button>
+      </div>
 
-      <!-- Step 3: Document Items Table -->
-      <template if:true={templateItems.length}>
-        <div class="slds-m-top_medium">
-          <p class="slds-text-title_bold">Template Items:</p>
-          <lightning-datatable
-            key-field="Id"
-            data={templateItems}
-            columns={columns}>
-          </lightning-datatable>
-        </div>
+      <!-- CATEGORY DROPDOWN -->
+   <template if:true={isCategoryDropdownOpen}>
+  <ul class="dropdown-list left">
+    <template for:each={categoryOptions} for:item="cat">
+      <li key={cat.value} class="dropdown-item">
+        <span data-value={cat.value} onclick={handleCategoryClick}>{cat.label}</span>
+        <button class="add-icon" data-category={cat.value} onclick={handleAddTemplateClick}>+</button>
+      </li>
+    </template>
+  </ul>
+</template>
+
+
+      <!-- TEMPLATE DROPDOWN -->
+      <template if:true={isTemplateDropdownOpen}>
+        <ul class="dropdown-list right">
+          <template for:each={templateOptions} for:item="template">
+            <li key={template.Id} class="dropdown-item" onclick={handleTemplateClick} data-id={template.Id}>
+              {template.Name}
+            </li>
+          </template>
+        </ul>
       </template>
     </div>
   </lightning-card>

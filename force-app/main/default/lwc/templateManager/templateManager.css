@@ -1,3 +1,88 @@
-.custom-container{
-	color : black;
+.button-group {
+  display: inline-flex;
+  border-radius: 0.25rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.template-button {
+  background-color: #0070d2;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.25rem;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.template-button:hover {
+  background-color: #005fb2;
+}
+
+.no-radius-right {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.no-radius-left {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+ margin-left: 1.5px;
+  width: 3rem;
+}
+
+.dropdown-list {
+  background: white;
+  border: 1px solid #d8dde6;
+  border-radius: 0.25rem;
+  position: absolute;
+  z-index: 100;
+  /* max-height: 200px; */
+  overflow-y: auto;
+  min-width: 200px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  margin-top: 0.5rem;
+}
+
+.dropdown-list.left {
+  margin-left: 0.1rem;
+}
+
+.dropdown-list.right {
+  margin-left: 12.5rem;
+}
+
+.dropdown-item {
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.dropdown-item:hover {
+  background-color: #f3f3f3;
+}
+.dropdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.add-icon {
+  background-color: transparent;
+  border: none;
+  color: #0070d2;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 0.5rem;
+}
+
+.add-icon:hover {
+  color: #005fb2;
 }
