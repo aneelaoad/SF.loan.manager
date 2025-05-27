@@ -1,6 +1,5 @@
 <template>
-  <lightning-card title="Add Template">
-    <div class="slds-p-around_medium">
+
       <div class="button-group">
         <!-- Add Template Button -->
         <button class="template-button no-radius-right">
@@ -36,6 +35,8 @@
           </template>
         </ul>
       </template>
-    </div>
-  </lightning-card>
+   <template if:true={isLoading}>
+  <lightning-spinner alternative-text="Loading..." size="medium"></lightning-spinner>
+</template>
+
 </template>

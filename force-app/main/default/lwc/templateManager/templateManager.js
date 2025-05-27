@@ -9,6 +9,8 @@ export default class TemplateManager extends LightningElement {
   @track templateOptions = [];
   @track isCategoryDropdownOpen = false;
   @track isTemplateDropdownOpen = false;
+  @track templateItems = [];
+  @track groupedItems = {};
   selectedCategory = '';
 
   connectedCallback() {
@@ -36,7 +38,6 @@ export default class TemplateManager extends LightningElement {
   handleCategoryClick(event) {
     const category = event.currentTarget.dataset.value;
     this.selectedCategory = category;
-    // this.isCategoryDropdownOpen = false;
     this.isTemplateDropdownOpen = true;
 
     getTemplatesByCategory({ category })
@@ -48,53 +49,91 @@ export default class TemplateManager extends LightningElement {
       });
   }
 
-  handleTemplateClick(event) {
-    const templateId = event.currentTarget.dataset.id;
-    this.isTemplateDropdownOpen = false;
-    this.isCategoryDropdownOpen = false;
+  // handleTemplateClick(event) {
+  //   const templateId = event.currentTarget.dataset.id;
+  //   this.isTemplateDropdownOpen = false;
+  //   this.isCategoryDropdownOpen = false;
 
-    getTemplateItems({ templateId })
-      .then(items => {
-        const processed = items.map(item => ({
-          ...item,
-          assignedToName: item.owner || '',
-          name: item.name,
-          status: item.status,
-          team: item.team
-        }));
+  //   getTemplateItems({ templateId })
+  //     .then(items => {
+  //       const processed = items.map(item => ({
+  //         ...item,
+  //         assignedToName: item.owner || '',
+  //         name: item.name,
+  //         status: item.status,
+  //         team: item.team
+  //       }));
 
-        this.dispatchEvent(new CustomEvent('templateitemsloaded', {
-          detail: processed,
-          bubbles: true,
-          composed: true
-        }));
-      })
-      .catch(error => {
-        console.error('Error fetching template items:', error);
-      });
-  }
+  //       // 🔥 Append to existing items
+  //       this.templateItems = [...this.templateItems, ...processed];
 
-  handleAddTemplateClick(event) {
-  event.stopPropagation(); // Prevent parent li click
+  //       // 🔥 Emit combined items
+  //       this.dispatchEvent(new CustomEvent('templateitemsloaded', {
+  //         detail: this.templateItems,
+  //         bubbles: true,
+  //         composed: true
+  //       }));
+  //     })
+  //     .catch(error => {
+  //       console.error('Error fetching template items:', error);
+  //     });
+  // }
+isLoading = false;
+handleTemplateClick(event) {
+  const templateId = event.currentTarget.dataset.id;
+  this.isTemplateDropdownOpen = false;
+  this.isCategoryDropdownOpen = false;
+   this.isLoading = true;
+  getTemplateItems({ templateId })
+    .then(items => {
+   this.isLoading = false;
 
-  const category = event.currentTarget.dataset.category;
-  const name = prompt(`Enter name for new template under '${category}':`);
-  if (!name) return;
+      const processed = items.map(item => ({
+        ...item,
+        assignedToName: item.owner || '',
+        name: item.name,
+        status: item.status,
+        team: item.team,
+        category: item.category
+      }));
 
-  const appliesTo = 'Generic'; // Or fetch user input if needed
+      // Prevent duplicates using item.id
+      const existingIds = new Set(this.templateItems.map(i => i.id));
+      const uniqueNewItems = processed.filter(i => !existingIds.has(i.id));
+      this.templateItems = [...this.templateItems, ...uniqueNewItems];
 
-  createTemplate({ name, category, appliesTo })
-    .then(newTemplate => {
-      // Optionally refresh templates for the selected category
-      if (this.selectedCategory === category) {
-        return getTemplatesByCategory({ category }).then((templates) => {
-          this.templateOptions = templates;
-          this.isTemplateDropdownOpen = true;
-        });
-      }
+      this.dispatchEvent(new CustomEvent('templateitemsloaded', {
+        detail: this.templateItems,
+        bubbles: true,
+        composed: true
+      }));
     })
     .catch(error => {
-      console.error('Error creating template:', error);
-      alert('Error creating template: ' + error.body.message);
-    });}
+      console.error('Error fetching template items:', error);
+    });
+}
+
+  handleAddTemplateClick(event) {
+    event.stopPropagation(); // Prevent parent li click
+
+    const category = event.currentTarget.dataset.category;
+    const name = prompt(`Enter name for new template under '${category}':`);
+    if (!name) return;
+
+    const appliesTo = 'Generic'; // Or fetch user input if needed
+
+    createTemplate({ name, category, appliesTo })
+      .then(newTemplate => {
+        if (this.selectedCategory === category) {
+          return getTemplatesByCategory({ category }).then((templates) => {
+            this.templateOptions = templates;
+            this.isTemplateDropdownOpen = true;
+          });
+        }
+      })
+      .catch(error => {
+        console.error('Error creating template:', error);
+        alert('Error creating template: ' + error.body.message);
+      });
+  }
 }

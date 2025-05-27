@@ -20,6 +20,10 @@
         <members>Cust_Milestone_Marker__c</members>
         <members>Cust_Milestone_Recipient__c</members>
         <members>Cust_RecipientMarkerAssociation__c</members>
+        <members>Document_Template__c</members>
+        <members>Document_Template_Item__c</members>
+        <members>Record_Document__c</members>
+        <members>Allowed_Document_Category__mdt</members>
         <name>CustomObject</name>
     </types>
 
