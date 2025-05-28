@@ -140,15 +140,16 @@ get statusKeys() {
     // Receive template items from child component
     handleTemplateItems(event) {
         const items = event.detail;
-
-        this.templateItemRows = items.map(item => ({
-            id: item.id,
-            name: item.name,
-            category: item.category || 'N/A',
-            status: item.status || 'Pending',
-            createdBy: item.createdBy || 'N/A',
-            owner: item.assignedToName || 'Unassigned'
-        }));
+        this.templateItemRows = items
+        console.log('handleTemplateItems : ',JSON.stringify(this.templateItemRows));
+        // this.templateItemRows = items.map(item => ({
+        //     id: item.id,
+        //     name: item.name,
+        //     category: item.category || 'N/A',
+        //     status: item.status || 'Pending',
+        //     createdBy: item.createdBy || 'N/A',
+        //     owner: item.assignedToName || 'Unassigned'
+        // }));
 
         // Default to show all when first received
         this.filteredRows = [...this.templateItemRows];

@@ -1,213 +1,173 @@
 import { LightningElement, track } from 'lwc';
-import getAllowedCategories from '@salesforce/apex/DocumentTemplateController.getAllowedCategories';
-import getTemplatesByCategory from '@salesforce/apex/DocumentTemplateController.getTemplatesByCategory';
-import getTemplateItems from '@salesforce/apex/DocumentTemplateController.getTemplateItems';
-import createTemplate from '@salesforce/apex/DocumentTemplateController.createTemplate';
-import getTemplateItemsByCategory from '@salesforce/apex/DocumentTemplateController.getTemplateItemsByCategory';
+import getAllowedTemplateCategories from '@salesforce/apex/DocumentTemplateController.getAllowedTemplateCategories';
+import getAllowedDocumentCategories from '@salesforce/apex/DocumentTemplateController.getAllowedDocumentCategories';
+import getItemsByDocumentCategory from '@salesforce/apex/DocumentTemplateController.getItemsByDocumentCategory';
+import getItemsByTemplateCategory from '@salesforce/apex/DocumentTemplateController.getItemsByTemplateCategory';
+import createTemplateAndItem from '@salesforce/apex/DocumentTemplateController.createTemplateAndItem';
 
 export default class TemplateManager extends LightningElement {
-  @track categoryOptions = [];
-  @track templateOptions = [];
-  @track isCategoryDropdownOpen = false;
   @track isTemplateDropdownOpen = false;
-  @track templateItems = [];
-  @track groupedItems = {};
-  selectedCategory = '';
-
+  @track isDocumentDropdownOpen = false;
+  @track isLoading = false;
   @track showModal = false;
+
+  @track templateCategoryOptions = [];
+  @track documentCategoryOptions = [];
+  @track documentOptions = [];
+
+  @track selectedTemplateCategory = '';
+  @track selectedDocumentCategory = '';
+  @track selectedCategoryType = '';
+  @track documentList = [];
+
+  @track modalHeader = '';
   @track modalCategory = '';
   @track modalTemplateName = '';
-  @track documentOptions = [];
-  @track modalDocumentId = null;
+  @track modalDocumentId = '';
 
-  isLoading = false;
+  // Load Template Categories
+  handleAddTemplate() {
+    this.isLoading = true;
+    getAllowedTemplateCategories()
+      .then(result => {
+        console.log('result : ',JSON.stringify(result));
+        this.templateCategoryOptions = result
+        // this.templateCategoryOptions = result.map(cat => ({
+        //   label: cat.masterLabel,
+        //   value: cat.masterLabel
+        // }));
 
-  connectedCallback() {
-    getAllowedCategories()
-      .then(data => {
-        this.categoryOptions = data.map(cat => ({
-          label: cat.label,
-          value: cat.label
-        }));
+        this.isTemplateDropdownOpen = true;
+        this.isDocumentDropdownOpen = false;
       })
-      .catch(error => {
-        console.error('Error fetching categories:', error);
-      });
+      .finally(() => (this.isLoading = false));
   }
 
-  get categoryDropdownArrow() {
-    return this.isCategoryDropdownOpen ? '▲' : '▼';
+  // Load Document Categories
+  handleAddDocument() {
+    this.isLoading = true;
+    getAllowedDocumentCategories()
+      .then(result => {
+        console.log('result : ',JSON.stringify(result));
+this.documentCategoryOptions = result
+        // this.documentCategoryOptions = result.map(cat => ({
+        //   label: cat.masterLabel,
+        //   value: cat.masterLabel
+        // }));
+        console.log('documentCategoryOptions : ',JSON.stringify(this.documentCategoryOptions));
+
+        this.isDocumentDropdownOpen = true;
+        this.isTemplateDropdownOpen = false;
+      })
+      .finally(() => (this.isLoading = false));
   }
 
-  toggleCategoryDropdown() {
-    this.isCategoryDropdownOpen = !this.isCategoryDropdownOpen;
-    this.isTemplateDropdownOpen = false;
-  }
-
-  handleCategoryClick(event) {
+  // Template Category Click → fetch all associated documents
+  handleTemplateCategoryClick(event) {
     const category = event.currentTarget.dataset.value;
-    this.selectedCategory = category;
-    this.isTemplateDropdownOpen = true;
-
-    getTemplatesByCategory({ category })
-      .then(templates => {
-        this.templateOptions = templates;
-      })
-      .catch(error => {
-        console.error('Error fetching templates:', error);
-      });
-  }
-
-  handleTemplateClick(event) {
-    const templateId = event.currentTarget.dataset.id;
-    this.isTemplateDropdownOpen = false;
-    this.isCategoryDropdownOpen = false;
+    this.selectedTemplateCategory = category;
+    this.selectedCategoryType = 'template';
     this.isLoading = true;
 
-    getTemplateItems({ templateId })
-      .then(items => {
-        this.isLoading = false;
+    getItemsByTemplateCategory({ templateCategory: category })
+      .then(result => {
+        console.log('getItemsByTemplateCategory : ',result);
 
-        const processed = items.map(item => ({
-          ...item,
-          assignedToName: item.owner || '',
-          name: item.name,
-          status: item.status,
-          team: item.team,
-          category: item.category
-        }));
-
-        const existingIds = new Set(this.templateItems.map(i => i.id));
-        const uniqueNewItems = processed.filter(i => !existingIds.has(i.id));
-        this.templateItems = [...this.templateItems, ...uniqueNewItems];
-
+        this.documentList = result;
+        // this.documentList = [...this.documentList, ...result];
         this.dispatchEvent(new CustomEvent('templateitemsloaded', {
-          detail: this.templateItems,
-          bubbles: true,
-          composed: true
+          detail: this.documentList
         }));
       })
-      .catch(error => {
-        console.error('Error fetching template items:', error);
-        this.isLoading = false;
-      });
+      .finally(() => (this.isLoading = false));
   }
 
-  get modalHeader() {
-    return `Add ${this.modalCategory} Template`;
+  // Document Category Click → fetch selectable documents
+  handleDocumentCategoryClick(event) {
+    const category = event.currentTarget.dataset.value;
+    this.selectedDocumentCategory = category;
+    this.selectedCategoryType = 'document';
+    this.isLoading = true;
+
+    getItemsByDocumentCategory({ category })
+      .then(result => {
+        console.log('getItemsByDocumentCategory : ',result);
+        this.documentOptions = result;
+      })
+      .finally(() => (this.isLoading = false));
   }
 
-  handleAddTemplateClick(event) {
-    event.stopPropagation();
-    this.modalCategory = event.currentTarget.dataset.category;
+  handleDocumentSelect(event) {
+    const documentId = event.currentTarget.dataset.id;
+    const selectedLabel = event.currentTarget.dataset.name;
+    const category = event.currentTarget.dataset.category;
+    const status = event.currentTarget.dataset.status;
+    const team = event.currentTarget.dataset.team;
+
+    const alreadyExists = this.documentList.some(doc => doc.id === documentId);
+    console.log('alreadyExists : ',alreadyExists);
+    if (!alreadyExists) {
+      this.documentList = [
+        ...this.documentList,
+        {
+          id: documentId,
+          name: selectedLabel,
+          type: 'document',
+          status: status,
+          team: team,
+          category: category
+        }
+      ];
+    }
+
+    this.isDocumentDropdownOpen = false;
+
+    this.dispatchEvent(new CustomEvent('templateitemsloaded', {
+      detail: this.documentList
+    }));
+  }
+
+  // "+" Modal Logic
+  handleAddCategoryClick(event) {
+    const category = event.currentTarget.dataset.category;
+    const type = event.currentTarget.dataset.type;
+
+    this.modalCategory = category;
+    this.modalHeader = type === 'template' ? 'Create Template' : 'Create Document';
     this.modalTemplateName = '';
-    this.modalDocumentId = null;
+    this.modalDocumentId = '';
     this.showModal = true;
-
-    // Load document template items for this category
-    getTemplateItemsByCategory({ category: this.modalCategory })
-      .then(items => {
-        this.documentOptions = items.map(i => ({
-          label: i.name,
-          value: i.id
-        }));
-      })
-      .catch(error => {
-        console.error('Error fetching template items for modal:', error);
-      });
-
-      console.log('documentOptions : ',JSON.stringify(this.documentOptions));
   }
 
   handleModalInputChange(event) {
     this.modalTemplateName = event.target.value;
   }
 
+  handleDocumentChange(event) {
+    this.modalDocumentId = event.detail.value;
+  }
+
   handleModalCancel() {
     this.showModal = false;
   }
 
-  handleDocumentChange(event) {
-  this.modalDocumentId = event.detail.value;
-  console.log('modalDocumentId : ',this.modalDocumentId);
+  handleModalSave() {
+    if (!this.modalTemplateName || !this.modalDocumentId) return;
+    this.isLoading = true;
 
-}
-
-modalDocumentIds = [];
-
-handleDocumentMultiChange(event) {
-  this.modalDocumentIds = event.detail.value; // array of IDs
-  console.log('modalDocumentIds : ',this.modalDocumentIds);
-}
-
-handleModalSave() {
-  const name = this.modalTemplateName;
-  const category = this.modalCategory;
-  const appliesTo = 'Opportunity';
-  const itemId = this.modalDocumentId;
-  console.log('itemId : ',itemId);
-  if (!name) {
-    alert('Please enter a template name.');
-    return;
-  }
-
-  if (!itemId) {
-    alert('Please select a document template item.');
-    return;
-  }
-
-  createTemplate({
-    name,
-    category,
-    appliesTo,
-    documentItemId: itemId // updated: send as array
-  })
-    .then(newTemplate => {
-      this.showModal = false;
-
-      if (this.selectedCategory === category) {
-        return getTemplatesByCategory({ category }).then((templates) => {
-          this.templateOptions = templates;
-          this.isTemplateDropdownOpen = true;
-        });
-      }
+    createTemplateAndItem({
+      templateName: this.modalTemplateName,
+      category: this.modalCategory,
+      appliesTo: '',
+      itemName: this.modalDocumentId,
+      team: '',
+      status: 'New'
     })
-    .catch(error => {
-      console.error('Error creating template:', error);
-      alert('Error creating template: ' + (error.body?.message || error.message));
-    });
-}
-
-  // handleModalSave() {
-  //   const name = this.modalTemplateName;
-  //   const category = this.modalCategory;
-  //   const appliesTo = 'Opportunity';
-  //   const itemId = this.modalDocumentId;
-
-  //   if (!name) {
-  //     alert('Please enter a template name.');
-  //     return;
-  //   }
-
-  //   if (!itemId) {
-  //     alert('Please select a document template item.');
-  //     return;
-  //   }
-
-  //   // createTemplate({ name, category, appliesTo, itemId }) // Update Apex to accept itemId if needed
-  //   //   .then(newTemplate => {
-  //   //     this.showModal = false;
-
-  //   //     if (this.selectedCategory === category) {
-  //   //       return getTemplatesByCategory({ category }).then((templates) => {
-  //   //         this.templateOptions = templates;
-  //   //         this.isTemplateDropdownOpen = true;
-  //   //       });
-  //   //     }
-  //   //   })
-  //   //   .catch(error => {
-  //   //     console.error('Error creating template:', error);
-  //   //     alert('Error creating template: ' + (error.body?.message || error.message));
-  //   //   });
-  // }
+      .then(() => {
+        this.showModal = false;
+        this.isTemplateDropdownOpen = false;
+        this.isDocumentDropdownOpen = false;
+      })
+      .finally(() => (this.isLoading = false));
+  }
 }

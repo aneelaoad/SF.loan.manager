@@ -1,312 +1,176 @@
 public with sharing class DocumentTemplateController {
 
-   
-    // Fetch allowed categories from metadata
-    @AuraEnabled(cacheable=true)
-    public static List<CategoryMetadataWrapper> getAllowedCategories() {
-        System.debug('Fetching allowed categories from metadata...');
-
-        List<Allowed_Document_Category__mdt> categoryMetadata = [
-            SELECT MasterLabel, Description__c, Icon__c, ColorClass__c
-            FROM Allowed_Document_Category__mdt
-            ORDER BY Order__c DESC
-        ];
-
-        List<CategoryMetadataWrapper> result = new List<CategoryMetadataWrapper>();
-        for (Allowed_Document_Category__mdt cat : categoryMetadata) {
-            CategoryMetadataWrapper wrapper = new CategoryMetadataWrapper();
-            wrapper.label = cat.MasterLabel;
-            wrapper.description = cat.Description__c;
-            wrapper.icon = cat.Icon__c;
-            wrapper.colorClass = cat.ColorClass__c;
-            result.add(wrapper);
-        }
-
-        System.debug('Returning category metadata: ' + result);
-        return result;
-    }
-
-    // Wrapper class to return metadata information
-    public class CategoryMetadataWrapper {
-        @AuraEnabled public String label;
+    public class CategoryWrapper {
+        @AuraEnabled public String masterLabel;
+        @AuraEnabled public String developerName;
         @AuraEnabled public String description;
         @AuraEnabled public String icon;
         @AuraEnabled public String colorClass;
     }
 
-    // Fetch templates by category
-    @AuraEnabled(cacheable=true)
-    public static List<Document_Template__c> getTemplatesByCategory(String category) {
-        System.debug('Fetching templates for category: ' + category);
-
-        List<Document_Template__c> templates = [
-            SELECT Id, Name, Description__c, Applies_To__c
-            FROM Document_Template__c
-            WHERE Category__c = :category
-            AND Is_Active__c = TRUE
-            ORDER BY Name
-        ];
-
-        System.debug('Fetched templates: ' + templates);
-        return templates;
-    }
-
-    // Create a new template
-    // @AuraEnabled
-    // public static Document_Template__c createTemplate(String name, String category, String appliesTo) {
-    //     System.debug('Creating template with name: ' + name + ', category: ' + category + ', appliesTo: ' + appliesTo);
-
-    //     Document_Template__c newTemplate = new Document_Template__c(
-    //         Name = name,
-    //         Category__c = category,
-    //         Applies_To__c = appliesTo,
-    //         Is_Active__c = true
-    //     );
-
-    //     try {
-    //         insert newTemplate;
-    //         System.debug('Template created successfully: ' + newTemplate);
-    //     } catch (DmlException e) {
-    //         System.debug('Error creating template: ' + e.getMessage());
-    //         throw new AuraHandledException('Error creating template: ' + e.getMessage());
-    //     }
-
-    //     return newTemplate;
-    // }
-
-
-@AuraEnabled
-public static Document_Template__c createTemplate(
-    String name,
-    String category,
-    String appliesTo,
-    Id documentItemId // optional
-) {
-    System.debug('Creating template with name: ' + name + ', category: ' + category + ', appliesTo: ' + appliesTo + ', documentItemId: ' + documentItemId);
-
-    Document_Template__c newTemplate = new Document_Template__c(
-        Name = name,
-        Category__c = category,
-        Applies_To__c = appliesTo,
-        Is_Active__c = true
-    );
-
-    try {
-        // First, insert the new template
-        insert newTemplate;
-        System.debug('Template created successfully: ' + newTemplate);
-
-        // If documentItemId is provided, reassign the item to this new template
-        if (String.isNotBlank(documentItemId)) {
-            Document_Template_Item__c itemToUpdate = [
-                SELECT Id, Document_Template__c
-                FROM Document_Template_Item__c
-                WHERE Id = :documentItemId
-                LIMIT 1
-            ];
-
-            // Reassign the item to point to the new template
-            itemToUpdate.Document_Template__c = newTemplate.Id;
-            update itemToUpdate;
-
-            System.debug('Reassigned document item to new template: ' + itemToUpdate);
-        }
-
-    } catch (Exception e) {
-        System.debug('Error during template creation: ' + e.getMessage());
-        throw new AuraHandledException('Error creating template: ' + e.getMessage());
-    }
-
-    return newTemplate;
-}
-
-
-
-//     @AuraEnabled
-// public static Document_Template__c createTemplate(
-//     String name,
-//     String category,
-//     String appliesTo,
-//     Id documentItemId // optional
-// ) {
-//     System.debug('Creating template with name: ' + name + ', category: ' + category + ', appliesTo: ' + appliesTo + ', documentItemId: ' + documentItemId);
-
-//     Document_Template__c newTemplate = new Document_Template__c(
-//         Name = name,
-//         Category__c = category,
-//         Applies_To__c = appliesTo,
-//         Is_Active__c = true
-//     );
-
-//     try {
-//         insert newTemplate;
-//         System.debug('Template created successfully: ' + newTemplate);
-
-//         // If a document item ID is provided, link it to the newly created template
-//         if (String.isNotBlank(documentItemId)) {
-//             Document_Template_Item__c itemToLink = new Document_Template_Item__c(
-//                 Id = documentItemId,
-//                 Document_Template__c = newTemplate.Id
-//             );
-//             update itemToLink;
-//             System.debug('Linked document item to new template: ' + itemToLink);
-//         }
-
-//     } catch (Exception e) {
-//         System.debug('Error during template creation: ' + e.getMessage());
-//         throw new AuraHandledException('Error creating template: ' + e.getMessage());
-//     }
-
-//     return newTemplate;
-// }
-
-
-    // Fetch template items for a given template
-    @AuraEnabled(cacheable=true)
-    public static List<TemplateItemWrapper> getTemplateItems(Id templateId) {
-        System.debug('Fetching template items for template Id: ' + templateId);
-
-        List<Document_Template_Item__c> items = [
-            SELECT Id, Name, Status__c, Assigned_To__r.Name, Team__c,
-                   Document_Template__r.Category__c
-            FROM Document_Template_Item__c
-            WHERE Document_Template__c = :templateId
-            ORDER BY Order__c
-        ];
-
-        List<TemplateItemWrapper> wrappers = new List<TemplateItemWrapper>();
-        for (Document_Template_Item__c item : items) {
-            TemplateItemWrapper wrapper = new TemplateItemWrapper();
-            wrapper.id = item.Id;
-            wrapper.name = item.Name;
-            wrapper.status = item.Status__c;
-            wrapper.owner = item.Assigned_To__r != null ? item.Assigned_To__r.Name : null;
-            wrapper.team = item.Team__c;
-            wrapper.category = item.Document_Template__r.Category__c;
-            wrappers.add(wrapper);
-        }
-
-        System.debug('Returning wrapped items: ' + wrappers);
-        return wrappers;
-    }
-
-    // Wrapper class for Template Items
-    public class TemplateItemWrapper {
-        @AuraEnabled public String id;
-        @AuraEnabled public String name;
-        @AuraEnabled public String status;
-        @AuraEnabled public String owner;
-        @AuraEnabled public String team;
-        @AuraEnabled public String category;
+    public class TemplateCreationResult {
+        @AuraEnabled public Id templateId;
         @AuraEnabled public String templateName;
-        
+        @AuraEnabled public Id itemId;
+        @AuraEnabled public String itemName;
     }
 
-
-    // Create Record Documents based on template
+    // 🆕 1. Create a template folder only
     @AuraEnabled
-    public static void createRecordDocumentsFromTemplate(Id templateId, Id recordId, String recordType) {
-        System.debug('Creating record documents from template Id: ' + templateId + ', recordId: ' + recordId + ', recordType: ' + recordType);
+    public static Id createTemplateFolder(String templateName, String category, String appliesTo) {
+        System.debug('Creating Template Folder');
+        System.debug('Template Name: ' + templateName);
+        System.debug('Category: ' + category);
+        System.debug('Applies To: ' + appliesTo);
 
-        List<Document_Template_Item__c> items = [
-            SELECT Id, Name, Status__c, Assigned_To__c, Team__c
-            FROM Document_Template_Item__c
-            WHERE Document_Template__c = :templateId
+        List<Allowed_Template_Category__mdt> allowedCategories = [
+            SELECT MasterLabel FROM Allowed_Template_Category__mdt WHERE MasterLabel = :category
         ];
+        System.debug('Allowed Categories Found: ' + allowedCategories.size());
 
-        System.debug('Fetched template items for record documents: ' + items);
-
-        List<Record_Document__c> recordDocs = new List<Record_Document__c>();
-
-        for (Document_Template_Item__c item : items) {
-            System.debug('Processing item: ' + item);
-
-            Record_Document__c doc = new Record_Document__c(
-                Document_Template_Item__c = item.Id,
-                Status__c = item.Status__c,
-                Assigned_To__c = item.Assigned_To__c,
-                Team__c = item.Team__c,
-                Is_Completed__c = false
-            );
-
-            if (recordType == 'Lead') {
-                doc.Lead__c = recordId;
-            } else if (recordType == 'Opportunity') {
-                doc.Loan__c = recordId;
-            }
-
-            recordDocs.add(doc);
+        if (allowedCategories.isEmpty()) {
+            System.debug('Invalid template category: ' + category);
+            throw new AuraHandledException('Invalid template category');
         }
 
-        try {
-            insert recordDocs;
-            System.debug('Record documents created successfully: ' + recordDocs);
-        } catch (DmlException e) {
-            System.debug('Error creating record documents: ' + e.getMessage());
-            throw new AuraHandledException('Error creating documents: ' + e.getMessage());
-        }
+        Document_Template__c template = new Document_Template__c(
+            Name = templateName,
+            Category__c = category,
+            Applies_To__c = appliesTo,
+            Is_Active__c = true
+        );
+        insert template;
+
+        System.debug('Template Folder Created with ID: ' + template.Id);
+        return template.Id;
     }
+
+    // ✅ 2. Create a document item (in a folder)
+    @AuraEnabled
+    public static TemplateCreationResult createTemplateAndItem(String templateName, String category, String appliesTo, String itemName, String team, String status) {
+        System.debug('Creating Template and Item');
+        System.debug('Inputs -> Template: ' + templateName + ', Category: ' + category + ', AppliesTo: ' + appliesTo + ', Item: ' + itemName + ', Team: ' + team + ', Status: ' + status);
+
+        Id templateId = createTemplateFolder(templateName, category, appliesTo);
+        System.debug('Template Folder ID: ' + templateId);
+
+        Document_Template_Item__c item = new Document_Template_Item__c(
+            Name = itemName,
+            Document_Template__c = templateId,
+            Team__c = team,
+            Status__c = status,
+            Category__c = category
+        );
+        insert item;
+        System.debug('Document Item Created with ID: ' + item.Id);
+
+        TemplateCreationResult result = new TemplateCreationResult();
+        result.templateId = templateId;
+        result.templateName = templateName;
+        result.itemId = item.Id;
+        result.itemName = item.Name;
+
+        return result;
+    }
+
+    // ✅ 3. Create a document item directly (without template)
+    @AuraEnabled
+    public static Id createItemDirectly(String itemName, String category, String team, String status) {
+        System.debug('Creating Item Directly');
+        System.debug('Inputs -> Item: ' + itemName + ', Category: ' + category + ', Team: ' + team + ', Status: ' + status);
+
+        List<Allowed_Document_Category__mdt> allowedCategories = [
+            SELECT MasterLabel FROM Allowed_Document_Category__mdt WHERE MasterLabel = :category
+        ];
+        System.debug('Allowed Document Categories Found: ' + allowedCategories.size());
+
+        if (allowedCategories.isEmpty()) {
+            System.debug('Invalid document category: ' + category);
+            throw new AuraHandledException('Invalid document category');
+        }
+
+        Document_Template_Item__c item = new Document_Template_Item__c(
+            Name = itemName,
+            Team__c = team,
+            Status__c = status,
+            Category__c = category
+        );
+        insert item;
+        System.debug('Item Created with ID: ' + item.Id);
+        return item.Id;
+    }
+
+    // ✅ 4. Fetch allowed template categories
+    @AuraEnabled(cacheable=true)
+    public static List<CategoryWrapper> getAllowedTemplateCategories() {
+        System.debug('Fetching Allowed Template Categories');
+        List<Allowed_Template_Category__mdt> categories = [SELECT MasterLabel, DeveloperName FROM Allowed_Template_Category__mdt];
+        System.debug('Total Template Categories Retrieved: ' + categories.size());
+
+        List<CategoryWrapper> results = new List<CategoryWrapper>();
+        for (Allowed_Template_Category__mdt cat : categories) {
+            CategoryWrapper wrapper = new CategoryWrapper();
+            wrapper.masterLabel = cat.MasterLabel;
+            wrapper.developerName = cat.DeveloperName;
+            results.add(wrapper);
+        }
+        return results;
+    }
+
+    // ✅ 5. Fetch allowed document categories
+    @AuraEnabled(cacheable=true)
+    public static List<CategoryWrapper> getAllowedDocumentCategories() {
+        System.debug('Fetching Allowed Document Categories');
+        List<Allowed_Document_Category__mdt> categories = [
+            SELECT MasterLabel, DeveloperName, Description__c, Icon__c, ColorClass__c
+            FROM Allowed_Document_Category__mdt
+        ];
+        System.debug('Total Document Categories Retrieved: ' + categories.size());
+
+        List<CategoryWrapper> results = new List<CategoryWrapper>();
+        for (Allowed_Document_Category__mdt cat : categories) {
+            CategoryWrapper wrapper = new CategoryWrapper();
+            wrapper.masterLabel = cat.MasterLabel;
+            wrapper.developerName = cat.DeveloperName;
+            wrapper.description = cat.Description__c;
+            wrapper.icon = cat.Icon__c;
+            wrapper.colorClass = cat.ColorClass__c;
+            results.add(wrapper);
+        }
+        return results;
+    }
+
+      // ✅ 6. 
+    @AuraEnabled(cacheable=true)
+public static List<Document_Template_Item__c> getItemsByDocumentCategory(String category) {
+    return [
+        SELECT Id, Name, Category__c, Status__c, Team__c
+        FROM Document_Template_Item__c
+        WHERE Category__c = :category AND Document_Template__c = null
+        ORDER BY Name
+    ];
+}
+   // ✅ 7. 
 
 @AuraEnabled(cacheable=true)
-public static List<TemplateItemWrapper> getTemplateItemsByCategory(String category) {
-    System.debug('Fetching template items for category: ' + category);
-
-    List<Document_Template_Item__c> items = [
-        SELECT Id, Name, Status__c, Assigned_To__r.Name, Team__c,
-               Document_Template__r.Name,
-               Document_Template__r.Category__c
+public static List<Document_Template_Item__c> getItemsByTemplateCategory(String templateCategory) {
+    return [
+        SELECT Id, Name, Category__c, Status__c, Team__c, Document_Template__c,
+               Document_Template__r.Name
         FROM Document_Template_Item__c
-        WHERE Document_Template__r.Category__c = :category
-        AND Document_Template__r.Is_Active__c = TRUE
-        ORDER BY Document_Template__r.Name, Order__c
+        WHERE Document_Template__r.Category__c = :templateCategory
+        ORDER BY Document_Template__r.Name, Name
     ];
-
-    List<TemplateItemWrapper> wrappers = new List<TemplateItemWrapper>();
-    for (Document_Template_Item__c item : items) {
-        TemplateItemWrapper wrapper = new TemplateItemWrapper();
-        wrapper.id = item.Id;
-        wrapper.name = item.Name;
-        wrapper.status = item.Status__c;
-        wrapper.owner = item.Assigned_To__r != null ? item.Assigned_To__r.Name : null;
-        wrapper.team = item.Team__c;
-        wrapper.category = item.Document_Template__r.Category__c;
-        wrapper.templateName = item.Document_Template__r.Name;
-        wrappers.add(wrapper);
-    }
-
-    System.debug('Returning template items by category: ' + wrappers);
-    return wrappers;
 }
 
-@AuraEnabled
-public static void createRecordDocumentsFromItems(List<Id> itemIds, Id recordId, String recordType) {
-    List<Document_Template_Item__c> items = [
-        SELECT Id, Status__c, Assigned_To__c, Team__c
+@AuraEnabled(cacheable=true)
+public static List<Document_Template_Item__c> getItemsByTemplateId(Id templateId) {
+    return [
+        SELECT Id, Name, Category__c, Status__c, Team__c
         FROM Document_Template_Item__c
-        WHERE Id IN :itemIds
+        WHERE Document_Template__c = :templateId
+        ORDER BY Name
     ];
-
-    List<Record_Document__c> recordDocs = new List<Record_Document__c>();
-
-    for (Document_Template_Item__c item : items) {
-        Record_Document__c doc = new Record_Document__c(
-            Document_Template_Item__c = item.Id,
-            Status__c = item.Status__c,
-            Assigned_To__c = item.Assigned_To__c,
-            Team__c = item.Team__c,
-            Is_Completed__c = false
-        );
-
-        if (recordType == 'Lead') {
-            doc.Lead__c = recordId;
-        } else if (recordType == 'Opportunity') {
-            doc.Loan__c = recordId;
-        }
-
-        recordDocs.add(doc);
-    }
-
-    insert recordDocs;
 }
 
 }
