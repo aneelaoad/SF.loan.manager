@@ -39,7 +39,7 @@
   border: 1px solid #d8dde6;
   border-radius: 0.25rem;
   position: absolute;
-  z-index: 100;
+  z-index: 9;
   /* max-height: 200px; */
   overflow-y: auto;
   min-width: 200px;

@@ -18,6 +18,28 @@ export default class CustomTaskManager extends LightningElement {
         { name: 'Reset', icon: 'utility:refresh', isReset: true, labelClass: 'category-label' }
     ];
 
+    get groupedByStatus() {
+    const groups = {};
+
+    this.filteredRows.forEach(item => {
+        const status = item.status || 'Unknown';
+        if (!groups[status]) {
+            groups[status] = [];
+        }
+        groups[status].push(item);
+    });
+
+    return Object.entries(groups).map(([status, items]) => ({
+        status,
+        items
+    }));
+}
+
+get statusKeys() {
+    return this.groupedByStatus.map(group => group.status);
+}
+
+
     connectedCallback() {
         this.fetchTemplates();
     }
