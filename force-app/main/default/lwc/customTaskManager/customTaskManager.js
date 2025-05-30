@@ -28,7 +28,7 @@ export default class CustomTaskManager extends LightningElement {
         }
         groups[status].push(item);
     });
-
+    console.log('31: filteredRows : ',JSON.stringify(this.filteredRows));
     return Object.entries(groups).map(([status, items]) => ({
         status,
         items
@@ -140,13 +140,12 @@ get statusKeys() {
     // Receive template items from child component
     handleTemplateItems(event) {
         const items = event.detail;
-        this.templateItemRows = items
-        console.log('handleTemplateItems : ',JSON.stringify(this.templateItemRows));
+this.templateItemRows = items
         // this.templateItemRows = items.map(item => ({
         //     id: item.id,
-        //     name: item.name,
+        //     name: item.Name,
         //     category: item.category || 'N/A',
-        //     status: item.status || 'Pending',
+        //     status: item.Status__c || 'Pending',
         //     createdBy: item.createdBy || 'N/A',
         //     owner: item.assignedToName || 'Unassigned'
         // }));
@@ -161,4 +160,9 @@ get statusKeys() {
             labelClass: 'category-label'
         }));
     }
+
+    handleEditTemplate(e){
+
+    }
+  
 }

@@ -50,77 +50,50 @@
 
 
 
-  <!-- Table Section -->
-
-  <div class="slds-p-horizontal_medium">
+<!-- Table Section -->
+<div class="slds-p-horizontal_medium">
   <template if:false={isEmpty}>
-  <lightning-accordion allow-multiple-sections-open active-section-name={statusKeys}>
-    <template for:each={groupedByStatus} for:item="group">
-      <lightning-accordion-section key={group.status} name={group.status} label={group.status}>
-        <div class="custom-table-wrapper slds-p-around_medium">
-          <table class="slds-table slds-table_cell-buffer slds-table_bordered elegant-table">
-            <thead>
-              <tr class="slds-text-title_caps slds-text-color_weak">
-                <th class="slds-p-around_medium">Name</th>
-                <th class="slds-p-around_medium">Category</th>
-                <th class="slds-p-around_medium">Status</th>
-                <th class="slds-p-around_medium">Owner</th>
-              </tr>
-            </thead>
-            <tbody>
-              <template for:each={group.items} for:item="row">
-                <tr key={row.id} class="elegant-row">
-                  <td class="slds-p-around_medium slds-truncate" title={row.name}>
-                    {row.name}
-                  </td>
-                  <td class="slds-p-around_medium">
-                    <span class="elegant-badge">{row.category}</span>
-                  </td>
-                  <td class="slds-p-around_medium slds-text-color_success slds-truncate" title={row.status}>
-                    {row.status}
-                  </td>
-                  <td class="slds-p-around_medium slds-truncate" title={row.owner}>
-                    {row.owner}
-                  </td>
+    <lightning-accordion allow-multiple-sections-open active-section-name={statusKeys}>
+      <template for:each={groupedByStatus} for:item="group">
+        <lightning-accordion-section key={group.status} name={group.status} label={group.status}>
+          <div class="custom-table-wrapper slds-p-around_medium">
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered elegant-table">
+              <thead>
+                <tr class="slds-text-title_caps slds-text-color_weak">
+                  <th class="slds-p-around_medium head">Name</th>
+                  <th class="slds-p-around_medium head">Category</th>
+                  <th class="slds-p-around_medium head">Status</th>
+                  <th class="slds-p-around_medium head">Team</th>
+                  <th class="slds-p-around_medium head">Owner</th>
                 </tr>
-              </template>
-            </tbody>
-          </table>
-        </div>
-      </lightning-accordion-section>
-    </template>
-  </lightning-accordion>
-</template>
+              </thead>
+              <tbody>
+                <template for:each={group.items} for:item="row">
+                  <tr key={row.id} class="elegant-row">
+                    <td class="slds-p-around_medium slds-truncate" title={row.name}>{row.name}</td>
+                    <td class="slds-p-around_medium">
+                      <span class="elegant-badge">{row.categoryName}</span>
+                    </td>
+                    <td class="slds-p-around_medium slds-truncate" title={row.status}>{row.status}</td>
+                    <td class="slds-p-around_medium slds-truncate" title={row.team}>{row.team}</td>
+                    <td class="slds-p-around_medium slds-truncate" title={row.owner}>{row.owner}</td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </lightning-accordion-section>
+      </template>
+    </lightning-accordion>
+  </template>
 
-
-
-    <!-- <template if:false={isEmpty}>
-      <table class="slds-table slds-table_cell-buffer slds-table_bordered">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Status</th>
-          
-            <th>Owner</th>
-           
-          </tr>
-        </thead>
-        <tbody>
-          <template for:each={filteredRows} for:item="row">
-            <tr key={row.id}>
-              <td>{row.name}</td>
-              <td><lightning-badge label={row.category} class="slds-badge_lightest"></lightning-badge></td>
-              <td>{row.status}</td>
-            
-              <td>{row.owner}</td>
-             
-
-            </tr>
-          </template>
-        </tbody>
-      </table>
-    </template> -->
+  <template if:true={isEmpty}>
+    <div class="slds-align_absolute-center slds-text-align_center slds-p-vertical_large empty-state">
+      <p class="slds-text-heading_small">No items or Templates</p>
+      <p>Select a template or add item needed</p>
+      <c-template-manager ontemplateitemsloaded={handleTemplateItems}></c-template-manager>
+    </div>
+  </template>
 
     
 

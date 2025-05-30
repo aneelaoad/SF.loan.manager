@@ -13,19 +13,18 @@
   <template if:true={isDocumentDropdownOpen}>
     <ul class="dropdown-list left">
       <template for:each={documentCategoryOptions} for:item="cat">
-        <li key={cat.masterLabel} class="dropdown-item">
+        <li key={cat.masterLabel} class="dropdown-item template-line">
           <span data-value={cat.masterLabel} data-type={cat.type} onclick={handleDocumentCategoryClick}>
             {cat.masterLabel}
           </span>
-          <button
-            class="add-icon"
-            title="Add New Document"
-            data-category={cat.masterLabel}
-            data-type={cat.type}
-            onclick={handleAddCategoryClick}
-          >
-            +
-          </button>
+          <button class="icon-add-button"
+  title="Add New Document"
+  data-category={cat.masterLabel}
+  data-type={cat.type}
+  onclick={handleAddCategoryClick}>
+  +
+</button>
+
         </li>
       </template>
     </ul>
@@ -34,7 +33,7 @@
     <template if:true={documentOptions}>
       <ul class="dropdown-list left second-dropdown">
         <template for:each={documentOptions} for:item="doc">
-          <li key={doc.id} class="dropdown-item">
+          <li key={doc.id} class="dropdown-item template-line">
             <span
               data-id={doc.id}
               data-name={doc.name}
@@ -57,18 +56,98 @@
   <template if:true={isTemplateDropdownOpen}>
     <ul class="dropdown-list right">
       <template for:each={templateCategoryOptions} for:item="template">
-        <li
-          key={template.masterLabel}
-          class="dropdown-item"
-          data-id={template.id}
-          data-value={template.masterLabel}
+        <li class="dropdown-item template-line" key={template.categoryId}>
+          <span
           onclick={handleTemplateCategoryClick}
+          data-id={template.categoryId}
+          data-value={template.templateName}
         >
-          {template.masterLabel}
+          {template.templateName}
+        </span>
+
+          <button class="icon-edit-button"
+  onclick={handleEditTemplate}
+  data-templateid={template.templateId}
+  data-categoryid={template.categoryId}>
+  <lightning-icon
+    icon-name="utility:edit"
+    size="xx-small"
+    alternative-text="Edit Template"
+    class="edit-icon">
+  </lightning-icon>
+</button>
+
         </li>
       </template>
     </ul>
   </template>
+
+  <template if:true={isEditModalOpen}>
+    <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open custom-modal">
+      <div class="slds-modal__container custom-modal-container">
+        <header class="slds-modal__header custom-modal-header">
+          <h2 class="slds-modal__title">Edit Template</h2>
+        </header>
+
+        <div class="slds-modal__content slds-p-around_medium">
+          <lightning-input label="Template Name" value={selectedTemplateForEdit.templateName}
+            onchange={handleTemplateNameChange}></lightning-input>
+
+          <div class="slds-grid slds-m-top_medium">
+            <!-- Left Column: Existing Docs -->
+            <div class="slds-col slds-size_1-of-2 slds-p-right_small">
+              <p class="slds-text-title_bold">Current Documents</p>
+              <ol class="custom-doc-list">
+                <template for:each={templateDocumentList} for:item="doc">
+                  <li key={doc.id} class="custom-doc-item">
+                    <span class="doc-name">{doc.name}</span> —
+                    <span class="doc-status">{doc.status}</span> —
+                    <span class="doc-team">{doc.team}</span>
+                    <lightning-icon icon-name="utility:close" alternative-text="Remove"
+                      onclick={handleRemoveFromTemplate} data-id={doc.id} class="icon-button" variant="error"
+                      size="xx-small">
+                    </lightning-icon>
+                  </li>
+                </template>
+              </ol>
+            </div>
+
+            <!-- Right Column: Available Docs Grouped in Accordion -->
+            <div class="slds-col slds-size_1-of-2 slds-p-left_small">
+              <p class="slds-text-title_bold">Add Documents</p>
+              <lightning-accordion allow-multiple-sections-open>
+                <template for:each={groupedAvailableDocuments} for:item="group">
+                  <lightning-accordion-section key={group.name} name={group.name} label={group.name}>
+                    <ol class="custom-doc-list">
+                      <template for:each={group.documents} for:item="doc">
+                        <!-- Inside each <li> for available documents -->
+                        <li key={doc.id} class="doc-list-item">
+                          {doc.displayNumber}. {doc.name} — {doc.status} — {doc.team}
+                          <lightning-button-icon icon-name="utility:add" alternative-text="Add"
+                            onclick={handleAddToTemplate} data-id={doc.id} class="slds-m-left_small" variant="bare">
+                          </lightning-button-icon>
+                        </li>
+
+                      </template>
+                    </ol>
+                  </lightning-accordion-section>
+                </template>
+              </lightning-accordion>
+            </div>
+          </div>
+        </div>
+
+        <footer class="slds-modal__footer custom-modal-footer">
+          <lightning-button variant="neutral" label="Cancel" onclick={closeEditModal}></lightning-button>
+          <lightning-button variant="brand" label="Save" onclick={saveTemplateChanges}></lightning-button>
+        </footer>
+      </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+  </template>
+
+
+
 
   <!-- Spinner -->
   <template if:true={isLoading}>
@@ -84,39 +163,18 @@
         </header>
 
         <div class="slds-modal__content slds-p-around_medium">
-          <lightning-input
-            label="Category"
-            value={modalCategory}
-            disabled
-          ></lightning-input>
+          <lightning-input label="Category" value={modalCategory} disabled></lightning-input>
 
-          <lightning-input
-            label="Template Name"
-            value={modalTemplateName}
-            onchange={handleModalInputChange}
-            required
-          ></lightning-input>
+          <lightning-input label="Template Name" value={modalTemplateName} onchange={handleModalInputChange} required>
+          </lightning-input>
 
-          <lightning-combobox
-            label="Select Document to Add"
-            value={modalDocumentId}
-            options={documentOptions}
-            onchange={handleDocumentChange}
-            required
-          ></lightning-combobox>
+          <lightning-combobox label="Select Document to Add" value={modalDocumentId} options={documentOptions}
+            onchange={handleDocumentChange} required></lightning-combobox>
         </div>
 
         <footer class="slds-modal__footer">
-          <lightning-button
-            variant="neutral"
-            label="Cancel"
-            onclick={handleModalCancel}
-          ></lightning-button>
-          <lightning-button
-            variant="brand"
-            label="Save"
-            onclick={handleModalSave}
-          ></lightning-button>
+          <lightning-button variant="neutral" label="Cancel" onclick={handleModalCancel}></lightning-button>
+          <lightning-button variant="brand" label="Save" onclick={handleSaveEditModal}></lightning-button>
         </footer>
       </div>
     </section>

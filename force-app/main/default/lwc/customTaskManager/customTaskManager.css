@@ -302,3 +302,74 @@
   font-weight: 600;
   display: inline-block;
 }
+
+.custom-table-wrapper {
+  background-color: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+/* Table Appearance */
+.elegant-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  background-color: #fdfdfd;
+}
+
+.elegant-table thead tr {
+  background-color: #eaf3fc;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.elegant-table th,
+.elegant-table td {
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+  padding: 0.75rem;
+}
+
+.elegant-table th {
+  border-bottom: 1px solid #dce6f1;
+}
+
+.elegant-table td {
+  border-top: 1px solid #edf1f5;
+}
+
+/* Row Highlight on Hover */
+.elegant-row:hover {
+  background-color: #f0f8ff;
+  transition: background-color 0.2s ease-in-out;
+}
+
+/* Badge / Category Styling */
+.elegant-badge {
+  background-color: #d1f0e2;
+  color: #00796b;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 1rem;
+  display: inline-block;
+}
+
+/* Accordion Header */
+.lightning-accordion-section__summary {
+  font-weight: bold;
+  color: #2e3b4e;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  color: #8c8c8c;
+  opacity: 0.85;
+}
+.head{
+  background-color: #e3f2fd;
+}
