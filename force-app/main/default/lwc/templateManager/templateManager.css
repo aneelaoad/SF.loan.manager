@@ -1,3 +1,4 @@
+/* --- BUTTONS --- */
 .button-group {
   display: inline-flex;
   border-radius: 0.25rem;
@@ -30,17 +31,21 @@
 .no-radius-left {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
- margin-left: 1.5px;
+  margin-left: 1.5px;
   width: 3rem;
 }
 
+.lightning-button:hover {
+  opacity: 0.85;
+}
+
+/* --- DROPDOWN --- */
 .dropdown-list {
   background: white;
   border: 1px solid #d8dde6;
   border-radius: 0.25rem;
   position: absolute;
   z-index: 9;
-  /* max-height: 200px; */
   overflow-y: auto;
   min-width: 200px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
@@ -50,20 +55,11 @@
 .dropdown-list.left {
   margin-left: 0.1rem;
 }
+.second-dropdown{
+  margin-left: 10rem;
 
-.dropdown-list.right {
-  /* margin-left: 12.5rem; */
 }
 
-.dropdown-item {
-  padding: 0.6rem 1rem;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.dropdown-item:hover {
-  background-color: #f3f3f3;
-}
 .dropdown-item {
   display: flex;
   justify-content: space-between;
@@ -71,6 +67,10 @@
   padding: 0.6rem 1rem;
   cursor: pointer;
   font-size: 0.9rem;
+}
+
+.dropdown-item:hover {
+  background-color: #f3f3f3;
 }
 
 .add-icon {
@@ -86,23 +86,25 @@
 .add-icon:hover {
   color: #005fb2;
 }
-.template-line{
-      display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #ddd;
+
+.template-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #ddd;
 }
+
+/* --- MODAL --- */
 .custom-modal-container {
   border-radius: 1rem;
-  /* background-color: #f9f6fd;
-  box-shadow: 0 8px 24px rgba(100, 50, 150, 0.2); */
   transition: all 0.3s ease-in-out;
-  max-width: 60rem;
+  max-width: 60vw;
+  width: 50vw;
 }
 
 .custom-modal-header {
-  background: linear-gradient(135deg, #a66bbe, #864ab8);
-  color: white;
+  background-color: #e3f2fd;
+  color: black;
   border-top-left-radius: 1rem;
   border-top-right-radius: 1rem;
   padding: 1.5rem;
@@ -114,51 +116,65 @@
 }
 
 .custom-modal-footer {
-  background-color: #f1eaf6;
+  background-color: #e3f2fd;
   border-bottom-left-radius: 1rem;
   border-bottom-right-radius: 1rem;
   padding: 1rem 1.5rem;
 }
 
-.doc-list-item {
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #e0d3ed;
-  font-size: 0.95rem;
-  color: #4b2e5d;
-}
-
-.lightning-button-icon {
-  --slds-c-icon-color-foreground-default: #864ab8;
-}
-
-.lightning-button:hover {
-  opacity: 0.85;
-}
-
 .slds-modal__content {
-  max-height: 60vh;
-  overflow-y: auto;
+  max-height: 70vh;
 }
 
-/* Accordion color adjustments */
-.lightning-accordion-section__summary {
-  color: #5e3c79;
-  font-weight: 600;
+/* --- DOCUMENT LIST --- */
+.doc-title {
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
 }
+
+.doc-section-grid {
+  gap: 1rem;
+}
+
+.doc-list-column {
+  background-color: #f4faff;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.scrollable-doc-list {
+  overflow-y: auto;
+  flex-grow: 1;
+  border: 1px solid #d8dde6;
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  background: #ffffff;
+}
+
 .custom-doc-list {
   counter-reset: doc-counter;
-  list-style: none;
+  list-style: decimal inside;
   padding-left: 1rem;
   margin: 0;
 }
 
-.custom-doc-item {
+.custom-doc-item,
+.doc-list-item {
   counter-increment: doc-counter;
-  margin-bottom: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #4b2e5d;
+  padding: 0.25rem 0;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid #f0f0f0;
   padding-left: 2rem;
   position: relative;
-  font-size: 0.95rem;
-  color: #4b2e5d;
   transition: all 0.2s ease;
 }
 
@@ -176,10 +192,11 @@
   text-align: center;
   border-radius: 50%;
   font-size: 0.8rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .doc-name {
+  flex: 1;
   font-weight: 500;
 }
 
@@ -192,9 +209,11 @@
   color: #546e7a;
 }
 
+/* --- ICON BUTTONS --- */
 .icon-button {
   --slds-c-icon-color-foreground-default: #b71c1c;
   margin-left: 0.5rem;
+  cursor: pointer;
   transform: scale(1);
   transition: transform 0.2s ease;
 }
@@ -202,6 +221,7 @@
 .icon-button:hover {
   transform: scale(1.15);
 }
+
 .icon-edit-button {
   background: none;
   border: none;
@@ -213,10 +233,40 @@
 }
 
 .icon-edit-button:hover {
-  background-color: rgba(124, 77, 255, 0.1); /* Soft purple hover */
+  background-color: rgba(124, 77, 255, 0.1);
 }
 
 .edit-icon {
-  --slds-c-icon-color-foreground-default: #7c4dff; /* Purple tone */
+  --slds-c-icon-color-foreground-default: #7c4dff;
   --slds-c-icon-color-background: transparent;
+}
+
+.lightning-button-icon {
+  --slds-c-icon-color-foreground-default: #864ab8;
+}
+
+/* --- ACCORDIONS --- */
+.accordion-wrapper {
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.accordion-docs-scroll {
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.accordionClass {
+  --sds-c-accordion-heading-font-size: 12px;
+}
+
+.slds-accordion__summary-action {
+  font-size: 12px !important;
+}
+
+.lightning-accordion-section__summary {
+  color: #5e3c79;
+  font-weight: 600;
+  font-size: 12px;
 }

@@ -173,6 +173,7 @@ public with sharing class DocumentTemplateController {
         }
     }
 
+
   /**
  * Fetch documents by category, using template or direct mapping.
  */
@@ -405,11 +406,12 @@ public static List<TemplateCategory> getTemplateCategories() {
         System.debug('Fetching documents for template: ' + templateId);
 
         List<Document__c> rawDocs = [
-            SELECT Id, Name, Category__c, Status__c, Team__c, Assigned_To__c, OwnerId, Document_Template__c 
+            SELECT Id, Name, Category__c, Status__c,Category__r.Name, Team__c, Assigned_To__c, OwnerId, Document_Template__c 
             FROM Document__c 
             WHERE Document_Template__c = :templateId 
             ORDER BY Name
         ];
+        System.debug('rawDocs: ' + rawDocs);
 
         List<DocumentItem> result = new List<DocumentItem>();
         for (Document__c d : rawDocs) {
@@ -425,6 +427,7 @@ public static List<TemplateCategory> getTemplateCategories() {
             doc.templateId = d.Document_Template__c;
             result.add(doc);
         }
+        System.debug('result: ' + result);
 
         return result;
     }
@@ -466,6 +469,151 @@ public static List<DocumentItem> getAllDocuments() {
         throw new AuraHandledException('Failed to fetch all documents: ' + e.getMessage());
     }
 }
+
+public class TemplateWrapper {
+    @AuraEnabled public Id id;
+    @AuraEnabled public String name;
+    @AuraEnabled public List<DocumentItem> documents;
+}
+
+
+@AuraEnabled
+public static TemplateWrapper updateTemplateWithDocuments(
+    Id templateId,
+    String newTemplateName,
+    List<Id> newItemIds,
+    List<Id> deletedItemIds
+) {
+    if (templateId == null) {
+        throw new AuraHandledException('Template ID is required.');
+    }
+
+    // === 1. Update Template Name ===
+    Doc_Template__c templateToUpdate = [SELECT Id, Name FROM Doc_Template__c WHERE Id = :templateId LIMIT 1];
+
+    if (String.isNotBlank(newTemplateName) && newTemplateName != templateToUpdate.Name) {
+        templateToUpdate.Name = newTemplateName;
+        update templateToUpdate;
+    }
+    System.Debug('templateToUpdate: '+templateToUpdate);
+    // === 2. Add New Documents to Template ===
+    if (!newItemIds.isEmpty()) {
+        List<Document__c> docsToUpdate = [
+            SELECT Id, Document_Template__c FROM Document__c WHERE Id IN :newItemIds
+        ];
+        for (Document__c doc : docsToUpdate) {
+            doc.Document_Template__c = templateId;
+        }
+    System.Debug('docsToUpdate: '+docsToUpdate);
+
+        update docsToUpdate;
+    }
+
+    // === 3. Remove Documents from Template ===
+    if (!deletedItemIds.isEmpty()) {
+        List<Document__c> docsToClear = [
+            SELECT Id, Document_Template__c FROM Document__c WHERE Id IN :deletedItemIds
+        ];
+        for (Document__c doc : docsToClear) {
+            doc.Document_Template__c = null;
+        }
+        update docsToClear;
+    System.Debug('docsToClear: '+docsToClear);
+
+    }
+
+    // === 4. Return Updated Template Wrapper ===
+    TemplateWrapper updatedWrapper = new TemplateWrapper();
+    updatedWrapper.id = templateToUpdate.Id;
+    updatedWrapper.name = templateToUpdate.Name;
+    updatedWrapper.documents = getDocumentsByTemplate(templateToUpdate.Id);
+    return updatedWrapper;
+}
+// @AuraEnabled
+// public static TemplateWrapper createTemplateWithDocuments(
+//     String templateName,
+   
+//     List<Id> documentIds
+// ) {
+//     if (String.isBlank(templateName)) {
+//         throw new AuraHandledException('Template name is required.');
+//     }
+  
+
+//     // === 1. Create New Template ===
+//     Doc_Template__c newTemplate = new Doc_Template__c(
+//         Name = templateName
+        
+//     );
+//     insert newTemplate;
+//     System.debug('newTemplate: '+newTemplate);
+
+//     // === 2. Assign Documents to New Template ===
+//     if (documentIds != null && !documentIds.isEmpty()) {
+//         List<Document__c> docsToAssign = [
+//             SELECT Id, Document_Template__c
+//             FROM Document__c
+//             WHERE Id IN :documentIds
+//         ];
+//         for (Document__c doc : docsToAssign) {
+//             doc.Document_Template__c = newTemplate.Id;
+//         }
+//         update docsToAssign;
+//     }
+
+//     // === 3. Return New Template Wrapper ===
+//     TemplateWrapper wrapper = new TemplateWrapper();
+//     wrapper.id = newTemplate.Id;
+//     wrapper.name = newTemplate.Name;
+//     wrapper.documents = getDocumentsByTemplate(newTemplate.Id);
+//     System.debug('wrapper: '+wrapper);
+//     return wrapper;
+// }
+
+@AuraEnabled
+public static TemplateWrapper createTemplateWithDocuments(
+    String templateName,
+    List<Id> documentIds
+) {
+    if (String.isBlank(templateName)) {
+        throw new AuraHandledException('Template name is required.');
+    }
+
+    // === 1. Create Category__c Record ===
+    Doc_Category__c newCategory = new Doc_Category__c(
+        Name = templateName,
+        Type__c = 'Template'
+    );
+    insert newCategory;
+
+    // === 2. Create New Doc_Template__c Record ===
+    Doc_Template__c newTemplate = new Doc_Template__c(
+        Name = templateName,
+        Category__c = newCategory.Id
+    );
+    insert newTemplate;
+
+    // === 3. Assign Documents to New Template ===
+    if (documentIds != null && !documentIds.isEmpty()) {
+        List<Document__c> docsToAssign = [
+            SELECT Id, Document_Template__c
+            FROM Document__c
+            WHERE Id IN :documentIds
+        ];
+        for (Document__c doc : docsToAssign) {
+            doc.Document_Template__c = newTemplate.Id;
+        }
+        update docsToAssign;
+    }
+
+    // === 4. Return New Template Wrapper ===
+    TemplateWrapper wrapper = new TemplateWrapper();
+    wrapper.id = newTemplate.Id;
+    wrapper.name = newTemplate.Name;
+    wrapper.documents = getDocumentsByTemplate(newTemplate.Id);
+    return wrapper;
+}
+
 
 	
 }
