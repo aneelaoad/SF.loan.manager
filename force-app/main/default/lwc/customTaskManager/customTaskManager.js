@@ -1,11 +1,44 @@
-import { LightningElement, track } from 'lwc';
-import getAllTemplates from '@salesforce/apex/TemplateController.getAllTemplates';
+import { LightningElement, track, api, wire } from 'lwc';
+import getAssignedDocuments from '@salesforce/apex/DocumentTemplateController.getAssignedDocuments';
+import { CurrentPageReference } from 'lightning/navigation';
 
 export default class CustomTaskManager extends LightningElement {
+    @api recordId;
     @track selectedCategories = [];
     @track showVerification = false;
     @track templateItemRows = [];
     @track filteredRows = [];
+
+    @wire(CurrentPageReference)
+    getPageReference(pageRef) {
+        if (pageRef) {
+            console.log('CurrentPageReference : ', pageRef);
+
+
+            // Extract recordId and objectName from the URL or page reference
+            this.recordId = pageRef.attributes.recordId;
+            this.objectName = pageRef.attributes.objectApiName;
+            console.log('recordId : ', this.recordId);
+            console.log('objectName : ', this.objectName);
+
+        }
+    }
+
+
+    @wire(getAssignedDocuments, { recordId: '$recordId' })
+    wiredDocuments({ error, data }) {
+        if (data) {
+            this.filteredRows = data;
+            console.log('dataxx : ', JSON.stringify(data));
+
+            console.log('filteredRowsxx : ', JSON.stringify(this.filteredRows));
+
+            this.error = undefined;
+        } else if (error) {
+            this.error = error;
+            this.filteredRows = [];
+        }
+    }
 
     categoryList = [
         { name: 'Income', circleClass: 'income-dot', labelClass: 'category-label' },
@@ -19,41 +52,28 @@ export default class CustomTaskManager extends LightningElement {
     ];
 
     get groupedByStatus() {
-    const groups = {};
+        const groups = {};
 
-    this.filteredRows.forEach(item => {
-        const status = item.status || 'Unknown';
-        if (!groups[status]) {
-            groups[status] = [];
-        }
-        groups[status].push(item);
-    });
-    console.log('31: filteredRows : ',JSON.stringify(this.filteredRows));
-    return Object.entries(groups).map(([status, items]) => ({
-        status,
-        items
-    }));
-}
-
-get statusKeys() {
-    return this.groupedByStatus.map(group => group.status);
-}
-
-
-    connectedCallback() {
-        this.fetchTemplates();
+        this.filteredRows.forEach(item => {
+            const status = item.status || 'General';
+            if (!groups[status]) {
+                groups[status] = [];
+            }
+            groups[status].push(item);
+        });
+        console.log('31: filteredRows : ', JSON.stringify(this.filteredRows));
+        return Object.entries(groups).map(([status, items]) => ({
+            status,
+            items
+        }));
     }
 
-    fetchTemplates() {
-        getAllTemplates()
-            .then((data) => {
-                console.log('Templates:', JSON.stringify(data));
-                // Template fetching is retained but not used for table filtering
-            })
-            .catch((error) => {
-                console.error('Error fetching templates:', error);
-            });
+    get statusKeys() {
+        return this.groupedByStatus.map(group => group.status);
     }
+
+
+
 
     get isEmpty() {
         return this.filteredRows.length === 0;
@@ -69,16 +89,21 @@ get statusKeys() {
         }
     }
 
-    handleNewTemplate() {
-        console.log('Creating new template...');
+     handleRefreshClick() {
+        console.log('Refresh button clicked!');
+        // Add your refresh logic here
     }
 
-    handleFromExisting() {
-        console.log('Creating template from existing...');
+    // Handler for the Archive button
+    handleArchiveClick() {
+        console.log('Archive button clicked!');
+        // Add your archive logic here
     }
 
-    handleNewTask() {
-        console.log('Adding new task...');
+    // Handler for the Mortgage App button
+    handleMortgageAppClick() {
+        console.log('Mortgage App button clicked!');
+        // Add your app-specific logic here
     }
 
     toggleVerification() {
@@ -140,15 +165,8 @@ get statusKeys() {
     // Receive template items from child component
     handleTemplateItems(event) {
         const items = event.detail;
-this.templateItemRows = items
-        // this.templateItemRows = items.map(item => ({
-        //     id: item.id,
-        //     name: item.Name,
-        //     category: item.category || 'N/A',
-        //     status: item.Status__c || 'Pending',
-        //     createdBy: item.createdBy || 'N/A',
-        //     owner: item.assignedToName || 'Unassigned'
-        // }));
+        this.templateItemRows = items
+
 
         // Default to show all when first received
         this.filteredRows = [...this.templateItemRows];
@@ -161,8 +179,6 @@ this.templateItemRows = items
         }));
     }
 
-    handleEditTemplate(e){
 
-    }
-  
+
 }

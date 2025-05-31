@@ -2,7 +2,7 @@
   @description       : 
   @author            : ChangeMeIn@UserSettingsUnder.SFDoc
   @group             : 
-  @last modified on  : 05-27-2025
+  @last modified on  : 05-31-2025
   @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 -->
 <template>
@@ -19,9 +19,28 @@
 
         <!-- Right Group -->
         <div class="right-group slds-button-group" role="group">
-            <lightning-button-icon icon-name="utility:refresh" alternative-text="Refresh"></lightning-button-icon>
-            <lightning-button-icon icon-name="utility:archive" alternative-text="Archived"></lightning-button-icon>
-            <lightning-button-icon icon-name="utility:apps" alternative-text="Mortgage App"></lightning-button-icon>
+      <!-- Refresh Button -->
+        <lightning-button 
+            icon-name="utility:refresh" 
+            label="Refresh" 
+            onclick={handleRefreshClick} 
+            class="slds-m-right_small">
+        </lightning-button>
+
+        <!-- Archive Button -->
+        <lightning-button 
+            icon-name="utility:archive" 
+            label="Archived" 
+            onclick={handleArchiveClick} 
+            class="slds-m-right_small">
+        </lightning-button>
+
+        <!-- Mortgage App Button -->
+        <lightning-button 
+            icon-name="utility:apps" 
+            label="Mortgage App" 
+            onclick={handleMortgageAppClick}>
+        </lightning-button>
         </div>
     </div>
 
@@ -76,7 +95,10 @@
                     </td>
                     <td class="slds-p-around_medium slds-truncate" title={row.status}>{row.status}</td>
                     <td class="slds-p-around_medium slds-truncate" title={row.team}>{row.team}</td>
-                    <td class="slds-p-around_medium slds-truncate" title={row.owner}>{row.owner}</td>
+                    <td class="slds-p-around_medium slds-truncate" title={row.owner}>{row.assignedTo}
+
+                
+                    </td>
                   </tr>
                 </template>
               </tbody>

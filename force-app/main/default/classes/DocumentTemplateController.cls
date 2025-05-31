@@ -50,7 +50,10 @@ public with sharing class DocumentTemplateController {
         @AuraEnabled public String name;
         @AuraEnabled public String status;
         @AuraEnabled public String team;
+        @AuraEnabled public String objectName;
         @AuraEnabled public Id assignedToId;
+        @AuraEnabled public Id relatedTo;
+
     }
 
     /**
@@ -145,33 +148,78 @@ public with sharing class DocumentTemplateController {
     /**
      * Create a new single document.
      */
-    @AuraEnabled
-    public static GenericResponseWrapper createDocument(DocumentInputWrapper input) {
-        System.debug('--- START createDocument ---');
-        System.debug('Input: ' + JSON.serialize(input));
+@AuraEnabled
+public static DocumentItem createDocument(String inputJson) {
+    System.debug('--- START createDocument ---');
+    System.debug('Serialized Input JSON: ' + inputJson);
 
-        try {
-            if (input == null || input.categoryId == null || String.isBlank(input.name)) {
-                throw new AuraHandledException('Category and name are required.');
+    try {
+        // Deserialize input
+        DocumentInputWrapper input = (DocumentInputWrapper) JSON.deserialize(inputJson, DocumentInputWrapper.class);
+        System.debug('Deserialized Input: ' + JSON.serialize(input));
+
+        if (input == null || input.categoryId == null || String.isBlank(input.name)) {
+            throw new AuraHandledException('CategoryId and name are required.');
+        }
+
+        // Create the Document__c record
+        Document__c doc = new Document__c(
+            Name = input.name,
+            Category__c = input.categoryId,
+            Status__c = input.status,
+            Team__c = input.team,
+            Assigned_To__c = input.assignedToId
+        );
+        insert doc;
+        System.debug('Inserted Document: ' + doc.Id);
+
+        // Create the Document_Assignment__c junction record
+        if (input.objectName == 'Lead' || input.objectName == 'Opportunity') {
+            Document_Assignment__c assignment = new Document_Assignment__c();
+            assignment.Document__c = doc.Id;
+
+            if (input.objectName == 'Lead') {
+                assignment.Lead__c = input.assignedToId;
+                System.debug('Assigned to Lead: ' + input.assignedToId);
+            } else if (input.objectName == 'Loan') {
+                assignment.Loan__c = input.assignedToId;
+                System.debug('Assigned to Loan: ' + input.assignedToId);
             }
 
-            Document__c doc = new Document__c(
-                Name = input.name,
-                Category__c = input.categoryId,
-                Status__c = input.status,
-                Team__c = input.team,
-                Assigned_To__c = input.assignedToId
-            );
-            insert doc;
-            System.debug('Created document: ' + doc.Id);
-            return new GenericResponseWrapper(true, 'Document created successfully.');
-        } catch (Exception e) {
-            System.debug('ERROR in createDocument: ' + e.getMessage());
-            return new GenericResponseWrapper(false, 'Error: ' + e.getMessage());
-        } finally {
-            System.debug('--- END createDocument ---');
+            insert assignment;
+            System.debug('Inserted Assignment: ' + assignment.Id);
+        } else {
+            throw new AuraHandledException('Invalid objectName. Must be "Lead" or "Loan".');
         }
+
+        // Return enriched DocumentItem
+        Document__c fullDoc = [
+            SELECT Id, Name, Category__c, Status__c, Team__c, Assigned_To__c, OwnerId, Document_Template__c,
+                   Category__r.Name
+            FROM Document__c
+            WHERE Id = :doc.Id LIMIT 1
+        ];
+
+        DocumentItem item = new DocumentItem();
+        item.id = fullDoc.Id;
+        item.name = fullDoc.Name;
+        item.categoryId = fullDoc.Category__c;
+        item.status = fullDoc.Status__c;
+        item.team = fullDoc.Team__c;
+        item.assignedTo = String.valueOf(fullDoc.Assigned_To__c);
+        item.ownerId = fullDoc.OwnerId;
+        item.templateId = fullDoc.Document_Template__c;
+        item.categoryName = fullDoc.Category__r != null ? fullDoc.Category__r.Name : null;
+
+        return item;
+
+    } catch (Exception e) {
+        System.debug('ERROR in createDocument: ' + e.getMessage());
+        throw new AuraHandledException('Failed to create document: ' + e.getMessage());
+    } finally {
+        System.debug('--- END createDocument ---');
     }
+}
 
 
   /**
@@ -489,7 +537,19 @@ public static TemplateWrapper updateTemplateWithDocuments(
     }
 
     // === 1. Update Template Name ===
-    Doc_Template__c templateToUpdate = [SELECT Id, Name FROM Doc_Template__c WHERE Id = :templateId LIMIT 1];
+    Doc_Template__c templateToUpdate = [SELECT Id, Name, Category__r.Id, Category__r.Name  FROM Doc_Template__c WHERE Id = :templateId LIMIT 1];
+
+// Fetch the template and its parent category
+
+
+// Update parent category's name if it exists
+if (templateToUpdate.Category__r != null) {
+    Doc_Category__c parentCategory = new Doc_Category__c(
+        Id = templateToUpdate.Category__r.Id,
+        Name = newTemplateName
+    );
+    update parentCategory;
+}
 
     if (String.isNotBlank(newTemplateName) && newTemplateName != templateToUpdate.Name) {
         templateToUpdate.Name = newTemplateName;
@@ -614,6 +674,128 @@ public static TemplateWrapper createTemplateWithDocuments(
     return wrapper;
 }
 
+@AuraEnabled
+public static DocumentItem assignDocumentToRecord(Id documentId, Id recordId, String objectName) {
+    if (String.isBlank(documentId) || String.isBlank(recordId) || String.isBlank(objectName)) {
+        throw new AuraHandledException('Missing required parameters.');
+    }
+// Check if this document is already assigned to this record ID (Lead or Loan)
+    List<Document_Assignment__c> existingAssignments = [
+        SELECT Id FROM Document_Assignment__c
+        WHERE Document__c = :documentId AND (Lead__c = :recordId OR Loan__c = :recordId)
+        LIMIT 1
+    ];
+
+    if (!existingAssignments.isEmpty()) {
+        throw new AuraHandledException('This document is already assigned to the selected record.');
+    }
+    Document_Assignment__c assignment = new Document_Assignment__c();
+    assignment.Document__c = documentId;
+
+    if (objectName == 'Lead') {
+        assignment.Lead__c = recordId;
+    } else if (objectName == 'Opportunity') {
+        assignment.Loan__c = recordId; // assuming Loan__c relates to Opportunity
+    } else {
+        throw new AuraHandledException('Unsupported object: ' + objectName);
+    }
+
+    insert assignment;
+
+    // Fetch full document and related info for return
+    Document__c doc = [
+        SELECT Id, Name, Category__c, Status__c, Team__c, Assigned_To__c, OwnerId, Document_Template__c,
+               Category__r.Name
+        FROM Document__c
+        WHERE Id = :documentId
+        LIMIT 1
+    ];
+
+    DocumentItem result = new DocumentItem();
+    result.id = doc.Id;
+    result.name = doc.Name;
+    result.categoryId = doc.Category__c;
+    result.status = doc.Status__c;
+    result.team = doc.Team__c;
+    result.assignedTo = String.valueOf(doc.Assigned_To__c);
+    result.ownerId = doc.OwnerId;
+    result.templateId = doc.Document_Template__c;
+    result.categoryName = doc.Category__r != null ? doc.Category__r.Name : null;
+
+    System.Debug('result '+result);
+    return result;
+}
+
+
+// @AuraEnabled
+// public static void assignDocumentToRecord(Id documentId, Id recordId, String objectName) {
+//     if (String.isBlank(documentId) || String.isBlank(recordId) || String.isBlank(objectName)) {
+//         throw new AuraHandledException('Missing required parameters.');
+//     }
+
+//     Document_Assignment__c assignment = new Document_Assignment__c();
+//     assignment.Document__c = documentId;
+
+//     if (objectName == 'Lead') {
+//         assignment.Lead__c = recordId;
+//     } else if (objectName == 'Opportunity') {
+//         assignment.Loan__c = recordId; // assuming Loan__c is the custom field referring to Opportunity
+//     } else {
+//         throw new AuraHandledException('Unsupported object: ' + objectName);
+//     }
+
+//     insert assignment;
+// }
 
 	
+    /**
+     * Get all documents assigned to a specific record
+     * @param recordId The ID of the record (Lead, Account, etc.)
+     * @return List of DocumentItem wrappers
+     */
+    @AuraEnabled(cacheable=true)
+    public static List<DocumentItem> getAssignedDocuments(Id recordId) {
+            System.debug('recordId: '+recordId);
+
+        try {
+            if (recordId == null) {
+                throw new AuraHandledException('Record ID is required');
+            }
+
+            // Query document assignments for this record
+            List<Document_Assignment__c> assignments = [
+                SELECT Id, Document__c, Document__r.Name, Document__r.Category__c, 
+                       Document__r.Status__c, Document__r.Team__c, Document__r.Assigned_To__c,
+                       Document__r.OwnerId, Document__r.Document_Template__c,
+                       Document__r.Category__r.Name
+                FROM Document_Assignment__c
+                WHERE Loan__c = :recordId
+               
+            ];
+            System.debug('assignments: '+assignments);
+
+            // Transform to DocumentItem wrappers
+            List<DocumentItem> documentItems = new List<DocumentItem>();
+            for (Document_Assignment__c assignment : assignments) {
+                DocumentItem item = new DocumentItem();
+                item.id = assignment.Document__c;
+                item.name = assignment.Document__r.Name;
+                item.categoryId = assignment.Document__r.Category__c;
+                item.status = assignment.Document__r.Status__c;
+                item.team = assignment.Document__r.Team__c;
+                item.assignedTo = UserInfo.getUserId();
+                // item.assignedTo = assignment.Document__r.Assigned_To__r.Name;
+                item.ownerId = assignment.Document__r.OwnerId;
+                item.templateId = assignment.Document__r.Document_Template__c;
+                item.categoryName = assignment.Document__r.Category__r.Name;
+                
+                documentItems.add(item);
+            }
+            System.debug('documentItems: '+documentItems);
+            return documentItems;
+        } catch (Exception e) {
+            System.debug('Error fetching assigned documents: ' + e.getMessage() + '\n' + e.getStackTraceString());
+            throw new AuraHandledException('Error fetching assigned documents: ' + e.getMessage());
+        }
+    }
 }
