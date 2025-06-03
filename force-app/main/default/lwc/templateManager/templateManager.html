@@ -2,7 +2,7 @@
   @description       : 
   @author            : ChangeMeIn@UserSettingsUnder.SFDoc
   @group             : 
-  @last modified on  : 05-31-2025
+  @last modified on  : 06-02-2025
   @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 -->
 <template>
@@ -12,13 +12,20 @@
        <lightning-icon
               icon-name="utility:add"
               size="x-small"
-            
+              class="plus-icon"
              >
             </lightning-icon>
             Template
     </button>
-    <button class="template-button no-radius-left" onclick={handleAddDocument}>
-      ▼
+    <button class="template-button no-radius-right" onclick={handleAddDocument} style="margin-left: 10px;">
+      <!-- ▼ -->
+       <lightning-icon
+              icon-name="utility:add"
+              size="x-small"
+              class="plus-icon"
+             >
+            </lightning-icon>
+            Document
     </button>
   </div>
 
