@@ -2,7 +2,7 @@
   @description       : LWC component for managing document and template selection
   @author            : ChangeMeIn@UserSettingsUnder.SFDoc
   @group             : 
-  @last modified on  : 06-04-2025
+  @last modified on  : 06-05-2025
   @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 -->
 <template>
@@ -53,6 +53,13 @@
           </button>
         </li>
       </template>
+
+      <!-- Hardcoded New Document Option -->
+      <li class="dropdown-item template-line">
+        <span onclick={handleAddNewCategory}>
+          New
+        </span>
+      </li>
     </ul>
 
    <!-- Sub-items for selected category -->
@@ -83,6 +90,7 @@
   <template if:true={isTemplateDropdownOpen}>
     <ul class="dropdown-list right">
       <!-- Loop through template categories -->
+      <!-- <template for:each={wiredTemplateCategoriesResult} for:item="template"> -->
       <template for:each={templateCategoryOptions} for:item="template">
         <li class="dropdown-item template-line" key={template.categoryId}>
           <span
@@ -113,7 +121,7 @@
       <!-- Hardcoded Custom Template Option -->
       <li class="dropdown-item template-line">
         <span onclick={handleAddNewTemplate}>
-          Custom
+          New
         </span>
       </li>
     </ul>
@@ -192,7 +200,7 @@
         </footer>
       </div>
     </section>
-    <div class="slds-backdrop slds-backdrop_open"></div>
+    <!-- <div class="slds-backdrop slds-backdrop_open"></div> -->
   </template>
 
   <!-- Spinner -->
@@ -256,6 +264,47 @@
         </footer>
       </div>
     </section>
-    <div class="slds-backdrop slds-backdrop_open"></div>
+    <!-- <div class="slds-backdrop slds-backdrop_open"></div> -->
   </template>
+
+  <!-- ------------------------------------- -->
+<!-- New Document Category Modal -->
+<!-- ------------------------------------- -->
+<template if:true={showNewCategoryModal}>
+  <section role="dialog" class="slds-modal slds-fade-in-open custom-themed-modal">
+    <div class="slds-modal__container custom-modal-container">
+      <!-- Modal Header -->
+      <header class="slds-modal__header custom-header">
+        <h2 class="slds-modal__title">New Document Category</h2>
+        <button class="slds-button slds-button_icon slds-modal__close" title="Close" onclick={closeNewCategoryModal}>
+          <lightning-icon icon-name="utility:close" alternative-text="Close" size="small"></lightning-icon>
+        </button>
+      </header>
+
+      <!-- Modal Body -->
+      <div class="slds-modal__content slds-p-around_medium">
+        <lightning-input
+          label="Category Name"
+          value={newCategoryName}
+          onchange={handleNewCategoryInput}
+          required
+          class="custom-input"
+        ></lightning-input>
+        <lightning-textarea
+          label="Description (optional)"
+          value={newCategoryDescription}
+          onchange={handleNewCategoryDescriptionInput}
+          class="custom-input slds-m-top_small"
+        ></lightning-textarea>
+      </div>
+
+      <!-- Modal Footer -->
+      <footer class="slds-modal__footer custom-footer">
+        <lightning-button variant="neutral" label="Cancel" onclick={closeNewCategoryModal}></lightning-button>
+        <lightning-button variant="brand" label="Create" onclick={createNewCategory}></lightning-button>
+      </footer>
+    </div>
+  </section>
+</template>
+
 </template>

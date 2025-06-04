@@ -255,18 +255,22 @@ export default class CustomTaskManager extends LightningElement {
     handleDeleteArchived(event) {
         console.log('handleDeleteArchived: ', event.currentTarget);
         const documentId = event.currentTarget.dataset.id;
+        const name = event.currentTarget.dataset.name;
+        console.log('documentId: ', documentId);
+        console.log('name: ', name);
+
         const recordId = this.recordId;
         const objectName = this.objectName;
 
-        deleteDocumentAssignments({ documentIds :[documentId], recordId, objectName })
+        deleteArchivedAssignments({ documentIds :[documentId], recordId, objectName })
             .then(() => {
                 // Remove from archived list
                 this.archivedList = [...this.archivedList.filter(doc => doc.id !== documentId)];
-                this.masterDocumentList = this.masterDocumentList.filter(doc => doc.id !== documentId);
+                // this.masterDocumentList = this.masterDocumentList.filter(doc => doc.id !== documentId);
                 this.dispatchEvent(
                     new ShowToastEvent({
                         title: 'Deleted',
-                        message: 'Archived document deleted.',
+                        message: 'Archived document '+name+' deleted.',
                         variant: 'success'
                     })
                 );
@@ -288,6 +292,7 @@ export default class CustomTaskManager extends LightningElement {
     // -------------------------------------
     handleArchiveRecord(event) {
         const documentId = event.currentTarget.dataset.id;
+        const name = event.currentTarget.dataset.name;
         console.log('handleArchiveRecord: ', documentId);
 
         archiveDocumentAssignment({ documentId, recordId: this.recordId })
@@ -304,7 +309,7 @@ export default class CustomTaskManager extends LightningElement {
                 this.dispatchEvent(
                     new ShowToastEvent({
                         title: 'Archived',
-                        message: 'Document archived successfully.',
+                        message: name+' archived successfully.',
                         variant: 'info'
                     })
                 );
@@ -332,6 +337,7 @@ export default class CustomTaskManager extends LightningElement {
     // -------------------------------------
     handleRestoreArchived(event) {
         const documentId = event.currentTarget.dataset.id;
+        const name = event.currentTarget.dataset.name;
             
          console.log('documentId: ', documentId);
          console.log('recordId: ', this.recordId);
@@ -351,12 +357,12 @@ export default class CustomTaskManager extends LightningElement {
             console.log('handleRestoreArchived: masterDocumentList:', this.masterDocumentList);
                 // console.log('handleRestoreArchived:');
                 
-                return refreshApex(this.wiredDocumentResult);
+                // return refreshApex(this.wiredDocumentResult);
             })
             .then(() => {
                 this.dispatchEvent(new ShowToastEvent({
                     title: 'Success',
-                    message: 'Document restored successfully.',
+                    message: name+' restored successfully.',
                     variant: 'success'
                 }));
             })
@@ -413,27 +419,52 @@ export default class CustomTaskManager extends LightningElement {
 
     // -------------------------------------
     // 22. Getter for Grouping Documents by Status
-    // -------------------------------------
-    get groupedByStatus() {
-        const groups = {};
-        const archivedIds = new Set((this.archivedList || []).map(item => item.id));
+    // // -------------------------------------
+    // get groupedByStatus() {
+    //     const groups = {};
+    //     const archivedIds = new Set((this.archivedList || []).map(item => item.id));
 
-        (this.masterDocumentList || [])
-            .filter(item => item && !archivedIds.has(item.id)) // Exclude archived
-            .forEach(item => {
-                const status = item.status || 'General';
-                if (!groups[status]) {
-                    groups[status] = [];
-                }
-                groups[status].push({ ...item });
-            });
+    //     (this.masterDocumentList || [])
+    //         .filter(item => item && !archivedIds.has(item.id)) // Exclude archived
+    //         .forEach(item => {
+    //             const status = item.status || 'General';
+    //             if (!groups[status]) {
+    //                 groups[status] = [];
+    //             }
+    //             groups[status].push({ ...item });
+    //         });
 
-        return Object.entries(groups).map(([status, items]) => ({
-            status,
-            items
-        }));
-    }
+    //     return Object.entries(groups).map(([status, items]) => ({
+    //         status,
+    //         items
+    //     }));
+    // }
 
+    // If categories use IDs
+get groupedByStatus() {
+    const groups = {};
+    const archivedIds = new Set((this.archivedList || []).map(item => item.id));
+
+    let filteredDocuments = (this.masterDocumentList || []).filter(item => {
+        if (!item) return false;
+        if (archivedIds.has(item.id)) return false;
+        if (this.selectedCategories.length === 0) return true;
+        return this.selectedCategories.includes(item.Category__c); // Use Category__c ID
+    });
+
+    filteredDocuments.forEach(item => {
+        const status = item.status || 'General';
+        if (!groups[status]) {
+            groups[status] = [];
+        }
+        groups[status].push({ ...item });
+    });
+
+    return Object.entries(groups).map(([status, items]) => ({
+        status,
+        items
+    }));
+}
     // -------------------------------------
     // 23. Getter for Grouping with Ready to Send Flag
     // -------------------------------------
@@ -466,16 +497,53 @@ export default class CustomTaskManager extends LightningElement {
     // -------------------------------------
     // 27. Handler for Email Button Click
     // -------------------------------------
-    handleEmailClick() {
-        sendReadyToSendDocuments()
-            .then((result) => {
-                console.log('email send: ', JSON.stringify(result));
-            })
-            .catch((error) => {
-                console.error('Send Email Error: ', error);
-            });
-    }
+  handleEmailClick(event) {
+    const groupId = event.target.dataset.groupId;
+    console.log('groupId:', groupId);
 
+    // Check if the clicked group is 'Ready to Send'
+    if (groupId === 'Ready to Send') {
+        // Filter documents from masterDocumentList with 'Ready to Send' status
+        const readyToSendDocumentIds = (this.masterDocumentList || [])
+            .filter(doc => doc && doc.status === 'Ready to Send')
+            .map(doc => doc.id);
+
+        console.log('masterDocumentList:', JSON.stringify(this.masterDocumentList));
+        console.log('readyToSendDocumentIds:', JSON.stringify(readyToSendDocumentIds));
+        console.log('groupedByStatusWithReadyToSend:', this.groupedByStatusWithReadyToSend);
+
+        if (readyToSendDocumentIds.length > 0) {
+            sendReadyToSendDocuments({ documentIds: readyToSendDocumentIds })
+                .then(() => {
+                    this.dispatchEvent(new ShowToastEvent({
+                        title: 'Success',
+                        message: 'Email Sent!',
+                        variant: 'success'
+                    }));
+                })
+                .catch(error => {
+                    console.error('Send Email Error: ', error);
+                    this.dispatchEvent(new ShowToastEvent({
+                        title: 'Error',
+                        message: 'Failed to send emails.',
+                        variant: 'error'
+                    }));
+                });
+        } else {
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Warning',
+                message: 'No documents with Ready to Send status found.',
+                variant: 'warning'
+            }));
+        }
+    } else {
+        this.dispatchEvent(new ShowToastEvent({
+            title: 'Info',
+            message: 'Please select the Ready to Send group to send emails.',
+            variant: 'info'
+        }));
+    }
+}
     // -------------------------------------
     // 28. Handler to Close Email Popover
     // -------------------------------------
@@ -522,7 +590,9 @@ export default class CustomTaskManager extends LightningElement {
     // -------------------------------------
     handleCategoryClick(event) {
         const clickedCategory = event.currentTarget.dataset.name;
-
+        console.log('clickedCategory: ',clickedCategory);
+        console.log('selectedCategories: ',this.selectedCategories);
+        
         if (clickedCategory === 'Reset') {
             this.selectedCategories = [];
         } else {

@@ -346,3 +346,73 @@
 tr.slds-hint-parent:hover {
   background-color: #f4f6f9;
 }
+.empty-archive-message {
+  background: #f0faf8;
+  border: 1px solid #d2f1eb;
+  border-radius: 0.75rem;
+  color: #4a8076;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.icon-greenblue lightning-icon {
+  --slds-c-icon-color-foreground-default: #28a196;
+}
+
+.text-muted {
+  color: #4a8076;
+}
+.slds-modal__content{
+  background: white;
+box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;}
+
+.custom-themed-table th {
+  font-size: 0.75rem;
+  color: #17696a;
+  text-transform: uppercase;
+  background-color: #f0fbfb;
+  padding: 0.75rem;
+  border-bottom: 1px solid #d9f0ef;
+}
+
+.custom-themed-table td {
+  font-size: 0.875rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid #f0f0f0;
+  background-color: #ffffff;
+}
+
+.custom-badge {
+  display: inline-block;
+  background-color: #d5f4f3;
+  color: #17696a;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.action-icon {
+  margin-left: 0.5rem;
+  --slds-c-icon-color-foreground-default: #5e6d70;
+  transition: transform 0.1s ease-in-out;
+}
+
+.archive-icon:hover {
+  --slds-c-icon-color-foreground-default: #22a699;
+  transform: scale(1.1);
+}
+
+.delete-icon:hover {
+  --slds-c-icon-color-foreground-default: #c23934;
+  transform: scale(1.1);
+}
+
+.send-email-button {
+  background-color: #17696a;
+  border: none;
+  --slds-c-button-text-color: white;
+}

@@ -62,7 +62,7 @@ public with sharing class DocumentTemplateController {
 
         // 1.1.12 Fetch enriched document details
         Document__c fullDoc = [
-            SELECT Id, Name, Category__c, Status__c, Team__c, Assigned_To__c, OwnerId, Document_Template__c,
+            SELECT Id, Name, Category__c, Status__c, Team__c, Assigned_To__c,Assigned_To__r.Name, OwnerId, Document_Template__c,
                    Category__r.Name
             FROM Document__c
             WHERE Id = :doc.Id LIMIT 1
@@ -75,7 +75,7 @@ public with sharing class DocumentTemplateController {
         item.categoryId = fullDoc.Category__c;
         item.status = fullDoc.Status__c;
         item.team = fullDoc.Team__c;
-        item.assignedTo = String.valueOf(fullDoc.Assigned_To__c);
+        item.assignedTo = String.valueOf(fullDoc.Assigned_To__r.Name);
         item.ownerId = fullDoc.OwnerId;
         item.templateId = fullDoc.Document_Template__c;
         item.categoryName = fullDoc.Category__r != null ? fullDoc.Category__r.Name : null;
@@ -848,6 +848,37 @@ public static List<DocumentItem> restoreArchivedAssignments(List<Id> documentIds
     }
 
     // ==================== Section 4: Category and Template Retrieval Methods ====================
+/**
+ * Creates a new Document Category.
+ * @param name The name of the category to create
+ * @return The created DocumentCategory wrapper
+ */
+@AuraEnabled
+public static DocumentCategory createDocumentCategory(String name) {
+    if (String.isBlank(name)) {
+        throw new AuraHandledException('Category name cannot be empty.');
+    }
+
+    try {
+        // Create new category record
+        Doc_Category__c newCategory = new Doc_Category__c(
+            Name = name,
+            Type__c = 'Document' // Assuming you want to hardcode this as in your query
+        );
+
+        insert newCategory;
+
+        // Wrap the created record and return
+        DocumentCategory result = new DocumentCategory();
+        result.id = newCategory.Id;
+        result.name = newCategory.Name;
+
+        return result;
+    } catch (Exception ex) {
+        System.debug('Error creating document category: ' + ex.getMessage());
+        throw new AuraHandledException('Failed to create document category: ' + ex.getMessage());
+    }
+}
 
     /**
      * 4.1 Fetches all categories with Type = 'Document' and returns them with camelCase fields.
@@ -886,7 +917,7 @@ public static List<DocumentItem> restoreArchivedAssignments(List<Id> documentIds
      * 4.2 Fetches all categories with Type = 'Template' and their associated single template.
      * @return List of TemplateCategory wrappers
      */
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled(cacheable=false)
     public static List<TemplateCategory> getTemplateCategories() {
         try {
             // 4.2.1 Log method entry
@@ -969,105 +1000,81 @@ public static List<DocumentItem> restoreArchivedAssignments(List<Id> documentIds
      * 5.1 Sends emails for documents with status 'Ready to Send' using a hardcoded email template.
      * @return GenericResponseWrapper indicating success or failure
      */
-    @AuraEnabled
-    public static GenericResponseWrapper sendReadyToSendDocuments() {
-        // 5.1.1 Define email template ID
-        Id templateId = '00X7z00000BMuYIEA1'; // Replace with your actual template Id
-        System.debug(LoggingLevel.INFO, '5.1.2 Email Template Id: ' + templateId);
-        
-        // 5.1.3 Verify template exists
-        EmailTemplate template = [SELECT Id, Name, IsActive FROM EmailTemplate WHERE Id = :templateId LIMIT 1];
-        if (template == null || !template.IsActive) {
-            System.debug(LoggingLevel.ERROR, '5.1.4 Invalid or inactive email template: ' + templateId);
-            return new GenericResponseWrapper(false, 'Invalid or inactive email template.');
-        }
-        
-        // 5.1.5 Fetch documents with 'Ready to Send' status
-        List<Document__c> documents = [
-            SELECT Id, Name, Status__c, Related_Contact__c
-            FROM Document__c
-            WHERE Status__c = 'Ready to Send'
-        ];
-        
-        System.debug(LoggingLevel.INFO, '5.1.6 Fetched ' + documents.size() + ' document(s) with status "Ready to Send".');
-        
-        // 5.1.7 Check if documents exist
-        if (documents.isEmpty()) {
-            System.debug(LoggingLevel.WARN, '5.1.8 No documents with status "Ready to Send" found.');
-            return new GenericResponseWrapper(false, 'No documents with status "Ready to Send" found.');
-        }
+  @AuraEnabled
+public static GenericResponseWrapper sendReadyToSendDocuments(List<Id> documentIds) {
+    if (documentIds == null || documentIds.isEmpty()) {
+        return new GenericResponseWrapper(false, 'No document IDs provided.');
+    }
 
-        List<Messaging.SingleEmailMessage> emails = new List<Messaging.SingleEmailMessage>();
-        Set<Id> assignedIds = new Set<Id>();
-        
-        // 5.1.9 Collect contact IDs
-        for (Document__c doc : documents) {
-            if (doc.Related_Contact__c != null) {
-                assignedIds.add(doc.Related_Contact__c);
-            }
-        }
-        
-        // 5.1.10 Fetch email addresses
-        Map<Id, String> assignedEmails = new Map<Id, String>();
-        if (!assignedIds.isEmpty()) {
-            for (User u : [SELECT Id, Email FROM User WHERE Id IN :assignedIds AND Email != NULL]) {
-                assignedEmails.put(u.Id, u.Email);
-            }
-            for (Contact c : [SELECT Id, Email FROM Contact WHERE Id IN :assignedIds AND Email != NULL]) {
-                assignedEmails.put(c.Id, c.Email);
-            }
-            for (Lead l : [SELECT Id, Email FROM Lead WHERE Id IN :assignedIds AND Email != NULL]) {
-                assignedEmails.put(l.Id, l.Email);
-            }
-        }
-        
-        System.debug(LoggingLevel.INFO, '5.1.11 Assigned Emails Map: ' + assignedEmails);
-        
-        // 5.1.12 Prepare emails
-        for (Document__c doc : documents) {
-            System.debug(LoggingLevel.INFO, '5.1.13 Processing document: ' + doc.Name + ' (ID: ' + doc.Id + ')');
-            
-            if (doc.Related_Contact__c != null && assignedEmails.containsKey(doc.Related_Contact__c)) {
-                String emailAddress = assignedEmails.get(doc.Related_Contact__c);
-                System.debug(LoggingLevel.INFO, '5.1.14 Assigned to (ID: ' + doc.Related_Contact__c + ') with email: ' + emailAddress);
-                
-                Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
-                mail.setTargetObjectId(doc.Related_Contact__c);
-                mail.setTemplateId(templateId);
-                mail.setSaveAsActivity(true);
-                emails.add(mail);
-            } else {
-                System.debug(LoggingLevel.WARN, '5.1.15 No valid email address found for document: ' + doc.Name + ' (ID: ' + doc.Id + ')');
-            }
-        }
+    List<Document__c> documents = [
+        SELECT Id, Name, Status__c, Related_Contact__c 
+        FROM Document__c
+        WHERE Id IN :documentIds AND Status__c = 'Ready to Send'
+    ];
 
-        // 5.1.16 Check if emails are prepared
-        if (emails.isEmpty()) {
-            System.debug(LoggingLevel.WARN, '5.1.17 No valid recipients found on Ready to Send documents.');
-            return new GenericResponseWrapper(false, 'No valid recipients found on Ready to Send documents.');
-        }
+    if (documents.isEmpty()) {
+        return new GenericResponseWrapper(false, 'No documents with status "Ready to Send" found for given IDs.');
+    }
 
-        // 5.1.18 Send emails with error handling
-        try {
-            Messaging.SendEmailResult[] results = Messaging.sendEmail(emails, false);
-            Integer successCount = 0;
-            for (Messaging.SendEmailResult result : results) {
-                if (result.isSuccess()) {
-                    successCount++;
-                    System.debug(LoggingLevel.INFO, '5.1.19 Email sent successfully to: ' + result);
-                } else {
-                    for (Messaging.SendEmailError err : result.getErrors()) {
-                        System.debug(LoggingLevel.ERROR, '5.1.20 Email error for recipient ID ' + err.getTargetObjectId() + ': ' + err.getMessage());
-                    }
-                }
-            }
-            System.debug(LoggingLevel.INFO, '5.1.21 ' + successCount + ' email(s) sent successfully.');
-            return new GenericResponseWrapper(true, successCount + ' email(s) sent using the hardcoded template.');
-        } catch (Exception e) {
-            System.debug(LoggingLevel.ERROR, '5.1.22 Exception in sendEmail: ' + e.getMessage());
-            return new GenericResponseWrapper(false, 'Error sending emails: ' + e.getMessage());
+    // Collect related contact/user/lead IDs
+    Set<Id> contactIds = new Set<Id>();
+    for (Document__c doc : documents) {
+        if (doc.Related_Contact__c != null) {
+            contactIds.add(doc.Related_Contact__c);
         }
     }
+
+    Map<Id, String> emailMap = new Map<Id, String>();
+    for (User u : [SELECT Id, Email FROM User WHERE Id IN :contactIds AND Email != NULL]) {
+        emailMap.put(u.Id, u.Email);
+    }
+    for (Contact c : [SELECT Id, Email FROM Contact WHERE Id IN :contactIds AND Email != NULL]) {
+        emailMap.put(c.Id, c.Email);
+    }
+    for (Lead l : [SELECT Id, Email FROM Lead WHERE Id IN :contactIds AND Email != NULL]) {
+        emailMap.put(l.Id, l.Email);
+    }
+
+    List<Messaging.SingleEmailMessage> emailsToSend = new List<Messaging.SingleEmailMessage>();
+
+    for (Document__c doc : documents) {
+        Id recipientId = doc.Related_Contact__c;
+        if (recipientId != null && emailMap.containsKey(recipientId)) {
+            String htmlBody = '<p>Dear Customer,</p>';
+            htmlBody += '<p>The following document is ready for your review:</p>';
+            htmlBody += '<table border="1" cellpadding="5" cellspacing="0">';
+            htmlBody += '<tr><th>Name</th></tr>';
+            htmlBody += '<tr><td>' + doc.Name + '</td></tr>';
+            htmlBody += '</table>';
+            htmlBody += '<p>Thank you,<br/>Your Company</p>';
+
+            Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+            email.setTargetObjectId(recipientId);
+            email.setSaveAsActivity(true);
+            email.setSubject('Your Document is Ready to Review');
+            email.setHtmlBody(htmlBody);
+
+            emailsToSend.add(email);
+        }
+    }
+    System.Debug('emailsToSend: '+emailsToSend);
+    if (emailsToSend.isEmpty()) {
+        return new GenericResponseWrapper(false, 'No valid recipients with email found.');
+    }
+
+    try {
+        Messaging.SendEmailResult[] results = Messaging.sendEmail(emailsToSend, false);
+        Integer successCount = 0;
+        for (Messaging.SendEmailResult res : results) {
+            if (res.isSuccess()) successCount++;
+        }
+
+        return new GenericResponseWrapper(true, successCount + ' email(s) sent successfully.');
+    } catch (Exception ex) {
+        return new GenericResponseWrapper(false, 'Failed to send emails. Error: ' + ex.getMessage());
+    }
+}
+
 
     // ==================== Section 6: Wrapper Classes ====================
 

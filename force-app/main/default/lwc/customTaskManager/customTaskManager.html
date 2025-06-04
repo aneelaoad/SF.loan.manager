@@ -2,7 +2,7 @@
   @description       : 
   @author            : ChangeMeIn@UserSettingsUnder.SFDoc
   @group             : 
-  @last modified on  : 06-04-2025
+  @last modified on  : 06-05-2025
   @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 -->
 <template>
@@ -24,13 +24,16 @@
       <!-- Right Button Group -->
       <div class="right-group slds-button-group" role="group">
         <!-- Refresh Button -->
-        <lightning-button icon-name="utility:refresh" label="Refresh" onclick={handleRefreshClick} class="slds-m-right_small"></lightning-button>
+        <lightning-button icon-name="utility:refresh" label="Refresh" onclick={handleRefreshClick}
+          class="slds-m-right_small"></lightning-button>
 
         <!-- Archive Button -->
-        <lightning-button icon-name="utility:archive" label="Archived" onclick={handleArchiveClick} class="slds-m-right_small"></lightning-button>
+        <lightning-button icon-name="utility:archive" label="Archived" onclick={handleArchiveClick}
+          class="slds-m-right_small"></lightning-button>
 
         <!-- Mortgage App Button -->
-        <lightning-button icon-name="utility:apps" label="Mortgage App" onclick={handleMortgageAppClick}></lightning-button>
+        <lightning-button icon-name="utility:apps" label="Mortgage App"
+          onclick={handleMortgageAppClick}></lightning-button>
       </div>
     </div>
 
@@ -50,7 +53,7 @@
 
           <!-- Modal Body -->
           <div class="slds-modal__content slds-p-around_medium custom-modal-content">
-            <template if:true={archivedList}>
+            <template if:true={archivedList.length}>
               <template for:each={archivedList} for:item="archived">
                 <div key={archived.id} class="archived-row slds-p-around_x-small slds-box slds-theme_shade">
                   <div class="slds-grid slds-wrap slds-grid_align-spread slds-grid_vertical-align-center">
@@ -59,28 +62,38 @@
                       <span class="slds-text-body_small slds-m-left_small">({archived.status})</span>
                     </div>
                     <div class="slds-col slds-size_1-of-3 slds-text-align_right">
-                      <lightning-button variant="brand-outline" label="Restore" data-id={archived.id} onclick={handleRestoreArchived} class="slds-m-right_x-small"></lightning-button>
-                      <lightning-button variant="destructive" label="Delete" data-id={archived.id} onclick={handleDeleteArchived}></lightning-button>
+                      <lightning-button variant="brand-outline" label="Restore" data-id={archived.id}
+                        onclick={handleRestoreArchived} data-name={archived.name} class="slds-m-right_x-small"></lightning-button>
+                      <lightning-button variant="destructive" label="Delete" data-id={archived.id}
+                        onclick={handleDeleteArchived} data-name={archived.name}></lightning-button>
                     </div>
                   </div>
                 </div>
               </template>
             </template>
-            <template if:false={archivedList}>
-              <p class="slds-text-color_weak slds-text-align_center">No archived documents.</p>
+            <template if:false={archivedList.length}>
+              <div class="empty-archive-message slds-p-around_medium slds-m-around_medium slds-align_absolute-center">
+                <lightning-icon icon-name="utility:archive" alternative-text="No Archives" size="small"
+                  class="icon-greenblue slds-m-right_small">
+                </lightning-icon>
+                <p class="slds-text-heading_small slds-text-align_center text-muted">No archived documents.</p>
+              </div>
             </template>
+
           </div>
 
           <!-- Modal Footer -->
           <footer class="slds-modal__footer custom-footer">
-            <lightning-button variant="destructive" label="Delete All" onclick={handleDeleteAllArchived} icon-name="utility:delete" icon-position="left"></lightning-button>
-            <lightning-button variant="brand-outline" label="Restore All" onclick={handleRestoreAllArchived} icon-name="utility:refresh" icon-position="left" class="slds-m-left_small"></lightning-button>
+            <lightning-button variant="destructive" label="Delete All" onclick={handleDeleteAllArchived}
+              icon-name="utility:delete" icon-position="left"></lightning-button>
+            <lightning-button variant="brand-outline" label="Restore All" onclick={handleRestoreAllArchived}
+              icon-name="utility:refresh" icon-position="left" class="slds-m-left_small"></lightning-button>
           </footer>
         </div>
       </section>
 
       <!-- Backdrop for Modal -->
-      <div class="slds-backdrop slds-backdrop_open"></div>
+      <!-- <div class="slds-backdrop slds-backdrop_open"></div> -->
     </template>
 
     <!-- ------------------------------------- -->
@@ -91,7 +104,8 @@
       <template for:each={categoryList} for:item="cat">
         <div key={cat.name} class="filter-chip slds-m-right_small" onclick={handleCategoryClick} data-name={cat.name}>
           <template if:true={cat.isReset}>
-            <lightning-icon icon-name={cat.icon} size="x-small" class="refresh-icon" alternative-text="Reset Filters"></lightning-icon>
+            <lightning-icon icon-name={cat.icon} size="x-small" class="refresh-icon"
+              alternative-text="Reset Filters"></lightning-icon>
           </template>
           <template if:false={cat.isReset}>
             <span class={cat.circleClass}></span>
@@ -102,56 +116,84 @@
     </div>
   </div>
 
-  <!-- ------------------------------------- -->
-  <!-- 04. Table Section for Document Display -->
-  <!-- ------------------------------------- -->
-  <div class="slds-p-horizontal_medium">
-    <template if:false={isEmpty}>
-      <lightning-accordion allow-multiple-sections-open active-section-name={statusKeys}>
-        <template for:each={groupedByStatusWithReadyToSend} for:item="group">
-          <lightning-accordion-section key={group.status} name={group.status} label={group.status}>
-            <div class="custom-table-wrapper slds-p-around_medium">
-              <table class="slds-table slds-table_cell-buffer slds-table_bordered elegant-table">
-                <thead>
-                  <tr class="slds-text-title_caps slds-text-color_weak">
-                    <th class="slds-p-around_medium head">Name</th>
-                    <th class="slds-p-around_medium head">Category</th>
-                    <th class="slds-p-around_medium head">Status</th>
-                    <th class="slds-p-around_medium head">Team</th>
-                    <th class="slds-p-around_medium head">Owner</th>
+ <!-- ------------------------------------- -->
+<!-- 04. Minimalist Document Table Section -->
+<!-- ------------------------------------- -->
+<div class="slds-p-horizontal_medium">
+  <template if:false={isEmpty}>
+    <lightning-accordion allow-multiple-sections-open active-section-name={statusKeys}>
+      <template for:each={groupedByStatusWithReadyToSend} for:item="group">
+        <lightning-accordion-section key={group.status} name={group.status} label={group.status}>
+          <div class="custom-table-wrapper slds-p-around_medium">
+            <table class="slds-table slds-table_cell-buffer custom-themed-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Category</th>
+                  <th>Status</th>
+                  <th>Team</th>
+                  <th>Owner</th>
+                  <th class="slds-text-align_right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={group.items} for:item="row">
+                  <tr key={row.id}>
+                    <td class="slds-truncate" title={row.name}>{row.name}</td>
+                    <td>
+                      <span class="custom-badge">{row.categoryName}</span>
+                    </td>
+                    <td class="slds-truncate" title={row.status}>{row.status}</td>
+                    <td class="slds-truncate" title={row.team}>{row.team}</td>
+                    <td class="slds-truncate" title={row.assignedTo}>{row.assignedTo}</td>
+                    <td class="slds-text-align_right">
+                      <lightning-button-icon
+                        icon-name="utility:archive"
+                        alternative-text="Archive"
+                        onclick={handleArchiveRecord}
+                        data-id={row.id}
+                        data-name={row.name}
+                        variant="bare"
+                        class="action-icon archive-icon"
+                      ></lightning-button-icon>
+                     
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  <template for:each={group.items} for:item="row">
-                    <tr key={row.id} class="elegant-row">
-                      <td class="slds-p-around_medium slds-truncate" title={row.name}>{row.name}</td>
-                      <td class="slds-p-around_medium">
-                        <span class="elegant-badge">{row.categoryName}</span>
-                      </td>
-                      <td class="slds-p-around_medium slds-truncate" title={row.status}>
-                        {row.status}
-                      </td>
-                      <td class="slds-p-around_medium slds-truncate" title={row.team}>{row.team}</td>
-                      <td class="slds-p-around_medium slds-truncate" title={row.owner}>
-                        {row.assignedTo}
-                        <lightning-button-icon icon-name="utility:delete" alternative-text="Delete" onclick={handleDelete} data-id={row.id} class="delete-button-red" variant="bare"></lightning-button-icon>
-                        <lightning-button-icon icon-name="utility:archive" alternative-text="Archive" onclick={handleArchiveRecord} data-id={row.id} class="archive-button-green" variant="bare"></lightning-button-icon>
-                      </td>
-                    </tr>
-                  </template>
-                </tbody>
-              </table>
+                </template>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Email Button for Ready to Send Group -->
+          <template if:true={group.isReadyToSend}>
+            <div class="slds-m-top_medium slds-text-align_right">
+              <lightning-button
+    label="Send Email"
+    title="Send Email"
+    icon-name="utility:email"
+    icon-position="left"
+    onclick={handleEmailClick}
+    data-group-id={group.status}
+    class="send-email-button"
+    variant="brand"
+></lightning-button>
+
+              <!-- <lightning-button
+                label="Send Email"
+                title="Send Email"
+                icon-name="utility:email"
+                icon-position="left"
+                onclick={handleEmailClick}
+                class="send-email-button"
+                variant="brand"
+              ></lightning-button> -->
             </div>
-            <!-- Email Button for Ready to Send Group -->
-            <template if:true={group.isReadyToSend}>
-              <div class="slds-m-top_medium">
-                <lightning-button label="Send Email" title="Send Email" icon-name="utility:email" icon-position="left" onclick={handleEmailClick} class="send-email-button slds-m-left_small" variant="brand"></lightning-button>
-              </div>
-            </template>
-          </lightning-accordion-section>
-        </template>
-      </lightning-accordion>
-    </template>
+          </template>
+        </lightning-accordion-section>
+      </template>
+    </lightning-accordion>
+  </template>
+
 
     <!-- ------------------------------------- -->
     <!-- 05. Email Popover Section -->
@@ -202,16 +244,21 @@
           <div class="slds-grid slds-wrap slds-gutters">
             <!-- Left Column -->
             <div class="slds-col slds-size_1-of-2">
-              <lightning-combobox label="Document Category" value={selectedDocumentCategory} options={documentCategoryOptions} onchange={handleDocumentCategoryChange} class="custom-input"></lightning-combobox>
-              <lightning-input label="Name" value={modalTemplateName} onchange={handleModalInputChange} required class="custom-input"></lightning-input>
+              <lightning-combobox label="Document Category" value={selectedDocumentCategory}
+                options={documentCategoryOptions} onchange={handleDocumentCategoryChange}
+                class="custom-input"></lightning-combobox>
+              <lightning-input label="Name" value={modalTemplateName} onchange={handleModalInputChange} required
+                class="custom-input"></lightning-input>
             </div>
             <!-- Right Column -->
             <div class="slds-col slds-size_1-of-2">
-              <lightning-combobox label="Status" value={modalStatus} options={statusOptions} onchange={handleStatusChange} class="custom-input"></lightning-combobox>
+              <lightning-combobox label="Status" value={modalStatus} options={statusOptions}
+                onchange={handleStatusChange} class="custom-input"></lightning-combobox>
             </div>
             <!-- Notes Section -->
             <div class="slds-col slds-size_1-of-1">
-              <lightning-textarea label="Notes" value={modalNotes} onchange={handleNotesChange} class="custom-input"></lightning-textarea>
+              <lightning-textarea label="Notes" value={modalNotes} onchange={handleNotesChange}
+                class="custom-input"></lightning-textarea>
             </div>
           </div>
         </div>
@@ -221,7 +268,7 @@
         </footer>
       </div>
     </section>
-    <div class="slds-backdrop slds-backdrop_open"></div>
+    <!-- <div class="slds-backdrop slds-backdrop_open"></div> -->
   </template>
 
   <!-- ------------------------------------- -->

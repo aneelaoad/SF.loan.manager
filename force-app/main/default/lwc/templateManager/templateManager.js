@@ -14,6 +14,7 @@ import updateTemplateWithDocuments from '@salesforce/apex/DocumentTemplateContro
 import getDocumentsByTemplate from '@salesforce/apex/DocumentTemplateController.getDocumentsByTemplate';
 import assignDocumentToRecord from '@salesforce/apex/DocumentTemplateController.assignDocumentToRecord';
 import createDocument from '@salesforce/apex/DocumentTemplateController.createDocument';
+import createDocumentCategory from '@salesforce/apex/DocumentTemplateController.createDocumentCategory';
 
 export default class TemplateManager extends LightningElement {
     // ==================== Properties ====================
@@ -57,7 +58,7 @@ export default class TemplateManager extends LightningElement {
     @track deletedItemIds = [];
     @track originalDocumentIds = [];
     @track availableDocuments = [];
-
+    wiredTemplateCategoriesResult;
     // Static Options
     teamOptions = [
         { label: 'Underwriting', value: 'Underwriting' },
@@ -165,40 +166,86 @@ export default class TemplateManager extends LightningElement {
             console.error('Error fetching documents:', this.error);
         }
     }
-
+//  @wire(getAllowedTemplateCategories)
+//     wiredCategories(result) {
+//         this.wiredTemplateCategoriesResult = result.data;
+//         console.log('result: ',result.data);
+//         console.log('wiredTemplateCategoriesResult: ',this.wiredTemplateCategoriesResult);
+        
+      
+//             // this.templateCategoryOptions = result.data.map(item => {
+//             //     const templateName = item.template?.name || '';
+//             //     return {
+//             //         categoryId: item.id,
+//             //         categoryName: item.name,
+//             //         templateId: item.template?.id,
+//             //         templateName: templateName,
+//             //         showEdit: true
+//             //     };
+//             // });
+       
+//     }
+     refreshCategories() {
+        //  this.isLoading = true;
+    getAllowedTemplateCategories()
+        .then(result => {
+            console.log('result: '+result);
+            
+            this.templateCategoryOptions = result.map(item => {
+                const templateName = item.template?.name || '';
+                return {
+                    categoryId: item.id,
+                    categoryName: item.name,
+                    templateId: item.template?.id,
+                    templateName: templateName,
+                    showEdit: true
+                };
+            });
+        })
+        .catch(error => this.showError('Error loading template categories', error))
+        .finally(() => (this.isLoading = false));
+    }
     // ==================== Event Handlers ====================
     /**
      * Toggles the template category dropdown and fetches template categories.
      */
     handleAddTemplate() {
-        this.isLoading = true;
-        getAllowedTemplateCategories()
-            .then(result => {
-                console.log('getAllowedTemplateCategories : ', JSON.stringify(result));
-                this.templateCategoryOptions = result.map(item => {
-                    const templateName = item.template?.name || '';
-                    return {
-                        categoryId: item.id,
-                        categoryName: item.name,
-                        templateId: item.template?.id,
-                        templateName: templateName,
-                        showEdit: templateName !== 'Custom'
-                    };
-                });
-                console.log('templateCategoryOptions : ', JSON.stringify(this.templateCategoryOptions));
-                this.isTemplateDropdownOpen = !this.isTemplateDropdownOpen;
-                this.isDocumentDropdownOpen = false;
-                if (this.isTemplateDropdownOpen) {
-                    setTimeout(() => {
-                        document.addEventListener('click', this.handleOutsideClick);
-                    }, 0);
-                } else {
-                    document.removeEventListener('click', this.handleOutsideClick);
-                }
-            })
-            .catch(error => this.showError('Error loading template categories', error))
-            .finally(() => (this.isLoading = false));
-    }
+         this.isTemplateDropdownOpen = !this.isTemplateDropdownOpen;
+            this.isDocumentDropdownOpen = false;
+            console.log('wiredTemplateCategoriesResult: '+JSON.stringify(this.wiredTemplateCategoriesResult));
+            
+            this.refreshCategories();
+}
+
+    // handleAddTemplate() {
+    //     this.isLoading = true;
+    //     getAllowedTemplateCategories()
+    //         .then(result => {
+    //             console.log('getAllowedTemplateCategories : ', JSON.stringify(result));
+    //             this.templateCategoryOptions = result.map(item => {
+    //                 const templateName = item.template?.name || '';
+    //                 return {
+    //                     categoryId: item.id,
+    //                     categoryName: item.name,
+    //                     templateId: item.template?.id,
+    //                     templateName: templateName,
+    //                     showEdit: templateName !== 'Custom'
+    //                 };
+    //             });
+    //             console.log('templateCategoryOptions : ', JSON.stringify(this.templateCategoryOptions));
+    //             this.isTemplateDropdownOpen = !this.isTemplateDropdownOpen;
+    //             this.isDocumentDropdownOpen = false;
+    //             if (this.isTemplateDropdownOpen) {
+    //                 setTimeout(() => {
+    //                     document.addEventListener('click', this.handleOutsideClick);
+    //                 }, 0);
+    //             } else {
+    //                 document.removeEventListener('click', this.handleOutsideClick);
+    //             }
+    //         })
+    //         .catch(error => this.showError('Error loading template categories', error))
+    //         .finally(() => (this.isLoading = false));
+    // }
 
     // handleOutsideClick = (event) => {
     //     console.log('this.template ', this.template);
@@ -243,19 +290,21 @@ export default class TemplateManager extends LightningElement {
     /**
      * Toggles the document category dropdown and fetches document categories.
      */
+
+     
     handleAddDocument() {
         this.isLoading = true;
         getAllowedDocumentCategories()
             .then(result => {
                 console.log('getAllowedDocumentCategories:', result);
-                this.documentCategoryOptions = result;
+                this.documentCategoryOptions = [...this.documentCategoryOptions, ...result];
                 this.isDocumentDropdownOpen = !this.isDocumentDropdownOpen;
                 this.isTemplateDropdownOpen = false;
-                if (!this.isDocumentDropdownOpen) {
-                    // Reset state when closing dropdown
-                    this.documentOptions = [];
-                    this.selectedDocumentCategoryId = '';
-                }
+                // if (!this.isDocumentDropdownOpen) {
+                //     // Reset state when closing dropdown
+                //     this.documentOptions = [];
+                //     this.selectedDocumentCategoryId = '';
+                // }
                 // if (this.isDocumentDropdownOpen) {
                 //     setTimeout(() => {
                 //         document.addEventListener('click', this.handleOutsideClick);
@@ -671,7 +720,9 @@ export default class TemplateManager extends LightningElement {
                 deletedItemIds: this.deletedItemIds
             })
                 .then((updatedTemplate) => {
-                    this.showSuccess('Success', 'Template Updated Successfully');
+                  this.refreshCategories();
+
+                    this.showSuccess('Success', updatedTemplate.name+' Template updated successfully');
                     console.log('Updated template:', updatedTemplate);
                     this.templateDocumentList = updatedTemplate.documents;
                     this.originalDocumentIds = updatedTemplate.documents.map(doc => doc.id);
@@ -689,7 +740,10 @@ export default class TemplateManager extends LightningElement {
                 documentIds: this.newItemIds
             })
                 .then((createdTemplate) => {
-                    this.showSuccess('Success', 'Template Created Successfully');
+                     this.refreshCategories();
+                    console.log('Created template:', createdTemplate);
+
+                    this.showSuccess('Success', createdTemplate.name+' Template is created Successfully');
                     this.closeEditModal();
                     this.editableTemplateName = '';
                     this.refreshTemplateList();
@@ -778,4 +832,91 @@ export default class TemplateManager extends LightningElement {
     refreshTemplateList() {
         // Implement refresh logic if needed
     }
+
+
+
+    // modal state
+showNewCategoryModal = false;
+newCategoryName = '';
+newCategoryDescription = '';
+
+// open modal
+handleAddNewCategory() {
+    this.showNewCategoryModal = true;
+}
+
+// close modal
+closeNewCategoryModal() {
+    this.showNewCategoryModal = false;
+    this.newCategoryName = '';
+    this.newCategoryDescription = '';
+}
+
+// handle inputs
+handleNewCategoryInput(event) {
+    this.newCategoryName = event.target.value;
+}
+handleNewCategoryDescriptionInput(event) {
+    this.newCategoryDescription = event.target.value;
+}
+
+// handle save
+// createNewCategory() {
+//     if (!this.newCategoryName.trim()) {
+//         // Optionally show toast or error
+//         return;
+//     }
+
+//     // TODO: Call Apex to create category
+//     console.log('Creating category:', this.newCategoryName, this.newCategoryDescription);
+
+//     // Close modal and reset
+//     this.closeNewCategoryModal();
+// }
+createNewCategory() {
+    const categoryName = this.newCategoryName?.trim();
+
+    if (!categoryName) {
+        this.dispatchEvent(new ShowToastEvent({
+            title: 'Error',
+            message: 'Category name cannot be empty.',
+            variant: 'error'
+        }));
+        return;
+    }
+
+    console.log('Creating category:', categoryName);
+
+    createDocumentCategory({ name: categoryName })
+        .then((newCategory) => {
+           this.documentCategoryOptions = [
+                ...this.documentCategoryOptions,
+                {
+                    id: newCategory.id,
+                    name: newCategory.name
+                }
+            ];
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Success',
+                message: `Category "${newCategory.name}" created.`,
+                variant: 'success'
+            }));
+
+            // Optionally: refresh categories list or add to UI
+            // this.categoryList = [...this.categoryList, newCategory];
+
+            this.closeNewCategoryModal();
+            this.newCategoryName = ''; // Reset input
+        })
+        .catch(error => {
+            console.error('Error creating category:', error);
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Error',
+                message: error.body?.message || 'Failed to create category.',
+                variant: 'error'
+            }));
+        });
+}
+
+
 }
