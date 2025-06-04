@@ -188,10 +188,57 @@ export default class TemplateManager extends LightningElement {
                 console.log('templateCategoryOptions : ', JSON.stringify(this.templateCategoryOptions));
                 this.isTemplateDropdownOpen = !this.isTemplateDropdownOpen;
                 this.isDocumentDropdownOpen = false;
+                if (this.isTemplateDropdownOpen) {
+                    setTimeout(() => {
+                        document.addEventListener('click', this.handleOutsideClick);
+                    }, 0);
+                } else {
+                    document.removeEventListener('click', this.handleOutsideClick);
+                }
             })
             .catch(error => this.showError('Error loading template categories', error))
             .finally(() => (this.isLoading = false));
     }
+
+    // handleOutsideClick = (event) => {
+    //     console.log('this.template ', this.template);
+    //     // Only close if the click happened outside this component's DOM
+    //     if (!this.template.contains(event.target)) {
+    //         this.isTemplateDropdownOpen = false;
+    //         this.isDocumentDropdownOpen = false;
+    //         document.removeEventListener('click', this.handleOutsideClick);
+    //     }
+    // };
+
+    handleOutsideClick = (event) => {
+    const dropdowns = this.template.querySelectorAll('.dropdown-list');
+    let clickedInsideDropdown = false;
+
+    dropdowns.forEach(dropdown => {
+        if (dropdown.contains(event.target)) {
+            clickedInsideDropdown = true;
+        }
+    });
+
+    if (!clickedInsideDropdown) {
+        this.isTemplateDropdownOpen = false;
+        // this.isDocumentDropdownOpen = false;
+        // this.isDocumentOptions = false;
+        document.removeEventListener('click', this.handleOutsideClick);
+    }
+};
+
+
+    handleDropdownClick(event) {
+        // Stops propagation inside dropdowns so clicks there don't close them
+        event.stopPropagation();
+    }
+
+    /**
+     * Toggles the document category dropdown and fetches document categories.
+     */
+
+    @track selectedDocumentCategoryId = ''; // New: Track selected category
 
     /**
      * Toggles the document category dropdown and fetches document categories.
@@ -200,14 +247,51 @@ export default class TemplateManager extends LightningElement {
         this.isLoading = true;
         getAllowedDocumentCategories()
             .then(result => {
-                console.log('getAllowedDocumentCategories : ', result);
+                console.log('getAllowedDocumentCategories:', result);
                 this.documentCategoryOptions = result;
                 this.isDocumentDropdownOpen = !this.isDocumentDropdownOpen;
                 this.isTemplateDropdownOpen = false;
+                if (!this.isDocumentDropdownOpen) {
+                    // Reset state when closing dropdown
+                    this.documentOptions = [];
+                    this.selectedDocumentCategoryId = '';
+                }
+                // if (this.isDocumentDropdownOpen) {
+                //     setTimeout(() => {
+                //         document.addEventListener('click', this.handleOutsideClick);
+                //     }, 0);
+                // } else {
+                //     document.removeEventListener('click', this.handleOutsideClick);
+                // }
             })
             .catch(error => this.showError('Error loading document categories', error))
             .finally(() => (this.isLoading = false));
     }
+    // handleAddDocument() {
+    //     this.isLoading = true;
+    //     getAllowedDocumentCategories()
+    //         .then(result => {
+    //             console.log('getAllowedDocumentCategories : ', result);
+    //             this.documentCategoryOptions = result;
+    //             this.isDocumentDropdownOpen = !this.isDocumentDropdownOpen;
+    //             this.isTemplateDropdownOpen = false;
+    //             if (!this.isDocumentDropdownOpen) {
+    //                 // Reset state when closing dropdown
+    //                 this.documentOptions = [];
+    //                 this.selectedDocumentCategoryId = '';
+    //             }
+
+    //             if (this.isDocumentDropdownOpen) {
+    //                 setTimeout(() => {
+    //                     document.addEventListener('click', this.handleOutsideClick);
+    //                 }, 0);
+    //             } else {
+    //                 document.removeEventListener('click', this.handleOutsideClick);
+    //             }
+    //         })
+    //         .catch(error => this.showError('Error loading document categories', error))
+    //         .finally(() => (this.isLoading = false));
+    // }
 
     /**
      * Fetches documents for a selected template category.
@@ -219,7 +303,7 @@ export default class TemplateManager extends LightningElement {
         console.log('templateId : ', templateId);
         console.log('recordId : ', this.recordId);
         console.log('objectName : ', this.objectName);
-        getDocumentsByTemplate({ templateId: templateId, recordId: this.recordId, objectName: this.objectName})
+        getDocumentsByTemplate({ templateId: templateId, recordId: this.recordId, objectName: this.objectName })
             .then(result => {
                 console.log('getDocumentsByTemplate : ', JSON.stringify(result));
                 this.documentList = [...this.documentList, ...result];
@@ -233,23 +317,108 @@ export default class TemplateManager extends LightningElement {
      * Fetches documents for a selected document category.
      * @param event The click event containing the category ID and name
      */
-    handleDocumentCategoryClick(event) {
-        const categoryId = event.currentTarget.dataset.id;
-        const categoryName = event.currentTarget.dataset.categoryname;
-        this.isLoading = true;
+    /**
+     * Fetches documents for a selected document category.
+     * @param event The click event containing the category ID and name
+     */
+    // handleDocumentCategoryClick(event) {
+    //     const categoryId = event.currentTarget.dataset.id;
+    //     const categoryName = event.currentTarget.dataset.categoryname;
+    //     this.isLoading = true;
+    //     console.log('Fetching documents for:', { categoryId, categoryName });
 
-        getDocumentsByCategory({ categoryId })
-            .then(result => {
-                if (result && result.documents) {
-                    this.documentOptions = result.documents;
-                    console.log('documentOptions loaded:', this.documents);
-                }
-                
-                // this.sendDocumentsToParent(this.documentList);
-            })
-            .catch(error => this.showError('Error fetching documents by category', error))
-            .finally(() => (this.isLoading = false));
+    //     // Only fetch if a different category is selected
+    //     if (this.selectedDocumentCategoryId !== categoryId) {
+    //         this.selectedDocumentCategoryId = categoryId;
+    //         this.documentOptions = []; // Clear previous documents
+    //         getDocumentsByCategory({ categoryId })
+    //             .then(result => {
+    //                 console.log('getDocumentsByCategory result:', JSON.stringify(result));
+    //                 if (result && result.documents && Array.isArray(result.documents)) {
+    //                     this.documentOptions = [...result.documents]; // New array to ensure reactivity
+    //                     console.log('documentOptions set:', JSON.stringify(this.documentOptions));
+    //                     if (result.documents.length === 0) {
+    //                         console.warn('No documents found for category:', categoryName);
+    //                         this.showError('No Documents', `No documents available for category ${categoryName}.`);
+    //                     }
+    //                 } else {
+    //                     console.warn('Invalid or empty document list:', result);
+    //                     this.documentOptions = [];
+    //                     this.showError('Error', 'No documents found or invalid response.');
+    //                 }
+    //             })
+    //             .catch(error => {
+    //                 console.error('Error fetching documents by category:', error);
+    //                 this.documentOptions = [];
+    //                 this.showError('Error fetching documents by category', error);
+    //             })
+    //             .finally(() => {
+    //                 this.isLoading = false;
+    //             });
+    //     } else {
+    //         this.isLoading = false; // Skip fetch if same category
+    //     }
+    // }
+    isDocumentOptions = false
+    // handleDocumentCategoryClick(event) {
+    //     const categoryId = event.currentTarget.dataset.id;
+    //     const categoryName = event.currentTarget.dataset.categoryname;
+    //     this.isLoading = true;
+    //     console.log('categoryId:',categoryId);
+    //     console.log('categoryName:',categoryName);
+        
+    //     getDocumentsByCategory({ categoryId })
+    //         .then(result => {
+    //     console.log('result:',result);
+
+    //             if (result && result.documents) {
+    //                 this.documentOptions = result.documents;
+    //                 this.isDocumentOptions = true;
+    //                 console.log('documentOptions loaded:', this.documentOptions);
+    //             }
+    //         })
+    //         .catch(error => this.showError('Error fetching documents by category', error))
+    //         .finally(() => (this.isLoading = false));
+    // }
+
+    handleDocumentCategoryClick(event) {
+    const categoryId = event.currentTarget.dataset.id;
+    const categoryName = event.currentTarget.dataset.categoryname;
+
+    // If the same category is clicked again, toggle it off
+    if (this.selectedDocumentCategoryId === categoryId) {
+        this.isDocumentOptions = false;
+        this.documentOptions = [];
+        this.selectedDocumentCategoryId = null;
+        return;
     }
+
+    // Set loading and reset prior state
+    this.isLoading = true;
+    // this.isDocumentOptions = false;
+    this.documentOptions = [];
+    this.selectedDocumentCategoryId = categoryId;
+
+    console.log('Fetching documents for:', { categoryId, categoryName });
+
+    getDocumentsByCategory({ categoryId })
+        .then(result => {
+            console.log('getDocumentsByCategory result:', result);
+            if (result && result.documents && result.documents.length > 0) {
+                this.documentOptions = [...result.documents];
+                this.isDocumentOptions = true;
+            } else {
+                this.showError('No Documents', `No documents found for category ${categoryName}.`);
+            }
+        })
+        .catch(error => {
+            this.showError('Error fetching documents by category', error);
+        })
+        .finally(() => {
+            this.isLoading = false;
+        });
+}
+
 
     /**
      * Handles document selection and assigns it to a record if applicable.
@@ -261,7 +430,6 @@ export default class TemplateManager extends LightningElement {
         const category = event.currentTarget.dataset.category;
         const status = event.currentTarget.dataset.status;
         const team = event.currentTarget.dataset.team;
-
         const alreadyExists = this.documentList.some(doc => doc.id === documentId);
         if (!alreadyExists) {
             this.documentList = [
@@ -276,7 +444,6 @@ export default class TemplateManager extends LightningElement {
                 }
             ];
         }
-
         if (this.recordId && this.objectName && documentId) {
             assignDocumentToRecord({
                 documentId: documentId,
@@ -348,20 +515,16 @@ export default class TemplateManager extends LightningElement {
      */
     handleSaveNewDocument() {
         this.isLoading = true;
-
         const input = {
             categoryId: this.modalCategoryId,
             name: this.modalTemplateName,
             status: this.modalStatus || '',
             team: this.modalTeam || '',
-            type:'document',
-            // assignedToId: '005QQ000001E2asYAC',
+            type: 'document',
             relatedTo: this.recordId,
             objectName: this.objectName
         };
-
         console.log('input: ' + JSON.stringify(input));
-
         createDocument({ inputJson: JSON.stringify(input) })
             .then((newDocument) => {
                 console.log('newDocument: ' + JSON.stringify(newDocument));
@@ -400,25 +563,20 @@ export default class TemplateManager extends LightningElement {
     handleAddToTemplate(event) {
         const docId = event.currentTarget.dataset.id;
         const doc = this.availableDocuments.find(d => d.id === docId);
-
         if (doc) {
             this.templateDocumentList = [...this.templateDocumentList, doc];
             this.availableDocuments = this.availableDocuments.filter(d => d.id !== docId);
-
             if (
                 !this.newItemIds.includes(docId) &&
                 !this.originalDocumentIds?.includes(docId)
             ) {
                 this.newItemIds.push(docId);
             }
-
             if (this.isNewTemplate && !this.newItemIds.find(item => item.id === docId)) {
                 this.newItemIds.push(docId);
                 console.log('isNewTemplate:', JSON.stringify(this.newItemIds));
             }
-
             this.deletedItemIds = this.deletedItemIds.filter(id => id !== docId);
-
             console.log('Added docId:', docId);
             console.log('newItemIds:', JSON.stringify(this.newItemIds));
         }
@@ -431,16 +589,13 @@ export default class TemplateManager extends LightningElement {
     handleRemoveFromTemplate(event) {
         const docId = event.currentTarget.dataset.id;
         const doc = this.templateDocumentList.find(d => d.id === docId);
-
         if (doc) {
             this.availableDocuments = [...this.availableDocuments, doc];
             this.templateDocumentList = this.templateDocumentList.filter(d => d.id !== docId);
             this.newItemIds = this.newItemIds.filter(id => id !== docId);
-
             if (!this.newItemIds.includes(docId) && !this.deletedItemIds.includes(docId)) {
                 this.deletedItemIds.push(docId);
             }
-
             console.log('Removed docId:', docId);
             console.log('deletedItemIds:', JSON.stringify(this.deletedItemIds));
         }
@@ -468,30 +623,23 @@ export default class TemplateManager extends LightningElement {
         this.selectedTemplateId = templateId;
         const categoryId = event.currentTarget.dataset.categoryid;
         const templateName = event.currentTarget.dataset.templatename;
-
         console.log('templateId:', templateId);
         console.log('categoryId:', categoryId);
         console.log('templateName:', templateName);
-
         if (!Array.isArray(this.templateCategoryOptions)) {
             console.error('templateCategoryOptions is not an array:', this.templateCategoryOptions);
             return;
         }
-
         this.selectedTemplateForEdit = this.templateCategoryOptions.find(
             t => t.templateId === templateId
         );
-
         if (!this.selectedTemplateForEdit) {
             console.error('No template found with templateId:', templateId);
             return;
         }
-
         console.log('selectedTemplateForEdit:', JSON.stringify(this.selectedTemplateForEdit));
-
         this.isLoading = true;
-
-        getDocumentsByTemplate({ templateId: templateId, recordId: null, objectName: null})
+        getDocumentsByTemplate({ templateId: templateId, recordId: null, objectName: null })
             .then(result => {
                 this.isEditModalOpen = true;
                 this.templateDocumentList = result;
@@ -515,7 +663,6 @@ export default class TemplateManager extends LightningElement {
         console.log('deletedItemIds : ', this.deletedItemIds);
         console.log('newItemIds : ', this.newItemIds);
         console.log('isNewTemplate ?: ', this.isNewTemplate);
-
         if (!this.isNewTemplate) {
             updateTemplateWithDocuments({
                 templateId: this.selectedTemplateId,
@@ -571,7 +718,7 @@ export default class TemplateManager extends LightningElement {
     }
 
     // ==================== Utility Methods ====================
-   /**
+    /**
      * Sends the document list to the parent component via a custom event to append to existing list.
      * @param documents The list of new documents to append
      */
