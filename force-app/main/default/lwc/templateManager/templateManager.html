@@ -226,7 +226,7 @@
                 class="custom-input"
               ></lightning-input>
               <lightning-input
-                label="Template Name"
+                label="Item Name"
                 value={modalTemplateName}
                 onchange={handleModalInputChange}
                 required
@@ -242,6 +242,9 @@
                 onchange={handleStatusChange}
                 class="custom-input"
               ></lightning-combobox>
+              </div>
+            <div class="slds-col slds-size_1-of-2">
+
               <lightning-combobox
                 label="Team"
                 value={modalTeam}
@@ -250,12 +253,13 @@
                 class="custom-input"
               ></lightning-combobox>
             </div>
-            <lightning-textarea
-              label="Notes"
-              value={modalNotes}
-              onchange={handleNotesChange}
-              class="custom-input"
-            ></lightning-textarea>
+            <lightning-combobox
+        name="user"
+        label="Assign To"
+        value={selectedUserId}
+        options={users}
+        onchange={handleUserChange}>
+    </lightning-combobox>
           </div>
         </div>
         <footer class="slds-modal__footer custom-footer">

@@ -2,10 +2,32 @@
  * @description       : Controller class for managing document templates, assignments, and categories in Salesforce.
  * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
  * @group             : Document Management
- * @last modified on  : 06-04-2025
+ * @last modified on  : 06-05-2025
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 **/
 public with sharing class DocumentTemplateController {
+      @AuraEnabled(cacheable=true)
+    public static List<Map<String, String>> getActiveUsers() {
+        List<User> activeUsers = [
+            SELECT Id, FirstName, LastName, Name
+            FROM User
+            WHERE IsActive = true
+            ORDER BY Name
+        ];
+
+        List<Map<String, String>> userList = new List<Map<String, String>>();
+
+        for (User u : activeUsers) {
+            Map<String, String> userMap = new Map<String, String>();
+            userMap.put('id', u.Id);
+            userMap.put('firstName', u.FirstName);
+            userMap.put('lastName', u.LastName);
+            userMap.put('name', u.Name);
+            userList.add(userMap);
+        }
+
+        return userList;
+    }
 
     // ==================== Section 1: Document Creation and Assignment Methods ====================
 
@@ -185,34 +207,7 @@ public with sharing class DocumentTemplateController {
         }
     }
 
-    /**
-     * 1.4 Deletes a specific document assignment.
-     * @param documentId The ID of the document
-     * @param recordId The ID of the record (Lead or Opportunity)
-     */
-    @AuraEnabled
-    public static void deleteDocumentAssignment(Id documentId, Id recordId) {
-        // 1.4.1 Validate input parameters
-        if (documentId == null || recordId == null) {
-            throw new AuraHandledException('Missing documentId or recordId.');
-        }
-
-        // 1.4.2 Query assignment to delete
-        List<Document_Assignment__c> toDelete = [
-            SELECT Id 
-            FROM Document_Assignment__c 
-            WHERE Document__c = :documentId 
-            AND (Lead__c = :recordId OR Loan__c = :recordId)
-            LIMIT 1
-        ];
-
-        // 1.4.3 Delete if found
-        if (toDelete.isEmpty()) {
-            throw new AuraHandledException('Document assignment not found.');
-        }
-
-        delete toDelete;
-    }
+   
 
     /**
      * 1.5 Deletes multiple archived document assignments.
@@ -676,7 +671,7 @@ public static List<DocumentItem> restoreArchivedAssignments(List<Id> documentIds
         // 2.4.1 Log input
         System.debug('2.4.2 recordId: ' + recordId);
 
-        try {
+        // try {
             // 2.4.3 Validate input
             if (recordId == null) {
                 throw new AuraHandledException('Record ID is required');
@@ -685,8 +680,8 @@ public static List<DocumentItem> restoreArchivedAssignments(List<Id> documentIds
             // 2.4.4 Query document assignments
             List<Document_Assignment__c> assignments = [
                 SELECT Id, Document__c, Document__r.Name, Document__r.Category__c, 
-                       Document__r.Status__c, Document__r.Team__c, Document__r.Assigned_To__c,
-                       Document__r.OwnerId, Document__r.Document_Template__c,
+                       Document__r.Status__c, Document__r.Team__c, Document__r.Assigned_To__c,Document__r.Assigned_To__r.Name,
+                       Document__r.OwnerId,Document__r.Related_Contact__r.Email, Document__r.Document_Template__c,Document__r.Owner.Name,Document__r.Assigned_To__r.Email,
                        Document__r.Category__r.Name
                 FROM Document_Assignment__c
                 WHERE Loan__c = :recordId
@@ -702,18 +697,21 @@ public static List<DocumentItem> restoreArchivedAssignments(List<Id> documentIds
                 item.categoryId = assignment.Document__r.Category__c;
                 item.status = assignment.Document__r.Status__c;
                 item.team = assignment.Document__r.Team__c;
-                item.assignedTo = UserInfo.getUserId();
+                item.assignedTo = assignment.Document__r.Assigned_To__r.Name;
                 item.ownerId = assignment.Document__r.OwnerId;
+                item.ownerName = assignment.Document__r.Owner.Name;
+                item.assignedToEmail = assignment.Document__r.Related_Contact__r.Email;
+                // item.assignedToEmail = assignment.Document__r.Assigned_To__r.Email;
                 item.templateId = assignment.Document__r.Document_Template__c;
                 item.categoryName = assignment.Document__r.Category__r.Name;
                 documentItems.add(item);
             }
             System.debug('2.4.7 documentItems: ' + documentItems);
             return documentItems;
-        } catch (Exception e) {
-            System.debug('2.4.8 Error fetching assigned documents: ' + e.getMessage() + '\n' + e.getStackTraceString());
-            throw new AuraHandledException('Error fetching assigned documents: ' + e.getMessage());
-        }
+        // } catch (Exception e) {
+        //     System.debug('2.4.8 Error fetching assigned documents: ' + e.getMessage() + '\n' + e.getStackTraceString());
+        //     throw new AuraHandledException('Error fetching assigned documents: ' + e.getMessage());
+        // }
     }
 
     // ==================== Section 3: Template Management Methods ====================
@@ -884,7 +882,7 @@ public static DocumentCategory createDocumentCategory(String name) {
      * 4.1 Fetches all categories with Type = 'Document' and returns them with camelCase fields.
      * @return List of DocumentCategory wrappers
      */
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled(cacheable=false)
     public static List<DocumentCategory> getDocumentCategories() {
         try {
             // 4.1.1 Log method entry
@@ -912,6 +910,7 @@ public static DocumentCategory createDocumentCategory(String name) {
             throw new AuraHandledException('Unable to fetch document categories at this time.');
         }
     }
+   
 
     /**
      * 4.2 Fetches all categories with Type = 'Template' and their associated single template.
@@ -995,71 +994,134 @@ public static DocumentCategory createDocumentCategory(String name) {
     }
 
     // ==================== Section 5: Email Sending Methods ====================
-
-    /**
-     * 5.1 Sends emails for documents with status 'Ready to Send' using a hardcoded email template.
-     * @return GenericResponseWrapper indicating success or failure
-     */
-  @AuraEnabled
-public static GenericResponseWrapper sendReadyToSendDocuments(List<Id> documentIds) {
+@AuraEnabled
+public static GenericResponseWrapper sendReadyToSendDocuments(List<Id> documentIds, List<Map<String, String>> readyToSendDocsWithEmails) {
     if (documentIds == null || documentIds.isEmpty()) {
         return new GenericResponseWrapper(false, 'No document IDs provided.');
     }
+    if (readyToSendDocsWithEmails == null || readyToSendDocsWithEmails.isEmpty()) {
+        return new GenericResponseWrapper(false, 'No document-email mappings provided.');
+    }
 
+    // Query documents with 'Ready to Send' status
     List<Document__c> documents = [
-        SELECT Id, Name, Status__c, Related_Contact__c 
+        SELECT Id, Name, Status__c
         FROM Document__c
         WHERE Id IN :documentIds AND Status__c = 'Ready to Send'
     ];
-
     if (documents.isEmpty()) {
-        return new GenericResponseWrapper(false, 'No documents with status "Ready to Send" found for given IDs.');
+        return new GenericResponseWrapper(false, 'No documents with status "Ready to Send" found.');
     }
 
-    // Collect related contact/user/lead IDs
-    Set<Id> contactIds = new Set<Id>();
+    Map<Id, Document__c> docMap = new Map<Id, Document__c>();
     for (Document__c doc : documents) {
-        if (doc.Related_Contact__c != null) {
-            contactIds.add(doc.Related_Contact__c);
+        docMap.put(doc.Id, doc);
+    }
+
+    // Group documents by email with recipient name
+    Map<String, List<Document__c>> docsByEmail = new Map<String, List<Document__c>>();
+    Map<String, String> emailToName = new Map<String, String>();
+
+    for (Map<String, String> entry : readyToSendDocsWithEmails) {
+        String docIdStr = entry.get('id');
+        String email = entry.get('email');
+        String name = entry.get('name');
+        if (String.isNotBlank(docIdStr) && String.isNotBlank(email) && docMap.containsKey(docIdStr)) {
+            if (!docsByEmail.containsKey(email)) {
+                docsByEmail.put(email, new List<Document__c>());
+            }
+            docsByEmail.get(email).add(docMap.get(docIdStr));
+
+            if (!emailToName.containsKey(email) && String.isNotBlank(name)) {
+                emailToName.put(email, name);
+            }
         }
     }
 
-    Map<Id, String> emailMap = new Map<Id, String>();
-    for (User u : [SELECT Id, Email FROM User WHERE Id IN :contactIds AND Email != NULL]) {
-        emailMap.put(u.Id, u.Email);
-    }
-    for (Contact c : [SELECT Id, Email FROM Contact WHERE Id IN :contactIds AND Email != NULL]) {
-        emailMap.put(c.Id, c.Email);
-    }
-    for (Lead l : [SELECT Id, Email FROM Lead WHERE Id IN :contactIds AND Email != NULL]) {
-        emailMap.put(l.Id, l.Email);
-    }
-
+    // Build and send emails
     List<Messaging.SingleEmailMessage> emailsToSend = new List<Messaging.SingleEmailMessage>();
+    for (String email : docsByEmail.keySet()) {
+        List<Document__c> docs = docsByEmail.get(email);
+        if (docs.isEmpty()) continue;
 
-    for (Document__c doc : documents) {
-        Id recipientId = doc.Related_Contact__c;
-        if (recipientId != null && emailMap.containsKey(recipientId)) {
-            String htmlBody = '<p>Dear Customer,</p>';
-            htmlBody += '<p>The following document is ready for your review:</p>';
-            htmlBody += '<table border="1" cellpadding="5" cellspacing="0">';
-            htmlBody += '<tr><th>Name</th></tr>';
-            htmlBody += '<tr><td>' + doc.Name + '</td></tr>';
-            htmlBody += '</table>';
-            htmlBody += '<p>Thank you,<br/>Your Company</p>';
+        String recipientName = emailToName.get(email);
+        String greeting = String.isNotBlank(recipientName) ? 'Dear ' + recipientName + ',' : 'Dear Customer,';
 
-            Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
-            email.setTargetObjectId(recipientId);
-            email.setSaveAsActivity(true);
-            email.setSubject('Your Document is Ready to Review');
-            email.setHtmlBody(htmlBody);
+       String htmlBody = '';
+htmlBody += '<html><body style="font-family:Segoe UI, sans-serif; background-color:#f4fdfc; padding:20px;">';
+htmlBody += '<div style="max-width:700px; margin:auto; background:#ffffff; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.08); padding:30px;">';
 
-            emailsToSend.add(email);
-        }
+htmlBody += '<p style="font-size:16px;">' + greeting + '</p>';
+htmlBody += '<p style="font-size:16px;">The following document(s) are ready for your review:</p>';
+
+// Document Table
+htmlBody += '<table style="width:100%; border-collapse:collapse; margin-top:20px;">';
+htmlBody += '<thead><tr>';
+htmlBody += '<th style="background:#28c7c7; color:#fff; text-align:left; padding:10px; border-radius:6px 6px 0 0;">Item Name/s</th>';
+htmlBody += '</tr></thead><tbody>';
+for (Document__c doc : docs) {
+    htmlBody += '<tr>';
+    htmlBody += '<td style="padding:10px; border-bottom:1px solid #e0e0e0;">' + doc.Name.escapeHtml4() + '</td>';
+    htmlBody += '</tr>';
+}
+htmlBody += '</tbody></table>';
+
+// Buttons
+htmlBody += '<div style="margin-top:30px; text-align:center;">';
+htmlBody += '<a href="' +  + '" style="display:inline-block; background:linear-gradient(to right, #28c7c7, #32b2e0); color:#fff; text-decoration:none; padding:12px 24px; margin:8px; border-radius:8px; font-weight:bold;">Email</a>';
+htmlBody += '<a href="' +  + '" style="display:inline-block; background:linear-gradient(to right, #32b2e0, #28c7c7); color:#fff; text-decoration:none; padding:12px 24px; margin:8px; border-radius:8px; font-weight:bold;">Drop Off</a>';
+htmlBody += '</div>';
+
+// Signature Section
+htmlBody += '<div style="margin-top:40px; text-align:center;">';
+htmlBody += '<img src="' +  + '" alt="Manager Photo" style="width:100px; border-radius:50%; margin-bottom:10px;" />';
+htmlBody += '<p style="margin:0; font-weight:bold; font-size:16px;">' +  + '</p>';
+htmlBody += '<p style="margin:0; font-size:14px;">' +  + '</p>';
+htmlBody += '<p style="margin:0; font-size:14px;">NMLS: ' +  + '</p>';
+htmlBody += '<p style="font-size:14px; margin-top:10px;">';
+htmlBody += '<strong>D:</strong> ' +  + '<br />';
+htmlBody += '<strong>M:</strong> ' +  + '<br />';
+htmlBody +=  + '<br />';
+htmlBody +=  + '</p>';
+htmlBody += '<p>';
+htmlBody += '<a href="' +  + '" style="color:#32b2e0; margin:0 6px;">Email Me</a> | ';
+htmlBody += '<a href="' +  + '" style="color:#32b2e0; margin:0 6px;">Visit My Website</a> | ';
+htmlBody += '<a href="' +  + '" style="color:#32b2e0; margin:0 6px;">Unsubscribe</a>';
+htmlBody += '</p>';
+htmlBody += '</div>';
+
+// Footer
+htmlBody += '<div style="margin-top:30px; text-align:center;">';
+htmlBody += '<img src="' +  + '" alt="Company Logo" style="height:40px;" />';
+htmlBody += '<p style="font-size:12px; color:#999;">';
+htmlBody += 'Best Option Mortgage is a DBA of ML Mortgage. ML Mortgage Corp. is a state-licensed mortgage lender, NMLS ID #362312, licensed by the CA Department of Financial Protection and Innovation under the Finance Lenders Law, License #60DBO69831. For other states, visit ';
+htmlBody += '<a href="https://mlmortgage.net" style="color:#32b2e0;">www.mlmortgage.net</a>.';
+htmlBody += '</p>';
+htmlBody += '</div>';
+
+htmlBody += '</div></body></html>';
+
+        // String htmlBody = '<p>' + greeting + '</p>';
+        // htmlBody += '<p>The following document(s) are ready for your review:</p>';
+        // htmlBody += '<table border="1" cellpadding="5" cellspacing="0">';
+        // htmlBody += '<tr><th>Document Name</th></tr>';
+        // for (Document__c doc : docs) {
+        //     htmlBody += '<tr><td>' + doc.Name.escapeHtml4() + '</td></tr>';
+        // }
+        // htmlBody += '</table>';
+        // htmlBody += '<p>Thank you,<br/>Your Company</p>';
+
+        Messaging.SingleEmailMessage emailMsg = new Messaging.SingleEmailMessage();
+        emailMsg.setToAddresses(new List<String>{email});
+        emailMsg.setSubject('Your Document(s) are Ready to Review');
+        emailMsg.setHtmlBody(htmlBody);
+        emailMsg.setSaveAsActivity(true);
+
+        emailsToSend.add(emailMsg);
     }
-    System.Debug('emailsToSend: '+emailsToSend);
+
     if (emailsToSend.isEmpty()) {
-        return new GenericResponseWrapper(false, 'No valid recipients with email found.');
+        return new GenericResponseWrapper(false, 'No valid emails were generated to send.');
     }
 
     try {
@@ -1068,12 +1130,91 @@ public static GenericResponseWrapper sendReadyToSendDocuments(List<Id> documentI
         for (Messaging.SendEmailResult res : results) {
             if (res.isSuccess()) successCount++;
         }
-
         return new GenericResponseWrapper(true, successCount + ' email(s) sent successfully.');
     } catch (Exception ex) {
         return new GenericResponseWrapper(false, 'Failed to send emails. Error: ' + ex.getMessage());
     }
 }
+
+
+//     /**
+//      * 5.1 Sends emails for documents with status 'Ready to Send' using a hardcoded email template.
+//      * @return GenericResponseWrapper indicating success or failure
+//      */
+//   @AuraEnabled
+// public static GenericResponseWrapper sendReadyToSendDocuments(List<Id> documentIds) {
+//     if (documentIds == null || documentIds.isEmpty()) {
+//         return new GenericResponseWrapper(false, 'No document IDs provided.');
+//     }
+
+//     List<Document__c> documents = [
+//         SELECT Id, Name, Status__c, Related_Contact__c 
+//         FROM Document__c
+//         WHERE Id IN :documentIds AND Status__c = 'Ready to Send'
+//     ];
+
+//     if (documents.isEmpty()) {
+//         return new GenericResponseWrapper(false, 'No documents with status "Ready to Send" found for given IDs.');
+//     }
+
+//     // Collect related contact/user/lead IDs
+//     Set<Id> contactIds = new Set<Id>();
+//     for (Document__c doc : documents) {
+//         if (doc.Related_Contact__c != null) {
+//             contactIds.add(doc.Related_Contact__c);
+//         }
+//     }
+
+//     Map<Id, String> emailMap = new Map<Id, String>();
+//     for (User u : [SELECT Id, Email FROM User WHERE Id IN :contactIds AND Email != NULL]) {
+//         emailMap.put(u.Id, u.Email);
+//     }
+//     for (Contact c : [SELECT Id, Email FROM Contact WHERE Id IN :contactIds AND Email != NULL]) {
+//         emailMap.put(c.Id, c.Email);
+//     }
+//     for (Lead l : [SELECT Id, Email FROM Lead WHERE Id IN :contactIds AND Email != NULL]) {
+//         emailMap.put(l.Id, l.Email);
+//     }
+
+//     List<Messaging.SingleEmailMessage> emailsToSend = new List<Messaging.SingleEmailMessage>();
+
+//     for (Document__c doc : documents) {
+//         Id recipientId = doc.Related_Contact__c;
+//         if (recipientId != null && emailMap.containsKey(recipientId)) {
+//             String htmlBody = '<p>Dear Customer,</p>';
+//             htmlBody += '<p>The following document is ready for your review:</p>';
+//             htmlBody += '<table border="1" cellpadding="5" cellspacing="0">';
+//             htmlBody += '<tr><th>Name</th></tr>';
+//             htmlBody += '<tr><td>' + doc.Name + '</td></tr>';
+//             htmlBody += '</table>';
+//             htmlBody += '<p>Thank you,<br/>Your Company</p>';
+
+//             Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+//             email.setTargetObjectId(recipientId);
+//             email.setSaveAsActivity(true);
+//             email.setSubject('Your Document is Ready to Review');
+//             email.setHtmlBody(htmlBody);
+
+//             emailsToSend.add(email);
+//         }
+//     }
+//     System.Debug('emailsToSend: '+emailsToSend);
+//     if (emailsToSend.isEmpty()) {
+//         return new GenericResponseWrapper(false, 'No valid recipients with email found.');
+//     }
+
+//     try {
+//         Messaging.SendEmailResult[] results = Messaging.sendEmail(emailsToSend, false);
+//         Integer successCount = 0;
+//         for (Messaging.SendEmailResult res : results) {
+//             if (res.isSuccess()) successCount++;
+//         }
+
+//         return new GenericResponseWrapper(true, successCount + ' email(s) sent successfully.');
+//     } catch (Exception ex) {
+//         return new GenericResponseWrapper(false, 'Failed to send emails. Error: ' + ex.getMessage());
+//     }
+// }
 
 
     // ==================== Section 6: Wrapper Classes ====================
@@ -1089,8 +1230,11 @@ public static GenericResponseWrapper sendReadyToSendDocuments(List<Id> documentI
         @AuraEnabled public String team { get; set; }
         @AuraEnabled public String assignedTo { get; set; }
         @AuraEnabled public String ownerId { get; set; }
+        @AuraEnabled public String ownerName { get; set; }
         @AuraEnabled public String templateId { get; set; }
         @AuraEnabled public String categoryName { get; set; }
+        @AuraEnabled public String assignedToEmail  { get; set; }
+
     }
 
     /**
@@ -1105,6 +1249,7 @@ public static GenericResponseWrapper sendReadyToSendDocuments(List<Id> documentI
         @AuraEnabled public String objectName;
         @AuraEnabled public Id assignedToId;
         @AuraEnabled public Id relatedTo;
+        
     }
 
     /**

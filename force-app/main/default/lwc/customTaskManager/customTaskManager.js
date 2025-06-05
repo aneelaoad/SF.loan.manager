@@ -2,20 +2,19 @@ import { LightningElement, track, api, wire } from 'lwc';
 import getAssignedDocuments from '@salesforce/apex/DocumentTemplateController.getAssignedDocuments';
 import { CurrentPageReference } from 'lightning/navigation';
 import { NavigationMixin } from 'lightning/navigation';
-// import deleteDocumentAssignment from '@salesforce/apex/DocumentTemplateController.deleteDocumentAssignment';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { refreshApex } from '@salesforce/apex';
 import getDocumentCategories from '@salesforce/apex/DocumentTemplateController.getDocumentCategories';
 import getArchivedDocuments from '@salesforce/apex/DocumentTemplateController.getArchivedDocuments';
 import archiveDocumentAssignment from '@salesforce/apex/DocumentTemplateController.archiveDocumentAssignment';
 import deleteArchivedAssignments from '@salesforce/apex/DocumentTemplateController.deleteArchivedAssignments';
-import getAllowedDocumentCategories from '@salesforce/apex/DocumentTemplateController.getDocumentCategories';
 import { getObjectInfo, getPicklistValues } from 'lightning/uiObjectInfoApi';
 import DOCUMENT_OBJECT from '@salesforce/schema/Document__c';
 import STATUS_FIELD from '@salesforce/schema/Document__c.Status__c';
 import createDocument from '@salesforce/apex/DocumentTemplateController.createDocument';
 import sendReadyToSendDocuments from '@salesforce/apex/DocumentTemplateController.sendReadyToSendDocuments';
 import restoreArchivedAssignments from '@salesforce/apex/DocumentTemplateController.restoreArchivedAssignments';
+import getActiveUsers from '@salesforce/apex/DocumentTemplateController.getActiveUsers';
 
 // -------------------------------------
 // 02. Component Definition
@@ -25,9 +24,11 @@ export default class CustomTaskManager extends LightningElement {
     // 03. Properties
     // -------------------------------------
     recordId;
+     users = [];
+    selectedUserId;
     @track selectedCategories = [];
     @track showVerification = false;
-    isArchived = false;
+     @track isArchived = false;
     @track masterDocumentList = [];
     wiredDocumentResult;
     @track archivedList = [];
@@ -38,7 +39,7 @@ export default class CustomTaskManager extends LightningElement {
     @track documentCategoryOptions = [];
     @track selectedDocumentCategory;
     showModal = false;
-
+categoryList = []
     // -------------------------------------
     // 04. Wired Method to Get Page Reference
     // -------------------------------------
@@ -56,33 +57,56 @@ export default class CustomTaskManager extends LightningElement {
         }
     }
 
+      @wire(getActiveUsers)
+    wiredUsers({ error, data }) {
+        if (data) {
+            this.users = data.map(user => ({
+                label: user.name,
+                value: user.id
+            }));
+        } else if (error) {
+            console.error('Error retrieving users:', error);
+        }
+    }
+ handleUserChange(event) {
+        this.selectedUserId = event.detail.value;
+    }
     // -------------------------------------
     // 05. Wired Method to Load Document Categories
     // -------------------------------------
-    @wire(getDocumentCategories)
-    wiredCategories({ error, data }) {
-        if (data) {
-            // Map categories to include name, class, and label styling
+    refreshDocumentCategories() {
+    getDocumentCategories()
+        .then(data => {
+            console.log('data->>> ',data);
+            this.documentCategoryOptions = data.map(item => ({
+                    label: item.name,
+                    value: item.id
+                }));
+
             this.categoryList = data.map(cat => ({
                 name: cat.name,
                 circleClass: this.getCategoryClass(cat.name),
                 labelClass: 'category-label'
             }));
 
-            // Add static "Reset" option at the end
+            // Add static "Reset" option
             this.categoryList.push({
                 name: 'Reset',
                 icon: 'utility:refresh',
                 isReset: true,
                 labelClass: 'category-label'
             });
-        } else if (error) {
+
+            console.log('categoryList (refreshed): ', JSON.stringify(this.categoryList));
+            console.log('documentCategoryOptions (refreshed): ', JSON.stringify(this.documentCategoryOptions));
+        })
+        .catch(error => {
             console.error('Error loading categories:', error);
             this.categoryList = [];
-        }
-        console.log('categoryList: ', this.categoryList);
-    }
+        });
+}
 
+   
     // -------------------------------------
     // 06. Helper Method for Category Styling
     // -------------------------------------
@@ -159,18 +183,40 @@ export default class CustomTaskManager extends LightningElement {
     // 11. Lifecycle Hook: Connected Callback
     // -------------------------------------
     connectedCallback() {
-        // Load allowed document categories on component initialization
-        getAllowedDocumentCategories()
-            .then(result => {
-                console.log('Document Categories: ', result);
-                this.documentCategoryOptions = result.map(item => ({
-                    label: item.name,
-                    value: item.id
-                }));
-            })
-            .catch(error => this.showError('Error loading document categories', error))
-            .finally(() => (this.isLoading = false));
+        this.refreshDocumentCategories();
+        // // Load allowed document categories on component initialization
+        // getAllowedDocumentCategories()
+        //     .then(result => {
+        //         console.log('Document Categories: ', result);
+        //         this.documentCategoryOptions = result.map(item => ({
+        //             label: item.name,
+        //             value: item.id
+        //         }));
+        //     })
+        //     .catch(error => this.showError('Error loading document categories', error))
+        //     .finally(() => (this.isLoading = false));
     }
+    // Parent component JS
+handleCategoryCreated(event) {
+    const newCategory = event.detail.category;
+    // console.log('Received new category from child:', newCategory);
+    // this.categoryList = [...this.categoryList, newCategory];
+    // this.categoryList = [...this.categoryList, newCategory]
+        
+    //     console.log('Updated categoryList:', this.categoryList);
+this.refreshDocumentCategories();
+    // Add your logic here to handle the new category
+    // For example, you might add it to an array of categories:
+    // this.categories = [...this.categories, newCategory];
+
+//    const newCategory = {
+//         ...event.detail.category,      // Original fields
+//         isReset: false,                // Default values
+//         icon: 'utility:refresh',
+//         circleClass: 'slds-circle slds-m-right_xx-small',
+//         labelClass: 'slds-truncate'
+//     };
+}
 
     // -------------------------------------
     // 12. Handler for Document Category Change
@@ -350,9 +396,10 @@ export default class CustomTaskManager extends LightningElement {
                 this.archivedList = this.archivedList.filter(doc => doc.id !== documentId);
                 // Refresh active documents to include restored one
                 console.log('handleRestoreArchived: ', this.archivedList);
-                if (restoredDocuments && restoredDocuments.length > 0) {
+            //     if (restoredDocuments && restoredDocuments.length > 0) {
                 this.masterDocumentList = [...this.masterDocumentList, ...restoredDocuments];
-            }
+                // this.masterDocumentList = [...this.masterDocumentList, ...restoredDocuments];
+            // }
             console.log('handleRestoreArchived: archivedList:', this.archivedList);
             console.log('handleRestoreArchived: masterDocumentList:', this.masterDocumentList);
                 // console.log('handleRestoreArchived:');
@@ -420,27 +467,36 @@ export default class CustomTaskManager extends LightningElement {
     // -------------------------------------
     // 22. Getter for Grouping Documents by Status
     // // -------------------------------------
-    // get groupedByStatus() {
-    //     const groups = {};
-    //     const archivedIds = new Set((this.archivedList || []).map(item => item.id));
+   
 
-    //     (this.masterDocumentList || [])
-    //         .filter(item => item && !archivedIds.has(item.id)) // Exclude archived
-    //         .forEach(item => {
-    //             const status = item.status || 'General';
-    //             if (!groups[status]) {
-    //                 groups[status] = [];
-    //             }
-    //             groups[status].push({ ...item });
-    //         });
+// get groupedByStatus() {
+//     const groups = {};
+//     const archivedIds = new Set((this.archivedList || []).map(item => item.id));
 
-    //     return Object.entries(groups).map(([status, items]) => ({
-    //         status,
-    //         items
-    //     }));
-    // }
+//     let filteredDocuments = (this.masterDocumentList || []).filter(item => {
+//         if (!item) return false;
+//         if (archivedIds.has(item.id)) return false;
+//         if (this.selectedCategories.length === 0) return true;
+//         return this.selectedCategories.includes(item.Category__c); // Use Category__c ID
+//     });
 
-    // If categories use IDs
+//     filteredDocuments.forEach(item => {
+//         const status = item.status || 'General';
+//         if (!groups[status]) {
+//             groups[status] = [];
+//         }
+//         groups[status].push({ ...item });
+//     });
+
+//     return Object.entries(groups).map(([status, items]) => ({
+//         status,
+//         items
+//     }));
+// }
+
+// -------------------------------------
+// 22. Getter for Grouping Documents by Status
+// -------------------------------------
 get groupedByStatus() {
     const groups = {};
     const archivedIds = new Set((this.archivedList || []).map(item => item.id));
@@ -449,11 +505,12 @@ get groupedByStatus() {
         if (!item) return false;
         if (archivedIds.has(item.id)) return false;
         if (this.selectedCategories.length === 0) return true;
-        return this.selectedCategories.includes(item.Category__c); // Use Category__c ID
+        // Match selected category names with the document's categoryName field
+        return this.selectedCategories.includes(item.categoryName);
     });
 
     filteredDocuments.forEach(item => {
-        const status = item.status || 'General';
+        const status = item.status || 'Other';
         if (!groups[status]) {
             groups[status] = [];
         }
@@ -473,6 +530,28 @@ get groupedByStatus() {
             ...group,
             isReadyToSend: this.isReadyToSend(group.status)
         }));
+    }
+  get readyToSendDocsWithEmails() {
+        // Filter documents with 'Ready to Send' status and extract id and email
+        console.log('masterDocumentList:', JSON.stringify(this.masterDocumentList));
+        
+        const readyToSendDocs = (this.masterDocumentList || [])
+        .filter(doc =>
+            doc &&
+            doc.status === 'Ready to Send' &&
+            doc.assignedToEmail &&
+            doc.id
+        )
+        .map(doc => ({
+            id: doc.id,
+            email: doc.assignedToEmail,
+            name: doc.assignedTo || 'Customer'
+        }));
+        
+        // Return the array of objects containing doc ID and email
+        console.log('readyToSendDocs:',JSON.stringify(readyToSendDocs));
+
+        return readyToSendDocs;
     }
 
     // -------------------------------------
@@ -499,8 +578,9 @@ get groupedByStatus() {
     // -------------------------------------
   handleEmailClick(event) {
     const groupId = event.target.dataset.groupId;
+    const email = event.target.dataset.email;
     console.log('groupId:', groupId);
-
+console.log('Ready to Send Emails:', JSON.stringify(this.readyToSendDocsWithEmails));
     // Check if the clicked group is 'Ready to Send'
     if (groupId === 'Ready to Send') {
         // Filter documents from masterDocumentList with 'Ready to Send' status
@@ -508,12 +588,12 @@ get groupedByStatus() {
             .filter(doc => doc && doc.status === 'Ready to Send')
             .map(doc => doc.id);
 
-        console.log('masterDocumentList:', JSON.stringify(this.masterDocumentList));
-        console.log('readyToSendDocumentIds:', JSON.stringify(readyToSendDocumentIds));
-        console.log('groupedByStatusWithReadyToSend:', this.groupedByStatusWithReadyToSend);
+        // console.log('masterDocumentList:', JSON.stringify(this.masterDocumentList));
+        // console.log('readyToSendDocumentIds:', JSON.stringify(readyToSendDocumentIds));
+        // console.log('groupedByStatusWithReadyToSend:', this.groupedByStatusWithReadyToSend);
 
         if (readyToSendDocumentIds.length > 0) {
-            sendReadyToSendDocuments({ documentIds: readyToSendDocumentIds })
+            sendReadyToSendDocuments({ documentIds: readyToSendDocumentIds, readyToSendDocsWithEmails: this.readyToSendDocsWithEmails })
                 .then(() => {
                     this.dispatchEvent(new ShowToastEvent({
                         title: 'Success',
@@ -589,6 +669,8 @@ get groupedByStatus() {
     // 33. Handler for Category Filter Click
     // -------------------------------------
     handleCategoryClick(event) {
+        console.log('wiredDocumentResult: ',this.wiredDocumentResult);
+        
         const clickedCategory = event.currentTarget.dataset.name;
         console.log('clickedCategory: ',clickedCategory);
         console.log('selectedCategories: ',this.selectedCategories);
@@ -722,8 +804,10 @@ get groupedByStatus() {
             status: this.modalStatus || '',
             team: this.modalTeam || '',
             type: 'Task',
-            relatedTo: this.recordId,
+            relatedTo: this.recordId,  
+            assignedToId: this.selectedUserId,
             objectName: this.objectName
+
         };
 
         console.log('input: ', JSON.stringify(input));

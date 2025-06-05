@@ -186,7 +186,7 @@
   left: 0;
   top: 0.1rem;
   background: #d9f2e6;
-  color: #2e7d32;
+  /* color: #2e7d32; */
   font-weight: bold;
   width: 1.5rem;
   height: 1.5rem;
@@ -319,4 +319,48 @@
 .slds-modal__content{
   background: white;
     box-shadow: rgba(0, 0, 0, 0.2) 0px 12px 28px 0px, rgba(0, 0, 0, 0.1) 0px 2px 4px 0px, rgba(255, 255, 255, 0.05) 0px 0px 0px 1px inset;
+}
+
+
+/* ----------------------
+TABLE CSSS
+--------------------- */
+.col-name {
+  width: 25%;
+  min-width: 200px;
+}
+.col-category {
+  width: 15%;
+  min-width: 120px;
+}
+.col-status {
+  width: 15%;
+  min-width: 120px;
+}
+.col-team {
+  width: 15%;
+  min-width: 120px;
+}
+.col-owner {
+  width: 20%;
+  min-width: 160px;
+}
+.col-actions {
+  width: 10%;
+  min-width: 80px;
+}
+
+/* Prevent wrapping and shifting */
+th, td {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* For sticky header effect */
+.fixed-header-table thead th {
+  position: sticky;
+  top: 0;
+  background: #f3f9fb;
+  z-index: 1;
 }
