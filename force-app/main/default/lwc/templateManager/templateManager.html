@@ -2,7 +2,7 @@
   @description       : LWC component for managing document and template selection
   @author            : ChangeMeIn@UserSettingsUnder.SFDoc
   @group             : 
-  @last modified on  : 06-05-2025
+  @last modified on  : 06-06-2025
   @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 -->
 <template>
@@ -137,13 +137,13 @@
         <div class="slds-modal__content slds-p-around_medium">
           <lightning-input
             label="Template Name"
-            value={selectedTemplateForEdit.templateName}
+            value={templateNameValue}
             onchange={handleTemplateNameChange}
           ></lightning-input>
           <div class="slds-grid slds-m-top_medium doc-section-grid">
             <!-- Left Column: Current Docs -->
             <div class="slds-col slds-size_1-of-2 slds-p-right_small doc-list-column">
-              <p class="doc-title">Current Documents</p>
+              <p class="doc-title">Current Items</p>
               <div class="scrollable-doc-list">
                 <ol class="custom-doc-list">
                   <template for:each={templateDocumentList} for:item="doc">
@@ -164,34 +164,70 @@
               </div>
             </div>
             <!-- Right Column: Available Docs Grouped -->
-            <div class="slds-col slds-size_1-of-2 slds-p-left_small doc-list-column">
-              <p class="doc-title">Add Documents</p>
-              <div class="scrollable-doc-list accordion-wrapper">
-                <lightning-accordion allow-multiple-sections-open class="accordionClass">
-                  <template for:each={groupedAvailableDocuments} for:item="group">
-                    <lightning-accordion-section key={group.name} name={group.name} label={group.name}>
-                      <div class="accordion-docs-scroll">
-                        <ol class="custom-doc-list">
-                          <template for:each={group.documents} for:item="doc">
-                            <li key={doc.id} class="doc-list-item">
-                              {doc.name}
-                              <lightning-button-icon
-                                icon-name="utility:add"
-                                alternative-text="Add"
-                                onclick={handleAddToTemplate}
-                                data-id={doc.id}
-                                class="slds-m-left_small"
-                                variant="bare"
-                              ></lightning-button-icon>
-                            </li>
-                          </template>
-                        </ol>
-                      </div>
-                    </lightning-accordion-section>
+         <!-- Right Column: Available Items Grouped by Tabs -->
+<div class="slds-col slds-size_1-of-2 slds-p-left_small doc-list-column">
+  <p class="doc-title">Add Items</p>
+  <lightning-tabset class="slds-m-top_small">
+    <!-- Tab for Documents -->
+    <lightning-tab label="Documents">
+      <div class="scrollable-doc-list accordion-wrapper">
+        <lightning-accordion allow-multiple-sections-open class="accordionClass">
+          <template for:each={groupedAvailableDocuments} for:item="group">
+            <lightning-accordion-section key={group.name} name={group.name} label={group.name}>
+              <div class="accordion-docs-scroll">
+                <ol class="custom-doc-list">
+                  <template for:each={group.documents} for:item="doc">
+                    <li key={doc.id} class="doc-list-item">
+                      {doc.name}
+                      <lightning-button-icon
+                        icon-name="utility:add"
+                        alternative-text="Add"
+                        onclick={handleAddToTemplate}
+                        data-id={doc.id}
+                        class="slds-m-left_small"
+                        variant="bare"
+                      ></lightning-button-icon>
+                    </li>
                   </template>
-                </lightning-accordion>
+                </ol>
               </div>
-            </div>
+            </lightning-accordion-section>
+          </template>
+        </lightning-accordion>
+      </div>
+    </lightning-tab>
+
+    <!-- Tab for Tasks -->
+    <lightning-tab label="Tasks">
+      <div class="scrollable-doc-list accordion-wrapper">
+        <lightning-accordion allow-multiple-sections-open class="accordionClass">
+          <template for:each={groupedAvailableTasks} for:item="group">
+            <lightning-accordion-section key={group.name} name={group.name} label={group.name}>
+              <div class="accordion-docs-scroll">
+                <ol class="custom-doc-list">
+                  <template for:each={group.documents} for:item="doc">
+                    <li key={doc.id} class="doc-list-item">
+                      {doc.name}
+                      <lightning-button-icon
+                        icon-name="utility:add"
+                        alternative-text="Add"
+                        onclick={handleAddToTemplate}
+                        data-id={doc.id}
+                        class="slds-m-left_small"
+                        variant="bare"
+                      ></lightning-button-icon>
+                    </li>
+                  </template>
+                </ol>
+              </div>
+            </lightning-accordion-section>
+          </template>
+        </lightning-accordion>
+      </div>
+    </lightning-tab>
+  </lightning-tabset>
+</div>
+
           </div>
         </div>
         <footer class="slds-modal__footer custom-modal-footer">
@@ -242,24 +278,16 @@
                 onchange={handleStatusChange}
                 class="custom-input"
               ></lightning-combobox>
-              </div>
-            <div class="slds-col slds-size_1-of-2">
-
-              <lightning-combobox
-                label="Team"
-                value={modalTeam}
-                options={teamOptions}
-                onchange={handleTeamChange}
-                class="custom-input"
-              ></lightning-combobox>
-            </div>
-            <lightning-combobox
+                <lightning-combobox
         name="user"
         label="Assign To"
         value={selectedUserId}
         options={users}
         onchange={handleUserChange}>
     </lightning-combobox>
+              </div>
+          
+          
           </div>
         </div>
         <footer class="slds-modal__footer custom-footer">

@@ -416,3 +416,18 @@ box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30p
   border: none;
   --slds-c-button-text-color: white;
 }
+
+/* Add this in your component's CSS file */
+.custom-table-wrapper {
+  overflow-x: auto;
+}
+
+.archive-icon {
+  --slds-c-icon-color-foreground-default: #54698d;
+}
+
+@media screen and (max-width: 768px) {
+  .slds-table th, .slds-table td {
+    font-size: 0.75rem;
+  }
+}

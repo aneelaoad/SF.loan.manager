@@ -2,7 +2,7 @@
   @description       : 
   @author            : ChangeMeIn@UserSettingsUnder.SFDoc
   @group             : 
-  @last modified on  : 06-05-2025
+  @last modified on  : 06-07-2025
   @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 -->
 <template>
@@ -25,16 +25,16 @@
       <!-- Right Button Group -->
       <div class="right-group slds-button-group" role="group">
         <!-- Refresh Button -->
-        <lightning-button icon-name="utility:refresh" label="Refresh" onclick={handleRefreshClick}
-          class="slds-m-right_small"></lightning-button>
+        <!-- <lightning-button icon-name="utility:refresh" label="Refresh" onclick={handleRefreshClick}
+          class="slds-m-right_small"></lightning-button> -->
 
         <!-- Archive Button -->
         <lightning-button icon-name="utility:archive" label="Archived" onclick={handleArchiveClick}
           class="slds-m-right_small"></lightning-button>
 
         <!-- Mortgage App Button -->
-        <lightning-button icon-name="utility:apps" label="Mortgage App"
-          onclick={handleMortgageAppClick}></lightning-button>
+        <!-- <lightning-button icon-name="utility:apps" label="Mortgage App"
+          onclick={handleMortgageAppClick}></lightning-button> -->
       </div>
     </div>
 
@@ -123,68 +123,69 @@
   <!-- 04. Minimalist Document Table Section -->
   <!-- ------------------------------------- -->
   <div class="slds-p-horizontal_medium">
-    <template if:false={isEmpty}>
-      <lightning-accordion allow-multiple-sections-open active-section-name={statusKeys}>
-        <template for:each={groupedByStatusWithReadyToSend} for:item="group">
-          <lightning-accordion-section key={group.status} name={group.status} label={group.status}>
-            <div class="custom-table-wrapper slds-p-around_medium">
-              <div class="custom-table-scroll">
-                <table class="slds-table slds-table_cell-buffer custom-themed-table fixed-header-table">
-                  <thead>
-                    <tr>
-                      <th class="col-name">Name</th>
-                      <th class="col-category">Category</th>
-                      <th class="col-status">Status</th>
-                      <th class="col-team">Team</th>
-                      <th class="col-owner">Assigned To </th>
-                      <th class="col-actions">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <template for:each={group.items} for:item="row">
-                      <tr key={row.id}>
-                        <td class="col-name slds-truncate">{row.name}</td>
-                        <td class="col-category"><span class="custom-badge">{row.categoryName}</span></td>
-                        <td class="col-status slds-truncate">{row.status}</td>
-                        <td class="col-team slds-truncate">{row.ownerName}</td>
-                        <td class="col-owner slds-truncate">{row.assignedTo}</td>
-                        <td class="col-owner slds-truncate">{row.assignedToEmail}</td>
-                        <td class="slds-text-align_right">
-                          <lightning-button-icon icon-name="utility:archive" alternative-text="Archive"
-                            onclick={handleArchiveRecord} data-id={row.id} data-name={row.name} variant="bare"
-                            class="action-icon archive-icon"></lightning-button-icon>
-                        </td>
-                      </tr>
-                    </template>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-
-            <!-- Email Button for Ready to Send Group -->
+     <template if:false={isEmpty}>
+    <lightning-accordion allow-multiple-sections-open active-section-name={statusKeys}>
+      <template for:each={groupedByStatusWithReadyToSend} for:item="group">
+        <lightning-accordion-section key={group.status} name={group.status} label={group.status}>
+          <div class="custom-table-wrapper slds-p-around_medium">
             <template if:true={group.isReadyToSend}>
-              <div class="slds-m-top_medium slds-text-align_right">
-                <lightning-button label="Send Email" title="Send Email" icon-name="utility:email" icon-position="left"
-                  onclick={handleEmailClick} data-group-id={group.status} class="send-email-button" data-email={group.assignedToEmail}
-                  variant="brand"></lightning-button>
-
-                <!-- <lightning-button
-                label="Send Email"
-                title="Send Email"
-                icon-name="utility:email"
-                icon-position="left"
-                onclick={handleEmailClick}
-                class="send-email-button"
-                variant="brand"
-              ></lightning-button> -->
+              <div class="slds-m-bottom_medium slds-text-align_left">
+                <lightning-button
+                  label="Send Email"
+                  title="Send Email"
+                  icon-name="utility:email"
+                  icon-position="left"
+                  onclick={handleEmailClick}
+                  data-group-id={group.status}
+                  data-email={group.assignedToEmail}
+                  variant="brand"
+                  class="send-email-button"
+                ></lightning-button>
               </div>
             </template>
-          </lightning-accordion-section>
-        </template>
-      </lightning-accordion>
-    </template>
 
+            <div class="custom-table-scroll slds-scrollable_x">
+              <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_fixed-layout custom-themed-table">
+                <thead>
+                  <tr class="slds-line-height_reset table-header">
+                    <th style="width: 20%;"><div class="slds-truncate" title="Name">Name</div></th>
+                    <th style="width: 15%;"><div class="slds-truncate" title="Category">Category</div></th>
+                    <th style="width: 15%;"><div class="slds-truncate" title="Status">Status</div></th>
+                    <th style="width: 20%;"><div class="slds-truncate" title="Owner">Owner</div></th>
+                    <th style="width: 20%;"><div class="slds-truncate" title="Assigned To">Assigned To</div></th>
+                    <th style="width: 10%;" class="slds-text-align_right"><div class="slds-truncate" title="Actions">Actions</div></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template for:each={group.items} for:item="row">
+                    <tr key={row.id}>
+                      <td><div class="slds-truncate" title={row.name}>{row.name}</div></td>
+                      <td if:true={row.categoryName}><span class="custom-badge slds-badge"> {row.categoryName}</span></td>
+                      <td if:false={row.categoryName}><span class="custom-badge slds-badge"> Other</span></td>
+                      <td><div class="slds-truncate" title={row.status}>{row.status}</div></td>
+                      <td><div class="slds-truncate" title={row.ownerName}>{row.ownerName}</div></td>
+                      <td><div class="slds-truncate" title={row.assignedTo}>{row.assignedTo}</div></td>
+                      <td class="slds-text-align_right">
+                        <lightning-button-icon icon-name="utility:archive"
+                          alternative-text="Archive"
+                          onclick={handleArchiveRecord}
+                          data-id={row.id}
+                          data-name={row.name}
+                          variant="border-filled"
+                          class="archive-icon slds-m-left_xx-small"
+                          title="Archive"
+                        ></lightning-button-icon>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </lightning-accordion-section>
+      </template>
+    </lightning-accordion>
+  </template>
 
     <!-- ------------------------------------- -->
     <!-- 05. Email Popover Section -->

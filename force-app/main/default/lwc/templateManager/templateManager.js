@@ -61,6 +61,7 @@ export default class TemplateManager extends LightningElement {
     @track originalDocumentIds = [];
     @track availableDocuments = [];
     wiredTemplateCategoriesResult;
+    @track availableTasks = []
     // Static Options
     teamOptions = [
         { label: 'Underwriting', value: 'Underwriting' },
@@ -87,12 +88,12 @@ export default class TemplateManager extends LightningElement {
 
         const categoryMap = {};
         const seenDocIds = new Set();
-        const templateDocIds = new Set(
+        const selectedIds = new Set(
             (this.templateDocumentList || []).map(d => d.id)
         );
 
         this.availableDocuments.forEach(doc => {
-            if (!doc || !doc.id || seenDocIds.has(doc.id) || templateDocIds.has(doc.id)) {
+            if (!doc || !doc.id || seenDocIds.has(doc.id) || selectedIds.has(doc.id)) {
                 return;
             }
 
@@ -116,6 +117,32 @@ export default class TemplateManager extends LightningElement {
                 documents: documentsWithNumbers
             };
         });
+    }
+
+    get groupedAvailableTasks() {
+        const grouped = {};
+        const selectedIds = new Set(
+            (this.templateDocumentList || []).map(d => d.id)
+        );
+
+        if (this.availableTasks) {
+            this.availableTasks.forEach(doc => {
+                if (!doc || !doc.id || selectedIds.has(doc.id)) {
+                    return;
+                }
+
+                const groupKey = doc.categoryName || 'Uncategorized';
+                if (!grouped[groupKey]) {
+                    grouped[groupKey] = [];
+                }
+                grouped[groupKey].push(doc);
+            });
+        }
+
+        return Object.keys(grouped).map(key => ({
+            name: key,
+            documents: grouped[key]
+        }));
     }
 
     // ==================== Lifecycle Hooks ====================
@@ -176,8 +203,11 @@ export default class TemplateManager extends LightningElement {
     @wire(getAllDocuments)
     wiredDocuments({ error, data }) {
         if (data) {
-            this.availableDocuments = data;
-            console.log('Documents fetched successfully:', this.documents);
+            console.log('Documents fetched successfully:', data);
+
+            this.availableDocuments = data.documents;
+            this.availableTasks = data.tasks;
+            // console.log('Documents fetched successfully:', this.documents);
         } else if (error) {
             this.error = error;
             console.error('Error fetching documents:', this.error);
@@ -598,21 +628,32 @@ export default class TemplateManager extends LightningElement {
      */
     handleAddToTemplate(event) {
         const docId = event.currentTarget.dataset.id;
-        const doc = this.availableDocuments.find(d => d.id === docId);
+
+        // Check both lists
+        let doc = this.availableDocuments.find(d => d.id === docId);
+        if (!doc) {
+            doc = this.availableTasks.find(t => t.id === docId);
+        }
+
         if (doc) {
+            // Add to the unified template list
             this.templateDocumentList = [...this.templateDocumentList, doc];
-            this.availableDocuments = this.availableDocuments.filter(d => d.id !== docId);
+
+            // Track new additions
             if (
                 !this.newItemIds.includes(docId) &&
                 !this.originalDocumentIds?.includes(docId)
             ) {
                 this.newItemIds.push(docId);
             }
-            if (this.isNewTemplate && !this.newItemIds.find(item => item.id === docId)) {
+
+            if (this.isNewTemplate && !this.newItemIds.includes(docId)) {
                 this.newItemIds.push(docId);
-                console.log('isNewTemplate:', JSON.stringify(this.newItemIds));
             }
+
+            // Clean up any removed entry
             this.deletedItemIds = this.deletedItemIds.filter(id => id !== docId);
+
             console.log('Added docId:', docId);
             console.log('newItemIds:', JSON.stringify(this.newItemIds));
         }
@@ -625,13 +666,19 @@ export default class TemplateManager extends LightningElement {
     handleRemoveFromTemplate(event) {
         const docId = event.currentTarget.dataset.id;
         const doc = this.templateDocumentList.find(d => d.id === docId);
+
         if (doc) {
-            this.availableDocuments = [...this.availableDocuments, doc];
+            // Remove from template list
             this.templateDocumentList = this.templateDocumentList.filter(d => d.id !== docId);
+
+            // Clean from new additions
             this.newItemIds = this.newItemIds.filter(id => id !== docId);
+
+            // Track deleted if it wasn't new and not already deleted
             if (!this.newItemIds.includes(docId) && !this.deletedItemIds.includes(docId)) {
                 this.deletedItemIds.push(docId);
             }
+
             console.log('Removed docId:', docId);
             console.log('deletedItemIds:', JSON.stringify(this.deletedItemIds));
         }
@@ -679,7 +726,7 @@ export default class TemplateManager extends LightningElement {
             .then(result => {
                 this.isEditModalOpen = true;
                 this.templateDocumentList = result;
-                console.log('Documents loaded:', this.templateDocumentList);
+                console.log('Template Items:', this.templateDocumentList);
             })
             .catch(error => {
                 console.error('Error fetching template items', error);
@@ -688,6 +735,9 @@ export default class TemplateManager extends LightningElement {
             .finally(() => {
                 this.isLoading = false;
             });
+    }
+    get templateNameValue() {
+        return this.isNewTemplate ? '' : this.selectedTemplateForEdit?.templateName || '';
     }
 
     /**

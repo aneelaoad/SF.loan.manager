@@ -364,3 +364,41 @@ th, td {
   background: #f3f9fb;
   z-index: 1;
 }
+.custom-table-wrapper {
+  overflow-x: auto;
+}
+
+.table-header {
+  background-color: #e3f2fd; /* Light blue header */
+}
+
+.custom-themed-table th,
+.custom-themed-table td {
+  border: 1px solid #cfd8dc; /* Light blue-gray grid */
+}
+
+.custom-badge {
+  background-color: #e3f2fd; /* Light blue badge */
+  color: #1a237e; /* Indigo text */
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  display: inline-block;
+}
+
+.archive-icon {
+  --slds-c-icon-color-foreground-default: #1a237e;
+}
+
+@media screen and (max-width: 768px) {
+  .custom-themed-table th,
+  .custom-themed-table td {
+    font-size: 0.75rem;
+  }
+}
+.custom-tabset {
+  margin-top: 0.5rem;
+}
+.accordion-wrapper {
+  margin-top: 0.5rem;
+}

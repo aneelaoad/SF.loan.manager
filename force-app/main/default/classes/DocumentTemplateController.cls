@@ -2,11 +2,11 @@
  * @description       : Controller class for managing document templates, assignments, and categories in Salesforce.
  * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
  * @group             : Document Management
- * @last modified on  : 06-05-2025
+ * @last modified on  : 06-07-2025
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 **/
 public with sharing class DocumentTemplateController {
-      @AuraEnabled(cacheable=true)
+    @AuraEnabled(cacheable=true)
     public static List<Map<String, String>> getActiveUsers() {
         List<User> activeUsers = [
             SELECT Id, FirstName, LastName, Name
@@ -27,6 +27,51 @@ public with sharing class DocumentTemplateController {
         }
 
         return userList;
+    }
+
+    // ==================== Section 1: Private Utility Methods ====================
+
+    /**
+     * Private method to query Document__c records and populate DocumentItem wrappers.
+     * @param docIds Set of Document__c IDs to query
+     * @return List of populated DocumentItem wrappers
+     */
+    private static List<DocumentItem> queryDocumentsAndWrap(Set<Id> docIds) {
+        if (docIds == null || docIds.isEmpty()) {
+            return new List<DocumentItem>();
+        }
+
+        // Query Document__c records with relevant fields
+        List<Document__c> docs = [
+            SELECT Id, Name, Category__c, Status__c, Team__c, Assigned_To__c, 
+                   Assigned_To__r.Name, Assigned_To__r.Email, Owner.Name, OwnerId, 
+                   Document_Template__c, Category__r.Name,Related_Contact__r.Email,Related_Contact__r.Name
+            FROM Document__c
+            WHERE Id IN :docIds
+        ];
+
+        // Transform to DocumentItem wrappers
+        List<DocumentItem> wrappedDocs = new List<DocumentItem>();
+        for (Document__c d : docs) {
+            DocumentItem item = new DocumentItem();
+            item.id = d.Id;
+            item.name = d.Name;
+            item.categoryId = d.Category__c;
+            item.status = d.Status__c;
+            item.team = d.Team__c;
+            // item.assignedTo = String.valueOf(d.Related_Contact__r.Name);
+            item.assignedTo = String.valueOf(d.Assigned_To__r.Name);
+            item.ownerId = d.OwnerId;
+            item.ownerName = d.Owner.Name;
+            item.assignedToEmail = d.Assigned_To__r.Email;
+            // item.assignedToEmail = d.Related_Contact__r.Email;
+
+            item.templateId = d.Document_Template__c;
+            item.categoryName = d.Category__r != null ? d.Category__r.Name : null;
+            wrappedDocs.add(item);
+        }
+
+        return wrappedDocs;
     }
 
     // ==================== Section 1: Document Creation and Assignment Methods ====================
@@ -82,27 +127,9 @@ public with sharing class DocumentTemplateController {
             throw new AuraHandledException('Invalid objectName. Must be "Lead" or "Loan".');
         }
 
-        // 1.1.12 Fetch enriched document details
-        Document__c fullDoc = [
-            SELECT Id, Name, Category__c, Status__c, Team__c, Assigned_To__c,Assigned_To__r.Name, OwnerId, Document_Template__c,
-                   Category__r.Name
-            FROM Document__c
-            WHERE Id = :doc.Id LIMIT 1
-        ];
-
-        // 1.1.13 Populate DocumentItem wrapper
-        DocumentItem item = new DocumentItem();
-        item.id = fullDoc.Id;
-        item.name = fullDoc.Name;
-        item.categoryId = fullDoc.Category__c;
-        item.status = fullDoc.Status__c;
-        item.team = fullDoc.Team__c;
-        item.assignedTo = String.valueOf(fullDoc.Assigned_To__r.Name);
-        item.ownerId = fullDoc.OwnerId;
-        item.templateId = fullDoc.Document_Template__c;
-        item.categoryName = fullDoc.Category__r != null ? fullDoc.Category__r.Name : null;
-
-        return item;
+        // 1.1.12 Fetch and wrap document details
+        List<DocumentItem> items = queryDocumentsAndWrap(new Set<Id>{doc.Id});
+        return items.isEmpty() ? new DocumentItem() : items[0];
     }
 
     /**
@@ -144,29 +171,10 @@ public with sharing class DocumentTemplateController {
 
         insert assignment;
 
-        // 1.2.4 Fetch document details
-        Document__c doc = [
-            SELECT Id, Name, Category__c, Status__c, Team__c, Assigned_To__c, OwnerId, Document_Template__c,
-                   Category__r.Name
-            FROM Document__c
-            WHERE Id = :documentId
-            LIMIT 1
-        ];
-
-        // 1.2.5 Populate DocumentItem wrapper
-        DocumentItem result = new DocumentItem();
-        result.id = doc.Id;
-        result.name = doc.Name;
-        result.categoryId = doc.Category__c;
-        result.status = doc.Status__c;
-        result.team = doc.Team__c;
-        result.assignedTo = String.valueOf(doc.Assigned_To__c);
-        result.ownerId = doc.OwnerId;
-        result.templateId = doc.Document_Template__c;
-        result.categoryName = doc.Category__r != null ? doc.Category__r.Name : null;
-
-        System.Debug('1.2.6 Result: ' + result);
-        return result;
+        // 1.2.4 Fetch and wrap document details
+        List<DocumentItem> items = queryDocumentsAndWrap(new Set<Id>{documentId});
+        System.Debug('1.2.5 Result: ' + items);
+        return items.isEmpty() ? new DocumentItem() : items[0];
     }
 
     /**
@@ -206,8 +214,6 @@ public with sharing class DocumentTemplateController {
             throw new AuraHandledException('No matching document assignment found to delete.');
         }
     }
-
-   
 
     /**
      * 1.5 Deletes multiple archived document assignments.
@@ -250,16 +256,14 @@ public with sharing class DocumentTemplateController {
             AND IsArchived__c = TRUE
         ];
 
-        // 1.6.2 Transform to DocumentItem wrappers
-        List<DocumentItem> result = new List<DocumentItem>();
+        // 1.6.2 Collect document IDs
+        Set<Id> docIds = new Set<Id>();
         for (Document_Assignment__c da : archived) {
-            DocumentItem item = new DocumentItem();
-            item.id = da.Document__c;
-            item.name = da.Document__r.Name;
-            item.status = da.Document__r.Status__c;
-            result.add(item);
+            docIds.add(da.Document__c);
         }
-        return result;
+
+        // 1.6.3 Fetch and wrap document details
+        return queryDocumentsAndWrap(docIds);
     }
 
     /**
@@ -305,144 +309,139 @@ public with sharing class DocumentTemplateController {
             update item;
         }
     }
-/**
- * 1.9 Restores multiple archived document assignments and returns associated DocumentItems.
- * @param documentIds List of document IDs to restore
- * @param recordId The ID of the record (Lead or Opportunity)
- * @return List of DocumentItem wrappers for restored documents
- */
-@AuraEnabled
-public static List<DocumentItem> restoreArchivedAssignments(List<Id> documentIds, Id recordId) {
-    // 1.9.1 Validate input
-    if (documentIds == null || documentIds.isEmpty()) {
-        throw new AuraHandledException('No documents to restore.');
+
+    /**
+     * 1.9 Restores multiple archived document assignments and returns associated DocumentItems.
+     * @param documentIds List of document IDs to restore
+     * @param recordId The ID of the record (Lead or Opportunity)
+     * @return List of DocumentItem wrappers for restored documents
+     */
+    @AuraEnabled
+    public static List<DocumentItem> restoreArchivedAssignments(List<Id> documentIds, Id recordId) {
+        // 1.9.1 Validate input
+        if (documentIds == null || documentIds.isEmpty()) {
+            throw new AuraHandledException('No documents to restore.');
+        }
+
+        // 1.9.2 Query archived assignments
+        List<Document_Assignment__c> toUpdate = [
+            SELECT Id, Document__c, IsArchived__c
+            FROM Document_Assignment__c
+            WHERE Document__c IN :documentIds
+            AND (Lead__c = :recordId OR Loan__c = :recordId)
+            AND IsArchived__c = true
+        ];
+
+        if (toUpdate.isEmpty()) {
+            throw new AuraHandledException('No matching archived assignments found.');
+        }
+
+        // 1.9.3 Mark as unarchived
+        for (Document_Assignment__c assignment : toUpdate) {
+            assignment.IsArchived__c = false;
+        }
+
+        update toUpdate;
+
+        // 1.9.4 Get unique document IDs and fetch details
+        Set<Id> restoredDocIds = new Set<Id>();
+        for (Document_Assignment__c assignment : toUpdate) {
+            restoredDocIds.add(assignment.Document__c);
+        }
+
+        // 1.9.5 Fetch and wrap document details
+        List<DocumentItem> wrappedDocs = queryDocumentsAndWrap(restoredDocIds);
+        System.Debug('wrappedDocs: '+wrappedDocs);
+        return wrappedDocs;
     }
-
-    // 1.9.2 Query archived assignments
-    List<Document_Assignment__c> toUpdate = [
-        SELECT Id, Document__c, IsArchived__c
-        FROM Document_Assignment__c
-        WHERE Document__c IN :documentIds
-        AND (Lead__c = :recordId OR Loan__c = :recordId)
-        AND IsArchived__c = true
-    ];
-
-    if (toUpdate.isEmpty()) {
-        throw new AuraHandledException('No matching archived assignments found.');
-    }
-
-    // 1.9.3 Mark as unarchived
-    for (Document_Assignment__c assignment : toUpdate) {
-        assignment.IsArchived__c = false;
-    }
-
-    update toUpdate;
-
-    // 1.9.4 Get unique document IDs to fetch related Document__c records
-    Set<Id> restoredDocIds = new Set<Id>();
-    for (Document_Assignment__c assignment : toUpdate) {
-        restoredDocIds.add(assignment.Document__c);
-    }
-
-    // 1.9.5 Query Document__c records
-    List<Document__c> docs = [
-        SELECT Id, Name, Category__c, Category__r.Name, Status__c, Team__c, Assigned_To__c, OwnerId, Document_Template__c
-        FROM Document__c
-        WHERE Id IN :restoredDocIds
-    ];
-
-    // 1.9.6 Wrap in DocumentItem
-    List<DocumentItem> wrappedDocs = new List<DocumentItem>();
-    for (Document__c d : docs) {
-        DocumentItem item = new DocumentItem();
-        item.id = d.Id;
-        item.name = d.Name;
-        item.categoryId = d.Category__c;
-        item.status = d.Status__c;
-        item.team = d.Team__c;
-        item.assignedTo = d.Assigned_To__c;
-        item.ownerId = d.OwnerId;
-        item.templateId = d.Document_Template__c;
-        item.categoryName = d.Category__r != null ? d.Category__r.Name : null;
-        wrappedDocs.add(item);
-    }
-    System.Debug('wrappedDocs: '+wrappedDocs);
-    return wrappedDocs;
-}
-
-    // /**
-    //  * 1.9 Restores multiple archived document assignments.
-    //  * @param documentIds List of document IDs to restore
-    //  * @param recordId The ID of the record (Lead or Opportunity)
-    //  */
-    // @AuraEnabled
-    // public static void restoreArchivedAssignments(List<Id> documentIds, Id recordId) {
-    //     // 1.9.1 Validate input
-    //     if (documentIds == null || documentIds.isEmpty()) {
-    //         throw new AuraHandledException('No documents to restore.');
-    //     }
-
-    //     // 1.9.2 Query archived assignments
-    //     List<Document_Assignment__c> toUpdate = [
-    //         SELECT Id, IsArchived__c
-    //         FROM Document_Assignment__c
-    //         WHERE Document__c IN :documentIds
-    //         AND (Lead__c = :recordId OR Loan__c = :recordId)
-    //         AND IsArchived__c = true
-    //     ];
-
-    //     // 1.9.3 Mark as unarchived
-    //     for (Document_Assignment__c doc : toUpdate) {
-    //         doc.IsArchived__c = false;
-    //     }
-
-    //     update toUpdate;
-    // }
 
     // ==================== Section 2: Document Retrieval Methods ====================
+public class DocumentTypeWrapper {
+    @AuraEnabled public List<DocumentItem> documents { get; set; }
+    @AuraEnabled public List<DocumentItem> tasks { get; set; }
+    
+    public DocumentTypeWrapper(List<DocumentItem> documents, List<DocumentItem> tasks) {
+        this.documents = documents;
+        this.tasks = tasks;
+    }
+}
 
     /**
      * 2.1 Fetches all documents and returns them wrapped in DocumentItem.
      * @return List of DocumentItem wrappers
      */
-    @AuraEnabled(cacheable=true)
-    public static List<DocumentItem> getAllDocuments() {
-        // 2.1.1 Log method entry
-        System.debug('--- START getAllDocuments ---');
 
-        try {
-            // 2.1.2 Query all documents
-            List<Document__c> allDocs = [
-                SELECT Id, Name, Category__r.Name, Status__c, Team__c, Assigned_To__c, OwnerId, Document_Template__c
-                FROM Document__c
-                ORDER BY Name
-            ];
+     @AuraEnabled(cacheable=true)
+public static DocumentTypeWrapper getAllDocuments() {
+    System.debug('--- START getAllDocuments ---');
 
-            // 2.1.3 Transform to DocumentItem wrappers
-            List<DocumentItem> wrappedDocs = new List<DocumentItem>();
-            for (Document__c d : allDocs) {
-                DocumentItem item = new DocumentItem();
-                item.id = d.Id;
-                item.name = d.Name;
-                item.categoryId = d.Category__c;
-                item.status = d.Status__c;
-                item.team = d.Team__c;
-                item.assignedTo = d.Assigned_To__c;
-                item.ownerId = d.OwnerId;
-                item.templateId = d.Document_Template__c;
-                item.categoryName = d.Category__r.Name;
-                wrappedDocs.add(item);
+    try {
+        // Fetch all documents with needed fields
+        List<Document__c> allDocs = [
+            SELECT Id, Name, Category__r.Name, Status__c, Team__c, Assigned_To__c, Type__c, OwnerId, Document_Template__c
+            FROM Document__c
+            WHERE Type__c IN ('Document', 'Task')
+            ORDER BY Name
+        ];
+
+        // Split IDs by type
+        Set<Id> docIds = new Set<Id>();
+        Set<Id> taskIds = new Set<Id>();
+
+        for (Document__c doc : allDocs) {
+            if (doc.Type__c == 'Document') {
+                docIds.add(doc.Id);
+            } else if (doc.Type__c == 'Task') {
+                taskIds.add(doc.Id);
             }
-
-            // 2.1.4 Log results
-            System.debug('2.1.5 Total documents wrapped: ' + wrappedDocs.size());
-            System.debug('2.1.6 Total documents: ' + wrappedDocs);
-            return wrappedDocs;
-        } catch (Exception e) {
-            System.debug('2.1.7 ERROR in getAllDocuments: ' + e.getMessage());
-            throw new AuraHandledException('Failed to fetch all documents: ' + e.getMessage());
         }
+
+        // Wrap documents
+        List<DocumentItem> documentItems = queryDocumentsAndWrap(docIds);
+        List<DocumentItem> taskItems = queryDocumentsAndWrap(taskIds);
+
+        System.debug('Documents: ' + documentItems.size());
+        System.debug('Tasks: ' + taskItems.size());
+        DocumentTypeWrapper res = new DocumentTypeWrapper(documentItems, taskItems);
+        System.debug('res: '+ res);
+
+        return res; 
+
+    } catch (Exception e) {
+        System.debug('Error in getAllDocuments: ' + e.getMessage());
+        throw new AuraHandledException('Failed to fetch document data: ' + e.getMessage());
     }
+}
+
+    // @AuraEnabled(cacheable=true)
+    // public static List<DocumentItem> getAllDocuments() {
+    //     // 2.1.1 Log method entry
+    //     System.debug('--- START getAllDocuments ---');
+
+    //     try {
+    //         // 2.1.2 Query all documents
+    //         List<Document__c> allDocs = [
+    //             SELECT Id, Name, Category__r.Name, Status__c, Team__c, Assigned_To__c,Type__c, OwnerId, Document_Template__c
+    //             FROM Document__c
+    //             ORDER BY Name
+    //         ];
+
+    //         // 2.1.3 Fetch and wrap document details
+    //         Set<Id> docIds = new Set<Id>();
+    //         for (Document__c d : allDocs) {
+    //             docIds.add(d.Id);
+    //         }
+
+    //         // 2.1.4 Log results
+    //         List<DocumentItem> wrappedDocs = queryDocumentsAndWrap(docIds);
+    //         System.debug('2.1.5 Total documents wrapped: ' + wrappedDocs.size());
+    //         System.debug('2.1.6 Total documents: ' + wrappedDocs);
+    //         return wrappedDocs;
+    //     } catch (Exception e) {
+    //         System.debug('2.1.7 ERROR in getAllDocuments: ' + e.getMessage());
+    //         throw new AuraHandledException('Failed to fetch all documents: ' + e.getMessage());
+    //     }
+    // }
 
     /**
      * 2.2 Fetches documents by category, using template or direct mapping.
@@ -487,59 +486,46 @@ public static List<DocumentItem> restoreArchivedAssignments(List<Id> documentIds
 
             // 2.2.9 Fetch documents for template
             List<Document__c> rawDocs = [
-                SELECT Id, Name, Category__c, Category__r.Name, Status__c, Team__c, Assigned_To__c, OwnerId, Document_Template__c
+                SELECT Id, Name, Category__c, Category__r.Name, Status__c, Team__c,Assigned_To__r.Name, Assigned_To__r.Email, Owner.Name, Assigned_To__c, OwnerId, Document_Template__c
                 FROM Document__c WHERE Document_Template__c = :templateId
             ];
 
+            // 2.2.10 Fetch and wrap document details
+            Set<Id> docIds = new Set<Id>();
             for (Document__c d : rawDocs) {
-                DocumentItem item = new DocumentItem();
-                item.id = d.Id;
-                item.name = d.Name;
-                item.categoryId = d.Category__c;
-                item.categoryName = d.Category__r.Name;
-                item.status = d.Status__c;
-                item.team = d.Team__c;
-                item.assignedTo = d.Assigned_To__c;
-                item.ownerId = d.OwnerId;
-                item.templateId = d.Document_Template__c;
-                docs.add(item);
+                docIds.add(d.Id);
             }
+            docs = queryDocumentsAndWrap(docIds);
 
-            // 2.2.10 Return template-based result
-            System.debug('2.2.11 Fetched documents: ' + docs.size());
+            // 2.2.11 Return template-based result
+            System.debug('2.2.12 Fetched documents: ' + docs.size());
             return new DocumentResultWrapper('Template', category.Name, templateId, docs);
 
         } else if (category.Type__c == 'Document') {
-            // 2.2.12 Handle Document-based category
-            System.debug('2.2.13 Path = Document');
+            // 2.2.13 Handle Document-based category
+            System.debug('2.2.14 Path = Document');
 
-            // 2.2.14 Fetch documents for category
+            // 2.2.15 Fetch documents for category
             List<Document__c> rawDocs = [
                 SELECT Id, Name, Category__c, Status__c, Team__c, Assigned_To__c, OwnerId, Document_Template__c
                 FROM Document__c WHERE Category__c = :categoryId
             ];
 
+            // 2.2.16 Fetch and wrap document details
+            Set<Id> docIds = new Set<Id>();
             for (Document__c d : rawDocs) {
-                DocumentItem item = new DocumentItem();
-                item.id = d.Id;
-                item.name = d.Name;
-                item.categoryId = d.Category__c;
-                item.status = d.Status__c;
-                item.team = d.Team__c;
-                item.assignedTo = d.Assigned_To__c;
-                item.ownerId = d.OwnerId;
-                item.templateId = d.Document_Template__c;
-                docs.add(item);
+                docIds.add(d.Id);
             }
+            docs = queryDocumentsAndWrap(docIds);
 
-            // 2.2.15 Return document-based result
-            System.debug('2.2.16 Fetched documents: ' + docs.size());
-            System.debug('2.2.17 documents: ' + docs);
+            // 2.2.17 Return document-based result
+            System.debug('2.2.18 Fetched documents: ' + docs.size());
+            System.debug('2.2.19 documents: ' + docs);
             return new DocumentResultWrapper('Document', category.Name, null, docs);
 
         } else {
-            // 2.2.18 Handle unsupported category type
-            System.debug('2.2.19 Unsupported category type: ' + category.Type__c);
+            // 2.2.20 Handle unsupported category type
+            System.debug('2.2.21 Unsupported category type: ' + category.Type__c);
             throw new AuraHandledException('Unsupported category type: ' + category.Type__c);
         }
     }
@@ -562,103 +548,88 @@ public static List<DocumentItem> restoreArchivedAssignments(List<Id> documentIds
         // 2.3.3 Log method details
         System.debug('2.3.4 Fetching documents for template: ' + templateId + ', recordId: ' + recordId + ', objectName: ' + objectName);
 
-        try {
-            // 2.3.5 Query documents for template
-            List<Document__c> rawDocs = [
-                SELECT Id, Name, Category__c, Status__c, Category__r.Name, Team__c, Assigned_To__c, OwnerId, Document_Template__c
-                FROM Document__c
-                WHERE Document_Template__c = :templateId
-                ORDER BY Name
+        // 2.3.5 Query documents for template
+        List<Document__c> rawDocs = [
+            SELECT Id, Name, Category__c, Status__c, Assigned_To__r.Name, Assigned_To__r.Email, Owner.Name,Category__r.Name, Team__c, Assigned_To__c, OwnerId, Document_Template__c
+            FROM Document__c
+            WHERE Document_Template__c = :templateId
+            ORDER BY Name
+        ];
+        System.debug('2.3.6 Fetched rawDocs: ' + rawDocs);
+
+        List<DocumentItem> result = new List<DocumentItem>();
+        Boolean shouldAssign = !String.isBlank(recordId);
+        System.debug('2.3.7 Should assign documents? ' + shouldAssign);
+        
+        Set<Id> assignedDocIds = new Set<Id>();
+        List<Document_Assignment__c> assignmentsToInsert = new List<Document_Assignment__c>();
+
+        if (shouldAssign) {
+            // 2.3.8 Check for existing assignments
+            System.debug('2.3.9 Looking for existing assignments for record: ' + recordId);
+
+            Set<Id> documentIds = new Set<Id>();
+            for (Document__c doc : rawDocs) {
+                documentIds.add(doc.Id);
+            }
+            System.debug('2.3.10 Documents to check for existing assignments: ' + documentIds);
+
+            List<Document_Assignment__c> existingAssignments = [
+                SELECT Document__c
+                FROM Document_Assignment__c
+                WHERE Document__c IN :documentIds AND (Lead__c = :recordId OR Loan__c = :recordId)
             ];
-            System.debug('2.3.6 Fetched rawDocs: ' + rawDocs);
 
-            List<DocumentItem> result = new List<DocumentItem>();
-            Boolean shouldAssign = !String.isBlank(recordId);
-            System.debug('2.3.7 Should assign documents? ' + shouldAssign);
-            
-            Set<Id> assignedDocIds = new Set<Id>();
-            List<Document_Assignment__c> assignmentsToInsert = new List<Document_Assignment__c>();
+            System.debug('2.3.11 Found existing assignments: ' + existingAssignments);
 
-            if (shouldAssign) {
-                // 2.3.8 Check for existing assignments
-                System.debug('2.3.9 Looking for existing assignments for record: ' + recordId);
-
-                Set<Id> documentIds = new Set<Id>();
-                for (Document__c doc : rawDocs) {
-                    documentIds.add(doc.Id);
-                }
-                System.debug('2.3.10 Documents to check for existing assignments: ' + documentIds);
-
-                List<Document_Assignment__c> existingAssignments = [
-                    SELECT Document__c
-                    FROM Document_Assignment__c
-                    WHERE Document__c IN :documentIds AND (Lead__c = :recordId OR Loan__c = :recordId)
-                ];
-
-                System.debug('2.3.11 Found existing assignments: ' + existingAssignments);
-
-                for (Document_Assignment__c assignment : existingAssignments) {
-                    assignedDocIds.add(assignment.Document__c);
-                }
+            for (Document_Assignment__c assignment : existingAssignments) {
+                assignedDocIds.add(assignment.Document__c);
             }
-
-            for (Document__c d : rawDocs) {
-                // 2.3.12 Process each document
-                System.debug('2.3.13 Processing document: ' + d.Id + ', name: ' + d.Name);
-
-                if (shouldAssign && assignedDocIds.contains(d.Id)) {
-                    System.debug('2.3.14 Document ' + d.Id + ' already assigned to record ' + recordId + ', skipping assignment.');
-                    continue;
-                }
-
-                // 2.3.15 Create assignment if needed
-                if (shouldAssign) {
-                    Document_Assignment__c assignment = new Document_Assignment__c();
-                    assignment.Document__c = d.Id;
-
-                    if (objectName == 'Lead') {
-                        assignment.Lead__c = recordId;
-                        System.debug('2.3.16 Assigning document ' + d.Id + ' to Lead with ID: ' + recordId);
-                    } else if (objectName == 'Opportunity') {
-                        assignment.Loan__c = recordId;
-                        System.debug('2.3.17 Assigning document ' + d.Name + ' to Opportunity with ID: ' + recordId);
-                    } else {
-                        System.debug('2.3.18 Unknown objectName: ' + objectName);
-                    }
-                    
-                    assignmentsToInsert.add(assignment);
-                }
-
-                // 2.3.19 Populate DocumentItem
-                DocumentItem doc = new DocumentItem();
-                doc.id = d.Id;
-                doc.name = d.Name;
-                doc.categoryId = d.Category__c;
-                doc.categoryName = d.Category__r.Name;
-                doc.status = d.Status__c;
-                doc.team = d.Team__c;
-                doc.assignedTo = d.Assigned_To__c;
-                doc.ownerId = d.OwnerId;
-                doc.templateId = d.Document_Template__c;
-                result.add(doc);
-
-                System.debug('2.3.20 Added document ' + d.Id + ' to result.');
-            }
-
-            // 2.3.21 Insert assignments if any
-            if (!assignmentsToInsert.isEmpty()) {
-                insert assignmentsToInsert;
-                System.debug('2.3.22 Inserted ' + assignmentsToInsert.size() + ' document assignments.');
-            } else {
-                System.debug('2.3.23 No assignments to insert.');
-            }
-
-            return result;
-
-        } catch (Exception e) {
-            System.debug('2.3.24 ERROR in getDocumentsByTemplate: ' + e.getMessage());
-            throw new AuraHandledException('Failed to fetch and assign documents: ' + e.getMessage());
         }
+
+        Set<Id> docIds = new Set<Id>();
+        for (Document__c d : rawDocs) {
+            // 2.3.12 Process each document
+            System.debug('2.3.13 Processing document: ' + d.Id + ', name: ' + d.Name);
+
+            if (shouldAssign && assignedDocIds.contains(d.Id)) {
+                System.debug('2.3.14 Document ' + d.Id + ' already assigned to record ' + recordId + ', skipping assignment.');
+                continue;
+            }
+
+            // 2.3.15 Create assignment if needed
+            if (shouldAssign) {
+                Document_Assignment__c assignment = new Document_Assignment__c();
+                assignment.Document__c = d.Id;
+
+                if (objectName == 'Lead') {
+                    assignment.Lead__c = recordId;
+                    System.debug('2.3.16 Assigning document ' + d.Id + ' to Lead with ID: ' + recordId);
+                } else if (objectName == 'Opportunity') {
+                    assignment.Loan__c = recordId;
+                    System.debug('2.3.17 Assigning document ' + d.Name + ' to Opportunity with ID: ' + recordId);
+                } else {
+                    System.debug('2.3.18 Unknown objectName: ' + objectName);
+                }
+                
+                assignmentsToInsert.add(assignment);
+            }
+
+            docIds.add(d.Id);
+        }
+
+        // 2.3.19 Fetch and wrap document details
+        result = queryDocumentsAndWrap(docIds);
+
+        // 2.3.20 Insert assignments if any
+        if (!assignmentsToInsert.isEmpty()) {
+            insert assignmentsToInsert;
+            System.debug('2.3.21 Inserted ' + assignmentsToInsert.size() + ' document assignments.');
+        } else {
+            System.debug('2.3.22 No assignments to insert.');
+        }
+
+        return result;
     }
 
     /**
@@ -666,53 +637,94 @@ public static List<DocumentItem> restoreArchivedAssignments(List<Id> documentIds
      * @param recordId The ID of the record (Lead, Account, etc.)
      * @return List of DocumentItem wrappers
      */
+    // @AuraEnabled(cacheable=true)
+    // public static List<DocumentItem> getAssignedDocuments(Id recordId) {
+    //     // 2.4.1 Log input
+    //     System.debug('2.4.2 recordId: ' + recordId);
+
+    //     // 2.4.3 Validate input
+    //     if (recordId == null) {
+    //         throw new AuraHandledException('Record ID is required');
+    //     }
+
+    //     // 2.4.4 Query document assignments
+    //     List<Document_Assignment__c> assignments = [
+    //         SELECT Id, Document__c, Document__r.Name, Document__r.Category__c, 
+    //                Document__r.Status__c, Document__r.Team__c, Document__r.Assigned_To__c,Document__r.Assigned_To__r.Name,
+    //                Document__r.OwnerId,Document__r.Related_Contact__r.Email, Document__r.Document_Template__c,Document__r.Owner.Name,Document__r.Assigned_To__r.Email,
+    //                Document__r.Category__r.Name
+    //         FROM Document_Assignment__c
+    //         WHERE Loan__c = :recordId
+    //     ];
+    //     System.debug('2.4.5 assignments: ' + assignments);
+
+    //     // 2.4.6 Collect document IDs
+    //     Set<Id> docIds = new Set<Id>();
+    //     for (Document_Assignment__c assignment : assignments) {
+    //         docIds.add(assignment.Document__c);
+    //     }
+
+    //     // 2.4.7 Fetch and wrap document details
+    //     List<DocumentItem> documentItems = queryDocumentsAndWrap(docIds);
+    //     System.debug('2.4.8 documentItems: ' + documentItems);
+    //     return documentItems;
+    // }
+
     @AuraEnabled(cacheable=true)
-    public static List<DocumentItem> getAssignedDocuments(Id recordId) {
-        // 2.4.1 Log input
-        System.debug('2.4.2 recordId: ' + recordId);
+public static List<DocumentItem> getAssignedDocuments(Id recordId, String objectName) {
+    // Log input
+    System.debug('recordId: ' + recordId);
+    System.debug('objectName: ' + objectName);
 
-        // try {
-            // 2.4.3 Validate input
-            if (recordId == null) {
-                throw new AuraHandledException('Record ID is required');
-            }
-
-            // 2.4.4 Query document assignments
-            List<Document_Assignment__c> assignments = [
-                SELECT Id, Document__c, Document__r.Name, Document__r.Category__c, 
-                       Document__r.Status__c, Document__r.Team__c, Document__r.Assigned_To__c,Document__r.Assigned_To__r.Name,
-                       Document__r.OwnerId,Document__r.Related_Contact__r.Email, Document__r.Document_Template__c,Document__r.Owner.Name,Document__r.Assigned_To__r.Email,
-                       Document__r.Category__r.Name
-                FROM Document_Assignment__c
-                WHERE Loan__c = :recordId
-            ];
-            System.debug('2.4.5 assignments: ' + assignments);
-
-            // 2.4.6 Transform to DocumentItem wrappers
-            List<DocumentItem> documentItems = new List<DocumentItem>();
-            for (Document_Assignment__c assignment : assignments) {
-                DocumentItem item = new DocumentItem();
-                item.id = assignment.Document__c;
-                item.name = assignment.Document__r.Name;
-                item.categoryId = assignment.Document__r.Category__c;
-                item.status = assignment.Document__r.Status__c;
-                item.team = assignment.Document__r.Team__c;
-                item.assignedTo = assignment.Document__r.Assigned_To__r.Name;
-                item.ownerId = assignment.Document__r.OwnerId;
-                item.ownerName = assignment.Document__r.Owner.Name;
-                item.assignedToEmail = assignment.Document__r.Related_Contact__r.Email;
-                // item.assignedToEmail = assignment.Document__r.Assigned_To__r.Email;
-                item.templateId = assignment.Document__r.Document_Template__c;
-                item.categoryName = assignment.Document__r.Category__r.Name;
-                documentItems.add(item);
-            }
-            System.debug('2.4.7 documentItems: ' + documentItems);
-            return documentItems;
-        // } catch (Exception e) {
-        //     System.debug('2.4.8 Error fetching assigned documents: ' + e.getMessage() + '\n' + e.getStackTraceString());
-        //     throw new AuraHandledException('Error fetching assigned documents: ' + e.getMessage());
-        // }
+    // Validate input
+    if (recordId == null || objectName == null) {
+        throw new AuraHandledException('Record ID and object name are required');
     }
+
+    // Initialize the base query
+    String baseQuery = 'SELECT Id, Document__c, Document__r.Name, Document__r.Category__c, ' +
+                       'Document__r.Status__c, Document__r.Team__c, Document__r.Assigned_To__c, ' +
+                       'Document__r.Assigned_To__r.Name, Document__r.OwnerId, ' +
+                       'Document__r.Related_Contact__r.Email, Document__r.Document_Template__c, ' +
+                       'Document__r.Owner.Name, Document__r.Assigned_To__r.Email, ' +
+                       'Document__r.Category__r.Name ';
+
+    // Add the WHERE clause dynamically based on the objectName
+    String whereClause = '';
+    if (objectName == 'Lead') {
+        whereClause = 'WHERE Lead__c = :recordId';  // Assuming 'Lead__c' is the relationship field to Lead
+    } else if (objectName == 'Opportunity') {
+        whereClause = 'WHERE Loan__c = :recordId';  // Assuming 'Loan__c' is the relationship field to Opportunity/Loan
+    } else {
+        throw new AuraHandledException('Invalid object name. Supported values are "Lead" or "Opportunity".');
+    }
+
+    // Combine base query and where clause
+    String query = baseQuery + ' FROM Document_Assignment__c ' + whereClause;
+
+    // Log the dynamic query for debugging
+    System.debug('Dynamic Query: ' + query);
+
+    // Execute the dynamic query
+    List<Document_Assignment__c> assignments = Database.query(query);
+
+    // Log assignments for debugging
+    System.debug('Assignments: ' + assignments);
+
+    // Collect document IDs from the assignments
+    Set<Id> docIds = new Set<Id>();
+    for (Document_Assignment__c assignment : assignments) {
+        docIds.add(assignment.Document__c);
+    }
+
+    // Fetch and wrap document details
+    List<DocumentItem> documentItems = queryDocumentsAndWrap(docIds);
+
+    // Log document items for debugging
+    System.debug('Document Items: ' + documentItems);
+
+    return documentItems;
+}
 
     // ==================== Section 3: Template Management Methods ====================
 
@@ -846,37 +858,38 @@ public static List<DocumentItem> restoreArchivedAssignments(List<Id> documentIds
     }
 
     // ==================== Section 4: Category and Template Retrieval Methods ====================
-/**
- * Creates a new Document Category.
- * @param name The name of the category to create
- * @return The created DocumentCategory wrapper
- */
-@AuraEnabled
-public static DocumentCategory createDocumentCategory(String name) {
-    if (String.isBlank(name)) {
-        throw new AuraHandledException('Category name cannot be empty.');
+
+    /**
+     * Creates a new Document Category.
+     * @param name The name of the category to create
+     * @return The created DocumentCategory wrapper
+     */
+    @AuraEnabled
+    public static DocumentCategory createDocumentCategory(String name) {
+        if (String.isBlank(name)) {
+            throw new AuraHandledException('Category name cannot be empty.');
+        }
+
+        try {
+            // Create new category record
+            Doc_Category__c newCategory = new Doc_Category__c(
+                Name = name,
+                Type__c = 'Document' // Assuming you want to hardcode this as in your query
+            );
+
+            insert newCategory;
+
+            // Wrap the created record and return
+            DocumentCategory result = new DocumentCategory();
+            result.id = newCategory.Id;
+            result.name = newCategory.Name;
+
+            return result;
+        } catch (Exception ex) {
+            System.debug('Error creating document category: ' + ex.getMessage());
+            throw new AuraHandledException('Failed to create document category: ' + ex.getMessage());
+        }
     }
-
-    try {
-        // Create new category record
-        Doc_Category__c newCategory = new Doc_Category__c(
-            Name = name,
-            Type__c = 'Document' // Assuming you want to hardcode this as in your query
-        );
-
-        insert newCategory;
-
-        // Wrap the created record and return
-        DocumentCategory result = new DocumentCategory();
-        result.id = newCategory.Id;
-        result.name = newCategory.Name;
-
-        return result;
-    } catch (Exception ex) {
-        System.debug('Error creating document category: ' + ex.getMessage());
-        throw new AuraHandledException('Failed to create document category: ' + ex.getMessage());
-    }
-}
 
     /**
      * 4.1 Fetches all categories with Type = 'Document' and returns them with camelCase fields.
@@ -911,7 +924,6 @@ public static DocumentCategory createDocumentCategory(String name) {
         }
     }
    
-
     /**
      * 4.2 Fetches all categories with Type = 'Template' and their associated single template.
      * @return List of TemplateCategory wrappers
@@ -994,228 +1006,137 @@ public static DocumentCategory createDocumentCategory(String name) {
     }
 
     // ==================== Section 5: Email Sending Methods ====================
-@AuraEnabled
-public static GenericResponseWrapper sendReadyToSendDocuments(List<Id> documentIds, List<Map<String, String>> readyToSendDocsWithEmails) {
-    if (documentIds == null || documentIds.isEmpty()) {
-        return new GenericResponseWrapper(false, 'No document IDs provided.');
-    }
-    if (readyToSendDocsWithEmails == null || readyToSendDocsWithEmails.isEmpty()) {
-        return new GenericResponseWrapper(false, 'No document-email mappings provided.');
-    }
 
-    // Query documents with 'Ready to Send' status
-    List<Document__c> documents = [
-        SELECT Id, Name, Status__c
-        FROM Document__c
-        WHERE Id IN :documentIds AND Status__c = 'Ready to Send'
-    ];
-    if (documents.isEmpty()) {
-        return new GenericResponseWrapper(false, 'No documents with status "Ready to Send" found.');
-    }
+    @AuraEnabled
+    public static GenericResponseWrapper sendReadyToSendDocuments(List<Id> documentIds, Id recordId, String objectName) {
+        System.debug('objectName: '+objectName);
+        System.debug('recordId: '+recordId);
+        if (documentIds == null || documentIds.isEmpty()) {
+            return new GenericResponseWrapper(false, 'No document IDs provided.');
+        }
+        if (String.isBlank(recordId)) {
+            return new GenericResponseWrapper(false, 'Record ID is required.');
+        }
 
-    Map<Id, Document__c> docMap = new Map<Id, Document__c>();
-    for (Document__c doc : documents) {
-        docMap.put(doc.Id, doc);
-    }
+        try {
+            // Query documents with 'Ready to Send' status
+            List<Document__c> documents = [
+                SELECT Id, Name, Status__c
+                FROM Document__c
+                WHERE Id IN :documentIds AND Status__c = 'Ready to Send'
+            ];
 
-    // Group documents by email with recipient name
-    Map<String, List<Document__c>> docsByEmail = new Map<String, List<Document__c>>();
-    Map<String, String> emailToName = new Map<String, String>();
-
-    for (Map<String, String> entry : readyToSendDocsWithEmails) {
-        String docIdStr = entry.get('id');
-        String email = entry.get('email');
-        String name = entry.get('name');
-        if (String.isNotBlank(docIdStr) && String.isNotBlank(email) && docMap.containsKey(docIdStr)) {
-            if (!docsByEmail.containsKey(email)) {
-                docsByEmail.put(email, new List<Document__c>());
+            if (documents.isEmpty()) {
+                return new GenericResponseWrapper(false, 'No documents with status "Ready to Send" found.');
             }
-            docsByEmail.get(email).add(docMap.get(docIdStr));
 
-            if (!emailToName.containsKey(email) && String.isNotBlank(name)) {
-                emailToName.put(email, name);
+            // Get record owner and recipient email based on object type
+            String recipientEmail;
+            String recipientName;
+            Id ownerId;
+
+            if (objectName == 'Lead') {
+                Lead leadRecord = [
+                    SELECT Id, Email, Name, OwnerId
+                    FROM Lead
+                    WHERE Id = :recordId
+                    LIMIT 1
+                ];
+                System.debug('leadRecord: '+leadRecord);
+                recipientEmail = leadRecord.Email;
+                recipientName = leadRecord.Name;
+                ownerId = leadRecord.OwnerId;
+            } else if (objectName == 'Opportunity') {
+
+                Opportunity oppRecord = [
+                    SELECT Id, Cust_Borrower_Email__c, Name, OwnerId
+                    FROM Opportunity
+                    WHERE Id = :recordId
+                    LIMIT 1
+                ];
+                System.debug('oppRecord: '+oppRecord);
+                recipientEmail = oppRecord.Cust_Borrower_Email__c;
+                recipientName = oppRecord.Name;
+                ownerId = oppRecord.OwnerId;
+            } else {
+                return new GenericResponseWrapper(false, 'Unsupported object type: ' + objectName);
             }
+
+            // Query owner details
+            User recordOwner = [
+                SELECT Id, Name, Email
+                FROM User
+                WHERE Id = :ownerId
+                LIMIT 1
+            ];
+
+            if (String.isBlank(recipientEmail)) {
+                return new GenericResponseWrapper(false, 'Recipient email address not found on the record.');
+            }
+        System.debug('recipientEmail: '+recipientEmail);
+
+            // Build email content
+            String greeting = String.isNotBlank(recipientName) ? 'Dear ' + recipientName + ',' : 'Dear Customer,';
+
+            String htmlBody = '';
+            htmlBody += '<html><body style="font-family:Segoe UI, sans-serif; background-color:#f4fdfc; padding:20px;">';
+            htmlBody += '<div style="max-width:700px; margin:auto; background:#ffffff; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.08); padding:30px;">';
+
+            // Greeting
+            htmlBody += '<p style="font-size:16px; color:#333;">' + greeting + '</p>';
+            htmlBody += '<p style="font-size:16px; color:#333;">The following document(s) are ready for your review:</p>';
+
+            // Document Table
+            htmlBody += '<table style="width:100%; border-collapse:collapse; margin-top:20px;">';
+            htmlBody += '<thead><tr>';
+            htmlBody += '<th style="background:#28c7c7; color:#fff; text-align:left; padding:10px; border-radius:6px 6px 0 0;">Item Name/s</th>';
+            htmlBody += '</tr></thead><tbody>';
+            for (Document__c doc : documents) {
+                htmlBody += '<tr>';
+                htmlBody += '<td style="padding:10px; border-bottom:1px solid #e0e0e0; color:#333;">' + doc.Name.escapeHtml4() + '</td>';
+                htmlBody += '</tr>';
+            }
+            htmlBody += '</tbody></table>';
+
+            // Signature Section
+            htmlBody += '<div style="margin-top:40px; text-align:center; color:#333;">';
+            htmlBody += '<p style="margin:0; font-weight:bold; font-size:16px;">' + recordOwner.Name + '</p>';
+            htmlBody += '<p style="margin:0; font-size:14px;">Record Owner</p>';
+            htmlBody += '<p style="font-size:14px; margin-top:10px; line-height:1.6;">';
+            htmlBody += '<a href="mailto:' + recordOwner.Email + '" style="color:#32b2e0;">Email Me</a>';
+            htmlBody += '</p></div>';
+
+            htmlBody += '</div></body></html>';
+
+            // Create and send email
+            Messaging.SingleEmailMessage emailMsg = new Messaging.SingleEmailMessage();
+            emailMsg.setToAddresses(new List<String>{recipientEmail});
+            emailMsg.setSubject('Your Document(s) are Ready to Review');
+            emailMsg.setHtmlBody(htmlBody);
+            emailMsg.setSaveAsActivity(true);
+            emailMsg.setOrgWideEmailAddressId(getOrgWideEmailAddress()); // Optional: Use org-wide email address
+            
+            Messaging.SendEmailResult[] results = Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{emailMsg}, false);
+            
+            if (results[0].isSuccess()) {
+                return new GenericResponseWrapper(true, 'Email sent successfully to ' + recipientEmail);
+            } else {
+                return new GenericResponseWrapper(false, 'Failed to send email: ' + results[0].getErrors()[0].getMessage());
+            }
+        } catch (Exception ex) {
+            return new GenericResponseWrapper(false, 'Error sending email: ' + ex.getMessage());
         }
     }
 
-    // Build and send emails
-    List<Messaging.SingleEmailMessage> emailsToSend = new List<Messaging.SingleEmailMessage>();
-    for (String email : docsByEmail.keySet()) {
-        List<Document__c> docs = docsByEmail.get(email);
-        if (docs.isEmpty()) continue;
-
-        String recipientName = emailToName.get(email);
-        String greeting = String.isNotBlank(recipientName) ? 'Dear ' + recipientName + ',' : 'Dear Customer,';
-
-       String htmlBody = '';
-htmlBody += '<html><body style="font-family:Segoe UI, sans-serif; background-color:#f4fdfc; padding:20px;">';
-htmlBody += '<div style="max-width:700px; margin:auto; background:#ffffff; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.08); padding:30px;">';
-
-htmlBody += '<p style="font-size:16px;">' + greeting + '</p>';
-htmlBody += '<p style="font-size:16px;">The following document(s) are ready for your review:</p>';
-
-// Document Table
-htmlBody += '<table style="width:100%; border-collapse:collapse; margin-top:20px;">';
-htmlBody += '<thead><tr>';
-htmlBody += '<th style="background:#28c7c7; color:#fff; text-align:left; padding:10px; border-radius:6px 6px 0 0;">Item Name/s</th>';
-htmlBody += '</tr></thead><tbody>';
-for (Document__c doc : docs) {
-    htmlBody += '<tr>';
-    htmlBody += '<td style="padding:10px; border-bottom:1px solid #e0e0e0;">' + doc.Name.escapeHtml4() + '</td>';
-    htmlBody += '</tr>';
-}
-htmlBody += '</tbody></table>';
-
-// Buttons
-htmlBody += '<div style="margin-top:30px; text-align:center;">';
-htmlBody += '<a href="' +  + '" style="display:inline-block; background:linear-gradient(to right, #28c7c7, #32b2e0); color:#fff; text-decoration:none; padding:12px 24px; margin:8px; border-radius:8px; font-weight:bold;">Email</a>';
-htmlBody += '<a href="' +  + '" style="display:inline-block; background:linear-gradient(to right, #32b2e0, #28c7c7); color:#fff; text-decoration:none; padding:12px 24px; margin:8px; border-radius:8px; font-weight:bold;">Drop Off</a>';
-htmlBody += '</div>';
-
-// Signature Section
-htmlBody += '<div style="margin-top:40px; text-align:center;">';
-htmlBody += '<img src="' +  + '" alt="Manager Photo" style="width:100px; border-radius:50%; margin-bottom:10px;" />';
-htmlBody += '<p style="margin:0; font-weight:bold; font-size:16px;">' +  + '</p>';
-htmlBody += '<p style="margin:0; font-size:14px;">' +  + '</p>';
-htmlBody += '<p style="margin:0; font-size:14px;">NMLS: ' +  + '</p>';
-htmlBody += '<p style="font-size:14px; margin-top:10px;">';
-htmlBody += '<strong>D:</strong> ' +  + '<br />';
-htmlBody += '<strong>M:</strong> ' +  + '<br />';
-htmlBody +=  + '<br />';
-htmlBody +=  + '</p>';
-htmlBody += '<p>';
-htmlBody += '<a href="' +  + '" style="color:#32b2e0; margin:0 6px;">Email Me</a> | ';
-htmlBody += '<a href="' +  + '" style="color:#32b2e0; margin:0 6px;">Visit My Website</a> | ';
-htmlBody += '<a href="' +  + '" style="color:#32b2e0; margin:0 6px;">Unsubscribe</a>';
-htmlBody += '</p>';
-htmlBody += '</div>';
-
-// Footer
-htmlBody += '<div style="margin-top:30px; text-align:center;">';
-htmlBody += '<img src="' +  + '" alt="Company Logo" style="height:40px;" />';
-htmlBody += '<p style="font-size:12px; color:#999;">';
-htmlBody += 'Best Option Mortgage is a DBA of ML Mortgage. ML Mortgage Corp. is a state-licensed mortgage lender, NMLS ID #362312, licensed by the CA Department of Financial Protection and Innovation under the Finance Lenders Law, License #60DBO69831. For other states, visit ';
-htmlBody += '<a href="https://mlmortgage.net" style="color:#32b2e0;">www.mlmortgage.net</a>.';
-htmlBody += '</p>';
-htmlBody += '</div>';
-
-htmlBody += '</div></body></html>';
-
-        // String htmlBody = '<p>' + greeting + '</p>';
-        // htmlBody += '<p>The following document(s) are ready for your review:</p>';
-        // htmlBody += '<table border="1" cellpadding="5" cellspacing="0">';
-        // htmlBody += '<tr><th>Document Name</th></tr>';
-        // for (Document__c doc : docs) {
-        //     htmlBody += '<tr><td>' + doc.Name.escapeHtml4() + '</td></tr>';
-        // }
-        // htmlBody += '</table>';
-        // htmlBody += '<p>Thank you,<br/>Your Company</p>';
-
-        Messaging.SingleEmailMessage emailMsg = new Messaging.SingleEmailMessage();
-        emailMsg.setToAddresses(new List<String>{email});
-        emailMsg.setSubject('Your Document(s) are Ready to Review');
-        emailMsg.setHtmlBody(htmlBody);
-        emailMsg.setSaveAsActivity(true);
-
-        emailsToSend.add(emailMsg);
+    // Helper method to get org-wide email address ID (optional)
+    private static Id getOrgWideEmailAddress() {
+        List<OrgWideEmailAddress> orgWideEmails = [
+            SELECT Id FROM OrgWideEmailAddress 
+            WHERE IsAllowAllProfiles = true 
+            LIMIT 1
+        ];
+        return !orgWideEmails.isEmpty() ? orgWideEmails[0].Id : null;
     }
-
-    if (emailsToSend.isEmpty()) {
-        return new GenericResponseWrapper(false, 'No valid emails were generated to send.');
-    }
-
-    try {
-        Messaging.SendEmailResult[] results = Messaging.sendEmail(emailsToSend, false);
-        Integer successCount = 0;
-        for (Messaging.SendEmailResult res : results) {
-            if (res.isSuccess()) successCount++;
-        }
-        return new GenericResponseWrapper(true, successCount + ' email(s) sent successfully.');
-    } catch (Exception ex) {
-        return new GenericResponseWrapper(false, 'Failed to send emails. Error: ' + ex.getMessage());
-    }
-}
-
-
-//     /**
-//      * 5.1 Sends emails for documents with status 'Ready to Send' using a hardcoded email template.
-//      * @return GenericResponseWrapper indicating success or failure
-//      */
-//   @AuraEnabled
-// public static GenericResponseWrapper sendReadyToSendDocuments(List<Id> documentIds) {
-//     if (documentIds == null || documentIds.isEmpty()) {
-//         return new GenericResponseWrapper(false, 'No document IDs provided.');
-//     }
-
-//     List<Document__c> documents = [
-//         SELECT Id, Name, Status__c, Related_Contact__c 
-//         FROM Document__c
-//         WHERE Id IN :documentIds AND Status__c = 'Ready to Send'
-//     ];
-
-//     if (documents.isEmpty()) {
-//         return new GenericResponseWrapper(false, 'No documents with status "Ready to Send" found for given IDs.');
-//     }
-
-//     // Collect related contact/user/lead IDs
-//     Set<Id> contactIds = new Set<Id>();
-//     for (Document__c doc : documents) {
-//         if (doc.Related_Contact__c != null) {
-//             contactIds.add(doc.Related_Contact__c);
-//         }
-//     }
-
-//     Map<Id, String> emailMap = new Map<Id, String>();
-//     for (User u : [SELECT Id, Email FROM User WHERE Id IN :contactIds AND Email != NULL]) {
-//         emailMap.put(u.Id, u.Email);
-//     }
-//     for (Contact c : [SELECT Id, Email FROM Contact WHERE Id IN :contactIds AND Email != NULL]) {
-//         emailMap.put(c.Id, c.Email);
-//     }
-//     for (Lead l : [SELECT Id, Email FROM Lead WHERE Id IN :contactIds AND Email != NULL]) {
-//         emailMap.put(l.Id, l.Email);
-//     }
-
-//     List<Messaging.SingleEmailMessage> emailsToSend = new List<Messaging.SingleEmailMessage>();
-
-//     for (Document__c doc : documents) {
-//         Id recipientId = doc.Related_Contact__c;
-//         if (recipientId != null && emailMap.containsKey(recipientId)) {
-//             String htmlBody = '<p>Dear Customer,</p>';
-//             htmlBody += '<p>The following document is ready for your review:</p>';
-//             htmlBody += '<table border="1" cellpadding="5" cellspacing="0">';
-//             htmlBody += '<tr><th>Name</th></tr>';
-//             htmlBody += '<tr><td>' + doc.Name + '</td></tr>';
-//             htmlBody += '</table>';
-//             htmlBody += '<p>Thank you,<br/>Your Company</p>';
-
-//             Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
-//             email.setTargetObjectId(recipientId);
-//             email.setSaveAsActivity(true);
-//             email.setSubject('Your Document is Ready to Review');
-//             email.setHtmlBody(htmlBody);
-
-//             emailsToSend.add(email);
-//         }
-//     }
-//     System.Debug('emailsToSend: '+emailsToSend);
-//     if (emailsToSend.isEmpty()) {
-//         return new GenericResponseWrapper(false, 'No valid recipients with email found.');
-//     }
-
-//     try {
-//         Messaging.SendEmailResult[] results = Messaging.sendEmail(emailsToSend, false);
-//         Integer successCount = 0;
-//         for (Messaging.SendEmailResult res : results) {
-//             if (res.isSuccess()) successCount++;
-//         }
-
-//         return new GenericResponseWrapper(true, successCount + ' email(s) sent successfully.');
-//     } catch (Exception ex) {
-//         return new GenericResponseWrapper(false, 'Failed to send emails. Error: ' + ex.getMessage());
-//     }
-// }
-
 
     // ==================== Section 6: Wrapper Classes ====================
 
@@ -1234,7 +1155,6 @@ htmlBody += '</div></body></html>';
         @AuraEnabled public String templateId { get; set; }
         @AuraEnabled public String categoryName { get; set; }
         @AuraEnabled public String assignedToEmail  { get; set; }
-
     }
 
     /**
@@ -1249,7 +1169,6 @@ htmlBody += '</div></body></html>';
         @AuraEnabled public String objectName;
         @AuraEnabled public Id assignedToId;
         @AuraEnabled public Id relatedTo;
-        
     }
 
     /**
@@ -1299,7 +1218,7 @@ htmlBody += '</div></body></html>';
     public class TemplateCategory {
         @AuraEnabled public String id { get; set; }
         @AuraEnabled public String name { get; set; }
-        @AuraEnabled public TemplateInfo template { get; set; } // Single template instead of list
+        @AuraEnabled public TemplateInfo template { get; set; }
     }
 
     /**

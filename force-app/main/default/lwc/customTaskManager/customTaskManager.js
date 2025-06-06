@@ -25,6 +25,7 @@ export default class CustomTaskManager extends LightningElement {
     // -------------------------------------
     recordId;
      users = [];
+     objectName = ''
     selectedUserId;
     @track selectedCategories = [];
     @track showVerification = false;
@@ -127,7 +128,7 @@ categoryList = []
     // -------------------------------------
     // 07. Wired Method to Load Assigned Documents
     // -------------------------------------
-    @wire(getAssignedDocuments, { recordId: '$recordId' })
+    @wire(getAssignedDocuments, { recordId: '$recordId', objectName:'$objectName'})
     wiredDocuments(result) {
         this.wiredDocumentResult = result; // Save for refresh
     console.log( "wiredDocuments: ",this.wiredDocumentResult);
@@ -236,102 +237,124 @@ this.refreshDocumentCategories();
     // -------------------------------------
     // 14. Handler for Deleting All Archived Documents
     // -------------------------------------
-    handleDeleteAllArchived() {
-        const documentIds = this.archivedList.map(item => item.id);
-        if (documentIds.length === 0) return;
 
-        deleteArchivedAssignments({ documentIds, recordId: this.recordId })
-            .then(() => {
-                this.archivedList = [];
+    // -------------------------------------
+// Shared Delete Archived Handler
+// -------------------------------------
+deleteArchivedDocuments(documentIds, name = null) {
+    if (!documentIds || documentIds.length === 0) return;
+
+    const recordId = this.recordId;
+    const objectName = this.objectName;
+
+    deleteArchivedAssignments({ documentIds, recordId, objectName })
+        .then(() => {
+            // Filter out deleted documents from archivedList
+            this.archivedList = this.archivedList.filter(doc => !documentIds.includes(doc.id));
+            this.isArchived = this.archivedList.length > 0;
+
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Deleted',
+                message: name 
+                    ? `Archived document "${name}" deleted.` 
+                    : 'All archived documents deleted.',
+                variant: 'success'
+            }));
+
+            return refreshApex(this.archivedWireResult);
+        })
+        .catch(error => {
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Error',
+                message: error?.body?.message || 'Failed to delete archived document(s).',
+                variant: 'error'
+            }));
+        });
+}
+
+// -------------------------------------
+// 16. Delete Single Archived Document
+// -------------------------------------
+handleDeleteArchived(event) {
+    const documentId = event.currentTarget.dataset.id;
+    const name = event.currentTarget.dataset.name;
+    this.deleteArchivedDocuments([documentId], name);
+}
+
+// -------------------------------------
+// 14. Delete All Archived Documents
+// -------------------------------------
+handleDeleteAllArchived() {
+    const documentIds = this.archivedList.map(doc => doc.id);
+    this.deleteArchivedDocuments(documentIds);
+}
+
+    // handleDeleteAllArchived() {
+    //     const documentIds = this.archivedList.map(item => item.id);
+    //     if (documentIds.length === 0) return;
+
+    //     deleteArchivedAssignments({ documentIds, recordId: this.recordId })
+    //         .then(() => {
+    //             this.archivedList = [];
                 
-                 this.isArchived = false
-                this.dispatchEvent(new ShowToastEvent({
-                    title: 'Deleted',
-                    message: 'All archived documents deleted.',
-                    variant: 'success'
-                }));
-                // return refreshApex(this.archivedWireResult);
+    //              this.isArchived = false
+    //             this.dispatchEvent(new ShowToastEvent({
+    //                 title: 'Deleted',
+    //                 message: 'All archived documents deleted.',
+    //                 variant: 'success'
+    //             }));
+    //             // return refreshApex(this.archivedWireResult);
 
-            })
-            .catch(error => {
-                this.dispatchEvent(new ShowToastEvent({
-                    title: 'Error',
-                    message: error.body?.message || 'Failed to delete archived documents.',
-                    variant: 'error'
-                }));
-            });
-    }
+    //         })
+    //         .catch(error => {
+    //             this.dispatchEvent(new ShowToastEvent({
+    //                 title: 'Error',
+    //                 message: error.body?.message || 'Failed to delete archived documents.',
+    //                 variant: 'error'
+    //             }));
+    //         });
+    // }
 
-    // -------------------------------------
-    // 15. Handler for Deleting a Document Assignment
-    // -------------------------------------
-    handleDelete(event) {
-        const documentId = event.currentTarget.dataset.id;
-        const recordId = this.recordId;
-        const objectName = this.objectName;
+   
+   
 
-        deleteArchivedAssignments({ documentIds: [documentId], recordId, objectName })
-            .then(() => {
-                 this.isArchived = false
-                return refreshApex(this.wiredDocumentResult); 
-            })
-            .then(() => {
-                this.dispatchEvent(
-                    new ShowToastEvent({
-                        title: 'Success',
-                        message: 'Document assignment deleted successfully.',
-                        variant: 'success'
-                    })
-                );
-            })
-            .catch(error => {
-                this.dispatchEvent(
-                    new ShowToastEvent({
-                        title: 'Error',
-                        message: error.body?.message || 'Failed to delete assignment.',
-                        variant: 'error'
-                    })
-                );
-            });
-    }
+    // // -------------------------------------
+    // // 16. Handler for Deleting an Archived Document
+    // // -------------------------------------
+    // handleDeleteArchived(event) {
+    //     console.log('handleDeleteArchived: ', event.currentTarget);
+    //     const documentId = event.currentTarget.dataset.id;
+    //     const name = event.currentTarget.dataset.name;
+    //     console.log('documentId: ', documentId);
+    //     console.log('name: ', name);
 
-    // -------------------------------------
-    // 16. Handler for Deleting an Archived Document
-    // -------------------------------------
-    handleDeleteArchived(event) {
-        console.log('handleDeleteArchived: ', event.currentTarget);
-        const documentId = event.currentTarget.dataset.id;
-        const name = event.currentTarget.dataset.name;
-        console.log('documentId: ', documentId);
-        console.log('name: ', name);
+    //     const recordId = this.recordId;
+    //     const objectName = this.objectName;
 
-        const recordId = this.recordId;
-        const objectName = this.objectName;
-
-        deleteArchivedAssignments({ documentIds :[documentId], recordId, objectName })
-            .then(() => {
-                // Remove from archived list
-                this.archivedList = [...this.archivedList.filter(doc => doc.id !== documentId)];
-                // this.masterDocumentList = this.masterDocumentList.filter(doc => doc.id !== documentId);
-                this.dispatchEvent(
-                    new ShowToastEvent({
-                        title: 'Deleted',
-                        message: 'Archived document '+name+' deleted.',
-                        variant: 'success'
-                    })
-                );
-                return refreshApex(this.archivedWireResult);
-            })
-            .catch(error => {
-                this.dispatchEvent(
-                    new ShowToastEvent({
-                        title: 'Error',
-                        message: error.body?.message || 'Failed to delete archived document.',
-                        variant: 'error'
-                    })
-                );
-            });
-    }
+    //     deleteArchivedAssignments({ documentIds :[documentId], recordId, objectName })
+    //         .then(() => {
+    //             // Remove from archived list
+    //             this.archivedList = [...this.archivedList.filter(doc => doc.id !== documentId)];
+    //             // this.masterDocumentList = this.masterDocumentList.filter(doc => doc.id !== documentId);
+    //             this.dispatchEvent(
+    //                 new ShowToastEvent({
+    //                     title: 'Deleted',
+    //                     message: 'Archived document '+name+' deleted.',
+    //                     variant: 'success'
+    //                 })
+    //             );
+    //             return refreshApex(this.archivedWireResult);
+    //         })
+    //         .catch(error => {
+    //             this.dispatchEvent(
+    //                 new ShowToastEvent({
+    //                     title: 'Error',
+    //                     message: error.body?.message || 'Failed to delete archived document.',
+    //                     variant: 'error'
+    //                 })
+    //             );
+    //         });
+    // }
 
     // -------------------------------------
     // 17. Handler for Archiving a Document
@@ -381,81 +404,139 @@ this.refreshDocumentCategories();
     // -------------------------------------
     // 19. Handler for Restoring an Archived Document
     // -------------------------------------
-    handleRestoreArchived(event) {
-        const documentId = event.currentTarget.dataset.id;
-        const name = event.currentTarget.dataset.name;
-            
-         console.log('documentId: ', documentId);
-         console.log('recordId: ', this.recordId);
-      
-        restoreArchivedAssignments({ documentIds: [documentId], recordId: this.recordId })
-            .then((restoredDocuments) => {
-            console.log('restoredDocuments', restoredDocuments);
-                this.isArchived = false
-                // Remove from archived list
-                this.archivedList = this.archivedList.filter(doc => doc.id !== documentId);
-                // Refresh active documents to include restored one
-                console.log('handleRestoreArchived: ', this.archivedList);
-            //     if (restoredDocuments && restoredDocuments.length > 0) {
-                this.masterDocumentList = [...this.masterDocumentList, ...restoredDocuments];
-                // this.masterDocumentList = [...this.masterDocumentList, ...restoredDocuments];
-            // }
-            console.log('handleRestoreArchived: archivedList:', this.archivedList);
-            console.log('handleRestoreArchived: masterDocumentList:', this.masterDocumentList);
-                // console.log('handleRestoreArchived:');
-                
-                // return refreshApex(this.wiredDocumentResult);
-            })
-            .then(() => {
-                this.dispatchEvent(new ShowToastEvent({
-                    title: 'Success',
-                    message: name+' restored successfully.',
-                    variant: 'success'
-                }));
-            })
-            .catch(error => {
-                console.error('Restore failed: ', error);
-                this.dispatchEvent(new ShowToastEvent({
-                    title: 'Error',
-                    message: 'Failed to restore document.',
-                    variant: 'error'
-                }));
-            });
-    }
 
-    // -------------------------------------
-    // 20. Handler for Restoring All Archived Documents
-    // -------------------------------------
-    handleRestoreAllArchived() {
-        const documentIds = this.archivedList.map(item => item.id);
-        if (documentIds.length === 0) return;
 
-        restoreArchivedAssignments({ documentIds, recordId: this.recordId })
-            .then((restoredDocuments) => {
-                this.archivedList = [];
-                this.isArchive=false;
-                // Refresh active documents to include restored ones
-                if (restoredDocuments && restoredDocuments.length > 0) {
-                this.masterDocumentList = [...this.masterDocumentList, ...restoredDocuments];
+    restoreDocumentsHelper(documentIds, successMessage, skipArchiveReset = false) {
+    if (!documentIds || documentIds.length === 0) return;
+
+    restoreArchivedAssignments({ documentIds, recordId: this.recordId })
+        .then((restoredDocuments) => {
+            // Remove restored docs from archived list
+            this.archivedList = this.archivedList.filter(doc => !documentIds.includes(doc.id));
+
+            // Optional: Reset archive view flag
+            if (!skipArchiveReset) {
+                this.isArchived = false;
+                this.isArchive = false;
             }
-                return refreshApex(this.wiredDocumentResult);
-            })
-            .then(() => {
-                this.dispatchEvent(new ShowToastEvent({
-                    title: 'Restored',
-                    message: 'All archived documents restored.',
-                    variant: 'success'
-                }));
-            })
-            .catch(error => {
-                console.error('Restore All Failed: ', error);
-                this.dispatchEvent(new ShowToastEvent({
-                    title: 'Error',
-                    message: error.body?.message || 'Failed to restore archived documents.',
-                    variant: 'error'
-                }));
-            });
-    }
+
+            // Update master document list
+           if (restoredDocuments && restoredDocuments.length > 0) {
+    const existingIds = new Set(this.masterDocumentList.map(doc => doc.id));
+    const newDocs = restoredDocuments.filter(doc => !existingIds.has(doc.id));
+    this.masterDocumentList = [...this.masterDocumentList, ...newDocs];
+}
+
+
+            return refreshApex(this.wiredDocumentResult); // Sync server data
+        })
+        .then(() => {
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Success',
+                message: successMessage,
+                variant: 'success'
+            }));
+        })
+        .catch(error => {
+            console.error('Restore failed: ', error);
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Error',
+                message: error.body?.message || 'Failed to restore document(s).',
+                variant: 'error'
+            }));
+        });
+}
+handleRestoreArchived(event) {
+    const documentId = event.currentTarget.dataset.id;
+    const name = event.currentTarget.dataset.name;
+
+    console.log('documentId:', documentId);
+    console.log('recordId:', this.recordId);
+
+    this.restoreDocumentsHelper([documentId], `${name} restored successfully.`, true);
+}
+handleRestoreAllArchived() {
+    const documentIds = this.archivedList.map(item => item.id);
+    if (documentIds.length === 0) return;
+
+    this.restoreDocumentsHelper(documentIds, 'All archived documents restored.');
+}
+
+    // handleRestoreArchived(event) {
+    //     const documentId = event.currentTarget.dataset.id;
+    //     const name = event.currentTarget.dataset.name;
+            
+    //      console.log('documentId: ', documentId);
+    //      console.log('recordId: ', this.recordId);
+      
+    //     restoreArchivedAssignments({ documentIds: [documentId], recordId: this.recordId })
+    //         .then((restoredDocuments) => {
+    //         console.log('restoredDocuments', restoredDocuments);
+    //             this.isArchived = false
+    //             // Remove from archived list
+    //             this.archivedList = this.archivedList.filter(doc => doc.id !== documentId);
+    //             // Refresh active documents to include restored one
+    //             console.log('handleRestoreArchived: ', this.archivedList);
+    //         //     if (restoredDocuments && restoredDocuments.length > 0) {
+    //             this.masterDocumentList = [...this.masterDocumentList, ...restoredDocuments];
+    //             // this.masterDocumentList = [...this.masterDocumentList, ...restoredDocuments];
+    //         // }
+    //         console.log('handleRestoreArchived: archivedList:', this.archivedList);
+    //         console.log('handleRestoreArchived: masterDocumentList:', this.masterDocumentList);
+    //             // console.log('handleRestoreArchived:');
+                
+    //             // return refreshApex(this.wiredDocumentResult);
+    //         })
+    //         .then(() => {
+    //             this.dispatchEvent(new ShowToastEvent({
+    //                 title: 'Success',
+    //                 message: name+' restored successfully.',
+    //                 variant: 'success'
+    //             }));
+    //         })
+    //         .catch(error => {
+    //             console.error('Restore failed: ', error);
+    //             this.dispatchEvent(new ShowToastEvent({
+    //                 title: 'Error',
+    //                 message: 'Failed to restore document.',
+    //                 variant: 'error'
+    //             }));
+    //         });
+    // }
+
+    // // -------------------------------------
+    // // 20. Handler for Restoring All Archived Documents
+    // // -------------------------------------
+    // handleRestoreAllArchived() {
+    //     const documentIds = this.archivedList.map(item => item.id);
+    //     if (documentIds.length === 0) return;
+
+    //     restoreArchivedAssignments({ documentIds, recordId: this.recordId })
+    //         .then((restoredDocuments) => {
+    //             this.archivedList = [];
+    //             this.isArchive=false;
+    //             // Refresh active documents to include restored ones
+    //             if (restoredDocuments && restoredDocuments.length > 0) {
+    //             this.masterDocumentList = [...this.masterDocumentList, ...restoredDocuments];
+    //         }
+    //             return refreshApex(this.wiredDocumentResult);
+    //         })
+    //         .then(() => {
+    //             this.dispatchEvent(new ShowToastEvent({
+    //                 title: 'Restored',
+    //                 message: 'All archived documents restored.',
+    //                 variant: 'success'
+    //             }));
+    //         })
+    //         .catch(error => {
+    //             console.error('Restore All Failed: ', error);
+    //             this.dispatchEvent(new ShowToastEvent({
+    //                 title: 'Error',
+    //                 message: error.body?.message || 'Failed to restore archived documents.',
+    //                 variant: 'error'
+    //             }));
+    //         });
+    // }
 
     // -------------------------------------
     // 21. Helper Method to Check Ready to Send Status
@@ -545,6 +626,7 @@ get groupedByStatus() {
         .map(doc => ({
             id: doc.id,
             email: doc.assignedToEmail,
+            // name:'Customer'
             name: doc.assignedTo || 'Customer'
         }));
         
@@ -577,52 +659,47 @@ get groupedByStatus() {
     // 27. Handler for Email Button Click
     // -------------------------------------
   handleEmailClick(event) {
-    const groupId = event.target.dataset.groupId;
-    const email = event.target.dataset.email;
-    console.log('groupId:', groupId);
-console.log('Ready to Send Emails:', JSON.stringify(this.readyToSendDocsWithEmails));
-    // Check if the clicked group is 'Ready to Send'
-    if (groupId === 'Ready to Send') {
-        // Filter documents from masterDocumentList with 'Ready to Send' status
-        const readyToSendDocumentIds = (this.masterDocumentList || [])
-            .filter(doc => doc && doc.status === 'Ready to Send')
-            .map(doc => doc.id);
+    const groupId = event.currentTarget.dataset.groupId;
+    const readyToSendDocs = this.masterDocumentList.filter(doc => doc.status === 'Ready to Send');
+    
+    if (readyToSendDocs.length === 0) {
+        this.dispatchEvent(new ShowToastEvent({
+            title: 'Error',
+            message: 'No documents are ready to send.',
+            variant: 'error'
+        }));
+        return;
+    }
 
-        // console.log('masterDocumentList:', JSON.stringify(this.masterDocumentList));
-        // console.log('readyToSendDocumentIds:', JSON.stringify(readyToSendDocumentIds));
-        // console.log('groupedByStatusWithReadyToSend:', this.groupedByStatusWithReadyToSend);
+    const documentIds = readyToSendDocs.map(doc => doc.id);
 
-        if (readyToSendDocumentIds.length > 0) {
-            sendReadyToSendDocuments({ documentIds: readyToSendDocumentIds, readyToSendDocsWithEmails: this.readyToSendDocsWithEmails })
-                .then(() => {
-                    this.dispatchEvent(new ShowToastEvent({
-                        title: 'Success',
-                        message: 'Email Sent!',
-                        variant: 'success'
-                    }));
-                })
-                .catch(error => {
-                    console.error('Send Email Error: ', error);
-                    this.dispatchEvent(new ShowToastEvent({
-                        title: 'Error',
-                        message: 'Failed to send emails.',
-                        variant: 'error'
-                    }));
-                });
+    sendReadyToSendDocuments({ 
+        documentIds: documentIds,
+        recordId: this.recordId,
+        objectName: this.objectName
+    })
+    .then(result => {
+        if (result.success) {
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Success',
+                message: result.message,
+                variant: 'success'
+            }));
         } else {
             this.dispatchEvent(new ShowToastEvent({
-                title: 'Warning',
-                message: 'No documents with Ready to Send status found.',
-                variant: 'warning'
+                title: 'Error',
+                message: result.message,
+                variant: 'error'
             }));
         }
-    } else {
+    })
+    .catch(error => {
         this.dispatchEvent(new ShowToastEvent({
-            title: 'Info',
-            message: 'Please select the Ready to Send group to send emails.',
-            variant: 'info'
+            title: 'Error',
+            message: error.body?.message || 'Failed to send email.',
+            variant: 'error'
         }));
-    }
+    });
 }
     // -------------------------------------
     // 28. Handler to Close Email Popover
