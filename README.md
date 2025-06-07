@@ -1,18 +1,19 @@
-# Salesforce DX Project: Next Steps
+# Salesforce Document Management Data Model
 
-Now that you’ve created a Salesforce DX project, what’s next? Here are some documentation resources to get you started.
+Document Object (Document__c)
+Description: Central object for managing documents in the system with tracking of status, type, and related entities.
 
-## How Do You Plan to Deploy Your Changes?
-
-Do you want to deploy a set of changes, or create a self-contained application? Choose a [development model](https://developer.salesforce.com/tools/vscode/en/user-guide/development-models).
-
-## Configure Your Salesforce DX Project
-
-The `sfdx-project.json` file contains useful configuration information for your project. See [Salesforce DX Project Configuration](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_ws_config.htm) in the _Salesforce DX Developer Guide_ for details about this file.
-
-## Read All About It
-
-- [Salesforce Extensions Documentation](https://developer.salesforce.com/tools/vscode/)
-- [Salesforce CLI Setup Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_intro.htm)
-- [Salesforce DX Developer Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_intro.htm)
-- [Salesforce CLI Command Reference](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference.htm)
+Fields
+Field Name	API Name	Data Type	Description	Values/Options
+Name	Name	Text(80)	Name of the document	
+Type	Type__c	Picklist	Classification of document	Document, Task
+Status	Status__c	Picklist	Current state of document	Upcoming, Pending Review, Completed, Sent, Ready to Send, Submitted
+Assigned To	Assigned_To__c	Lookup(User)	User responsible for the document	
+Category	Category__c	Lookup(Category__c)	Document category	
+Created By	CreatedById	Lookup(User)	User who created (system)	
+Last Modified By	LastModifiedById	Lookup(User)	User who last edited (system)	
+Document Template	Document_Template__c	Lookup(Template__c)	Template used	
+Loan	Loan__c	Lookup(Opportunity)	Related loan opportunity	
+Owner	OwnerId	Lookup(User)	Record owner	
+Related Contact	Related_Contact__c	Lookup(Contact)	Associated contact	
+Team	Team__c	Text(255)	Team association

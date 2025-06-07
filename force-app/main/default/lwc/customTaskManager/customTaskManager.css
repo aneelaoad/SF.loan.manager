@@ -412,7 +412,7 @@ box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30p
 }
 
 .send-email-button {
-  background-color: #17696a;
+  /* background-color: #17696a; */
   border: none;
   --slds-c-button-text-color: white;
 }
@@ -430,4 +430,173 @@ box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30p
   .slds-table th, .slds-table td {
     font-size: 0.75rem;
   }
+}
+
+/* --- Base Theme Colors --- */
+:host {
+    --theme-primary: #1a73e8;
+    --theme-primary-light: #e8f0fe;
+    --theme-primary-dark: #1557b0;
+    --theme-secondary: #f8fafd;
+    --theme-border: #e1e7ef;
+    --theme-text: #3c4043;
+    --theme-text-light: #5f6368;
+}
+
+/* --- Button Styles --- */
+.template-button {
+    background-color: var(--theme-primary);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.25rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.template-button:hover {
+    background-color: var(--theme-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* --- Table Styles --- */
+.custom-themed-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.custom-themed-table th {
+    background-color: var(--theme-primary-light);
+    color: var(--theme-text);
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 1rem;
+    border-bottom: 1px solid var(--theme-border);
+}
+
+.custom-themed-table td {
+    padding: 0.875rem 1rem;
+    color: var(--theme-text);
+    font-size: 0.875rem;
+    border-bottom: 1px solid var(--theme-border);
+    transition: background-color 0.15s ease;
+}
+
+.custom-themed-table tr:hover td {
+    background-color: var(--theme-secondary);
+}
+
+/* --- Badge Styles --- */
+.custom-badge {
+    background-color: var(--theme-primary-light);
+    color: var(--theme-primary);
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* --- Ready to Send Group --- */
+.ready-to-send-group {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.ready-to-send-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.ready-to-send-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--theme-text);
+}
+
+.send-email-button {
+    /* background-color: var(--theme-primary); */
+    color: white;
+    border: none;
+    padding: 0.625rem 1rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.send-email-button:hover {
+    /* background-color: var(--theme-primary-dark); */
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* --- Accordion Styles --- */
+.slds-accordion__summary-heading {
+    font-size: 12px !important;
+    color: var(--theme-text) !important;
+}
+.slds-accordion__summary-content{
+  font-size: 14px !important;
+}
+.slds-accordion__section {
+    padding: 0.5rem 0;
+}
+
+/* --- Modal Styles --- */
+.custom-header {
+    background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-dark));
+    color: white;
+    padding: 1.5rem;
+    border-radius: 8px 8px 0 0;
+}
+
+.custom-modal-content {
+    padding: 1.5rem;
+    background: white;
+}
+
+.custom-footer {
+    background: var(--theme-secondary);
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--theme-border);
+    border-radius: 0 0 8px 8px;
+}
+
+/* --- Empty State --- */
+.empty-state {
+    padding: 3rem 1.5rem;
+    text-align: center;
+    color: var(--theme-text-light);
+}
+
+.empty-state p {
+    margin: 0.5rem 0;
+    font-size: 0.875rem;
+}
+
+/* --- Loading State --- */
+.slds-spinner_container {
+    background: rgba(255, 255, 255, 0.8);
 }

@@ -24,12 +24,12 @@ export default class CustomTaskManager extends LightningElement {
     // 03. Properties
     // -------------------------------------
     recordId;
-     users = [];
-     objectName = ''
+    users = [];
+    objectName = ''
     selectedUserId;
     @track selectedCategories = [];
     @track showVerification = false;
-     @track isArchived = false;
+    @track isArchived = false;
     @track masterDocumentList = [];
     wiredDocumentResult;
     @track archivedList = [];
@@ -40,7 +40,7 @@ export default class CustomTaskManager extends LightningElement {
     @track documentCategoryOptions = [];
     @track selectedDocumentCategory;
     showModal = false;
-categoryList = []
+    categoryList = []
     // -------------------------------------
     // 04. Wired Method to Get Page Reference
     // -------------------------------------
@@ -58,7 +58,7 @@ categoryList = []
         }
     }
 
-      @wire(getActiveUsers)
+    @wire(getActiveUsers)
     wiredUsers({ error, data }) {
         if (data) {
             this.users = data.map(user => ({
@@ -69,45 +69,45 @@ categoryList = []
             console.error('Error retrieving users:', error);
         }
     }
- handleUserChange(event) {
+    handleUserChange(event) {
         this.selectedUserId = event.detail.value;
     }
     // -------------------------------------
     // 05. Wired Method to Load Document Categories
     // -------------------------------------
     refreshDocumentCategories() {
-    getDocumentCategories()
-        .then(data => {
-            console.log('data->>> ',data);
-            this.documentCategoryOptions = data.map(item => ({
+        getDocumentCategories()
+            .then(data => {
+                console.log('data->>> ', data);
+                this.documentCategoryOptions = data.map(item => ({
                     label: item.name,
                     value: item.id
                 }));
 
-            this.categoryList = data.map(cat => ({
-                name: cat.name,
-                circleClass: this.getCategoryClass(cat.name),
-                labelClass: 'category-label'
-            }));
+                this.categoryList = data.map(cat => ({
+                    name: cat.name,
+                    circleClass: this.getCategoryClass(cat.name),
+                    labelClass: 'category-label'
+                }));
 
-            // Add static "Reset" option
-            this.categoryList.push({
-                name: 'Reset',
-                icon: 'utility:refresh',
-                isReset: true,
-                labelClass: 'category-label'
+                // Add static "Reset" option
+                this.categoryList.push({
+                    name: 'Reset',
+                    icon: 'utility:refresh',
+                    isReset: true,
+                    labelClass: 'category-label'
+                });
+
+                console.log('categoryList (refreshed): ', JSON.stringify(this.categoryList));
+                console.log('documentCategoryOptions (refreshed): ', JSON.stringify(this.documentCategoryOptions));
+            })
+            .catch(error => {
+                console.error('Error loading categories:', error);
+                this.categoryList = [];
             });
+    }
 
-            console.log('categoryList (refreshed): ', JSON.stringify(this.categoryList));
-            console.log('documentCategoryOptions (refreshed): ', JSON.stringify(this.documentCategoryOptions));
-        })
-        .catch(error => {
-            console.error('Error loading categories:', error);
-            this.categoryList = [];
-        });
-}
 
-   
     // -------------------------------------
     // 06. Helper Method for Category Styling
     // -------------------------------------
@@ -128,15 +128,16 @@ categoryList = []
     // -------------------------------------
     // 07. Wired Method to Load Assigned Documents
     // -------------------------------------
-    @wire(getAssignedDocuments, { recordId: '$recordId', objectName:'$objectName'})
+    @wire(getAssignedDocuments, { recordId: '$recordId', objectName: '$objectName' })
     wiredDocuments(result) {
         this.wiredDocumentResult = result; // Save for refresh
-    console.log( "wiredDocuments: ",this.wiredDocumentResult);
-    
+        console.log("wiredDocuments: ", this.wiredDocumentResult);
+
         const { data, error } = result;
 
         if (data) {
             this.masterDocumentList = data;
+
             this.error = undefined;
         } else if (error) {
             this.error = error;
@@ -150,6 +151,8 @@ categoryList = []
     @wire(getArchivedDocuments, { recordId: '$recordId' })
     wiredArchivedDocs(result) {
         this.archivedWireResult = result;
+        console.log('getArchivedDocuments: '+JSON.stringify(this.archivedWireResult));
+        
         const { data, error } = result;
 
         if (data) {
@@ -198,26 +201,26 @@ categoryList = []
         //     .finally(() => (this.isLoading = false));
     }
     // Parent component JS
-handleCategoryCreated(event) {
-    const newCategory = event.detail.category;
-    // console.log('Received new category from child:', newCategory);
-    // this.categoryList = [...this.categoryList, newCategory];
-    // this.categoryList = [...this.categoryList, newCategory]
-        
-    //     console.log('Updated categoryList:', this.categoryList);
-this.refreshDocumentCategories();
-    // Add your logic here to handle the new category
-    // For example, you might add it to an array of categories:
-    // this.categories = [...this.categories, newCategory];
+    handleCategoryCreated(event) {
+        const newCategory = event.detail.category;
+        // console.log('Received new category from child:', newCategory);
+        // this.categoryList = [...this.categoryList, newCategory];
+        // this.categoryList = [...this.categoryList, newCategory]
 
-//    const newCategory = {
-//         ...event.detail.category,      // Original fields
-//         isReset: false,                // Default values
-//         icon: 'utility:refresh',
-//         circleClass: 'slds-circle slds-m-right_xx-small',
-//         labelClass: 'slds-truncate'
-//     };
-}
+        //     console.log('Updated categoryList:', this.categoryList);
+        this.refreshDocumentCategories();
+        // Add your logic here to handle the new category
+        // For example, you might add it to an array of categories:
+        // this.categories = [...this.categories, newCategory];
+
+        //    const newCategory = {
+        //         ...event.detail.category,      // Original fields
+        //         isReset: false,                // Default values
+        //         icon: 'utility:refresh',
+        //         circleClass: 'slds-circle slds-m-right_xx-small',
+        //         labelClass: 'slds-truncate'
+        //     };
+    }
 
     // -------------------------------------
     // 12. Handler for Document Category Change
@@ -239,122 +242,61 @@ this.refreshDocumentCategories();
     // -------------------------------------
 
     // -------------------------------------
-// Shared Delete Archived Handler
-// -------------------------------------
-deleteArchivedDocuments(documentIds, name = null) {
-    if (!documentIds || documentIds.length === 0) return;
+    // Shared Delete Archived Handler
+    // -------------------------------------
+    deleteArchivedDocuments(documentIds, name = null) {
+        if (!documentIds || documentIds.length === 0) return;
 
-    const recordId = this.recordId;
-    const objectName = this.objectName;
+        const recordId = this.recordId;
+        const objectName = this.objectName;
 
-    deleteArchivedAssignments({ documentIds, recordId, objectName })
-        .then(() => {
-            // Filter out deleted documents from archivedList
-            this.archivedList = this.archivedList.filter(doc => !documentIds.includes(doc.id));
-            this.isArchived = this.archivedList.length > 0;
+        deleteArchivedAssignments({ documentIds, recordId, objectName })
+            .then(() => {
+                // Filter out deleted documents from archivedList
+                this.archivedList = this.archivedList.filter(doc => !documentIds.includes(doc.id));
+                this.masterDocumentList = this.masterDocumentList.filter(doc => !documentIds.includes(doc.id));
+                this.isArchived = this.archivedList.length > 0;
 
-            this.dispatchEvent(new ShowToastEvent({
-                title: 'Deleted',
-                message: name 
-                    ? `Archived document "${name}" deleted.` 
-                    : 'All archived documents deleted.',
-                variant: 'success'
-            }));
+                this.dispatchEvent(new ShowToastEvent({
+                    title: 'Deleted',
+                    message: name
+                        ? `Archived document "${name}" deleted.`
+                        : 'All archived documents deleted.',
+                    variant: 'success'
+                }));
 
-            return refreshApex(this.archivedWireResult);
-        })
-        .catch(error => {
-            this.dispatchEvent(new ShowToastEvent({
-                title: 'Error',
-                message: error?.body?.message || 'Failed to delete archived document(s).',
-                variant: 'error'
-            }));
-        });
-}
+                 return Promise.all([
+                    refreshApex(this.archivedWireResult),
+                    refreshApex(this.wiredDocumentResult) // Refresh active documents
+                ]);
+                // return refreshApex(this.archivedWireResult);
+            })
+            .catch(error => {
+                this.dispatchEvent(new ShowToastEvent({
+                    title: 'Error',
+                    message: error?.body?.message || 'Failed to delete archived document(s).',
+                    variant: 'error'
+                }));
+            });
+    }
 
-// -------------------------------------
-// 16. Delete Single Archived Document
-// -------------------------------------
-handleDeleteArchived(event) {
-    const documentId = event.currentTarget.dataset.id;
-    const name = event.currentTarget.dataset.name;
-    this.deleteArchivedDocuments([documentId], name);
-}
+    // -------------------------------------
+    // 16. Delete Single Archived Document
+    // -------------------------------------
+    handleDeleteArchived(event) {
+        const documentId = event.currentTarget.dataset.id;
+        const name = event.currentTarget.dataset.name;
+        this.deleteArchivedDocuments([documentId], name);
+    }
 
-// -------------------------------------
-// 14. Delete All Archived Documents
-// -------------------------------------
-handleDeleteAllArchived() {
-    const documentIds = this.archivedList.map(doc => doc.id);
-    this.deleteArchivedDocuments(documentIds);
-}
+    // -------------------------------------
+    // 14. Delete All Archived Documents
+    // -------------------------------------
+    handleDeleteAllArchived() {
+        const documentIds = this.archivedList.map(doc => doc.id);
+        this.deleteArchivedDocuments(documentIds);
+    }
 
-    // handleDeleteAllArchived() {
-    //     const documentIds = this.archivedList.map(item => item.id);
-    //     if (documentIds.length === 0) return;
-
-    //     deleteArchivedAssignments({ documentIds, recordId: this.recordId })
-    //         .then(() => {
-    //             this.archivedList = [];
-                
-    //              this.isArchived = false
-    //             this.dispatchEvent(new ShowToastEvent({
-    //                 title: 'Deleted',
-    //                 message: 'All archived documents deleted.',
-    //                 variant: 'success'
-    //             }));
-    //             // return refreshApex(this.archivedWireResult);
-
-    //         })
-    //         .catch(error => {
-    //             this.dispatchEvent(new ShowToastEvent({
-    //                 title: 'Error',
-    //                 message: error.body?.message || 'Failed to delete archived documents.',
-    //                 variant: 'error'
-    //             }));
-    //         });
-    // }
-
-   
-   
-
-    // // -------------------------------------
-    // // 16. Handler for Deleting an Archived Document
-    // // -------------------------------------
-    // handleDeleteArchived(event) {
-    //     console.log('handleDeleteArchived: ', event.currentTarget);
-    //     const documentId = event.currentTarget.dataset.id;
-    //     const name = event.currentTarget.dataset.name;
-    //     console.log('documentId: ', documentId);
-    //     console.log('name: ', name);
-
-    //     const recordId = this.recordId;
-    //     const objectName = this.objectName;
-
-    //     deleteArchivedAssignments({ documentIds :[documentId], recordId, objectName })
-    //         .then(() => {
-    //             // Remove from archived list
-    //             this.archivedList = [...this.archivedList.filter(doc => doc.id !== documentId)];
-    //             // this.masterDocumentList = this.masterDocumentList.filter(doc => doc.id !== documentId);
-    //             this.dispatchEvent(
-    //                 new ShowToastEvent({
-    //                     title: 'Deleted',
-    //                     message: 'Archived document '+name+' deleted.',
-    //                     variant: 'success'
-    //                 })
-    //             );
-    //             return refreshApex(this.archivedWireResult);
-    //         })
-    //         .catch(error => {
-    //             this.dispatchEvent(
-    //                 new ShowToastEvent({
-    //                     title: 'Error',
-    //                     message: error.body?.message || 'Failed to delete archived document.',
-    //                     variant: 'error'
-    //                 })
-    //             );
-    //         });
-    // }
 
     // -------------------------------------
     // 17. Handler for Archiving a Document
@@ -367,18 +309,19 @@ handleDeleteAllArchived() {
         archiveDocumentAssignment({ documentId, recordId: this.recordId })
             .then(() => {
                 // Remove from master list
+                
                 this.masterDocumentList = this.masterDocumentList.filter(row => row.id !== documentId);
                 return Promise.all([
-                refreshApex(this.archivedWireResult),
-                refreshApex(this.wiredDocumentResult) // Refresh active documents
-            ]);
+                    refreshApex(this.archivedWireResult),
+                    refreshApex(this.wiredDocumentResult) // Refresh active documents
+                ]);
                 // return refreshApex(this.archivedWireResult);
             })
             .then(() => {
                 this.dispatchEvent(
                     new ShowToastEvent({
                         title: 'Archived',
-                        message: name+' archived successfully.',
+                        message: name + ' archived successfully.',
                         variant: 'info'
                     })
                 );
@@ -407,68 +350,68 @@ handleDeleteAllArchived() {
 
 
     restoreDocumentsHelper(documentIds, successMessage, skipArchiveReset = false) {
-    if (!documentIds || documentIds.length === 0) return;
+        if (!documentIds || documentIds.length === 0) return;
 
-    restoreArchivedAssignments({ documentIds, recordId: this.recordId })
-        .then((restoredDocuments) => {
-            // Remove restored docs from archived list
-            this.archivedList = this.archivedList.filter(doc => !documentIds.includes(doc.id));
+        restoreArchivedAssignments({ documentIds, recordId: this.recordId })
+            .then((restoredDocuments) => {
+                // Remove restored docs from archived list
+                this.archivedList = this.archivedList.filter(doc => !documentIds.includes(doc.id));
 
-            // Optional: Reset archive view flag
-            if (!skipArchiveReset) {
-                this.isArchived = false;
-                this.isArchive = false;
-            }
+                // Optional: Reset archive view flag
+                if (!skipArchiveReset) {
+                    this.isArchived = false;
+                    this.isArchive = false;
+                }
 
-            // Update master document list
-           if (restoredDocuments && restoredDocuments.length > 0) {
-    const existingIds = new Set(this.masterDocumentList.map(doc => doc.id));
-    const newDocs = restoredDocuments.filter(doc => !existingIds.has(doc.id));
-    this.masterDocumentList = [...this.masterDocumentList, ...newDocs];
-}
+                // Update master document list
+                if (restoredDocuments && restoredDocuments.length > 0) {
+                    const existingIds = new Set(this.masterDocumentList.map(doc => doc.id));
+                    const newDocs = restoredDocuments.filter(doc => !existingIds.has(doc.id));
+                    this.masterDocumentList = [...this.masterDocumentList, ...newDocs];
+                }
 
 
-            return refreshApex(this.wiredDocumentResult); // Sync server data
-        })
-        .then(() => {
-            this.dispatchEvent(new ShowToastEvent({
-                title: 'Success',
-                message: successMessage,
-                variant: 'success'
-            }));
-        })
-        .catch(error => {
-            console.error('Restore failed: ', error);
-            this.dispatchEvent(new ShowToastEvent({
-                title: 'Error',
-                message: error.body?.message || 'Failed to restore document(s).',
-                variant: 'error'
-            }));
-        });
-}
-handleRestoreArchived(event) {
-    const documentId = event.currentTarget.dataset.id;
-    const name = event.currentTarget.dataset.name;
+                return refreshApex(this.wiredDocumentResult); // Sync server data
+            })
+            .then(() => {
+                this.dispatchEvent(new ShowToastEvent({
+                    title: 'Success',
+                    message: successMessage,
+                    variant: 'success'
+                }));
+            })
+            .catch(error => {
+                console.error('Restore failed: ', error);
+                this.dispatchEvent(new ShowToastEvent({
+                    title: 'Error',
+                    message: error.body?.message || 'Failed to restore document(s).',
+                    variant: 'error'
+                }));
+            });
+    }
+    handleRestoreArchived(event) {
+        const documentId = event.currentTarget.dataset.id;
+        const name = event.currentTarget.dataset.name;
 
-    console.log('documentId:', documentId);
-    console.log('recordId:', this.recordId);
+        console.log('documentId:', documentId);
+        console.log('recordId:', this.recordId);
 
-    this.restoreDocumentsHelper([documentId], `${name} restored successfully.`, true);
-}
-handleRestoreAllArchived() {
-    const documentIds = this.archivedList.map(item => item.id);
-    if (documentIds.length === 0) return;
+        this.restoreDocumentsHelper([documentId], `${name} restored successfully.`, true);
+    }
+    handleRestoreAllArchived() {
+        const documentIds = this.archivedList.map(item => item.id);
+        if (documentIds.length === 0) return;
 
-    this.restoreDocumentsHelper(documentIds, 'All archived documents restored.');
-}
+        this.restoreDocumentsHelper(documentIds, 'All archived documents restored.');
+    }
 
     // handleRestoreArchived(event) {
     //     const documentId = event.currentTarget.dataset.id;
     //     const name = event.currentTarget.dataset.name;
-            
+
     //      console.log('documentId: ', documentId);
     //      console.log('recordId: ', this.recordId);
-      
+
     //     restoreArchivedAssignments({ documentIds: [documentId], recordId: this.recordId })
     //         .then((restoredDocuments) => {
     //         console.log('restoredDocuments', restoredDocuments);
@@ -484,7 +427,7 @@ handleRestoreAllArchived() {
     //         console.log('handleRestoreArchived: archivedList:', this.archivedList);
     //         console.log('handleRestoreArchived: masterDocumentList:', this.masterDocumentList);
     //             // console.log('handleRestoreArchived:');
-                
+
     //             // return refreshApex(this.wiredDocumentResult);
     //         })
     //         .then(() => {
@@ -548,61 +491,61 @@ handleRestoreAllArchived() {
     // -------------------------------------
     // 22. Getter for Grouping Documents by Status
     // // -------------------------------------
-   
 
-// get groupedByStatus() {
-//     const groups = {};
-//     const archivedIds = new Set((this.archivedList || []).map(item => item.id));
 
-//     let filteredDocuments = (this.masterDocumentList || []).filter(item => {
-//         if (!item) return false;
-//         if (archivedIds.has(item.id)) return false;
-//         if (this.selectedCategories.length === 0) return true;
-//         return this.selectedCategories.includes(item.Category__c); // Use Category__c ID
-//     });
+    // get groupedByStatus() {
+    //     const groups = {};
+    //     const archivedIds = new Set((this.archivedList || []).map(item => item.id));
 
-//     filteredDocuments.forEach(item => {
-//         const status = item.status || 'General';
-//         if (!groups[status]) {
-//             groups[status] = [];
-//         }
-//         groups[status].push({ ...item });
-//     });
+    //     let filteredDocuments = (this.masterDocumentList || []).filter(item => {
+    //         if (!item) return false;
+    //         if (archivedIds.has(item.id)) return false;
+    //         if (this.selectedCategories.length === 0) return true;
+    //         return this.selectedCategories.includes(item.Category__c); // Use Category__c ID
+    //     });
 
-//     return Object.entries(groups).map(([status, items]) => ({
-//         status,
-//         items
-//     }));
-// }
+    //     filteredDocuments.forEach(item => {
+    //         const status = item.status || 'General';
+    //         if (!groups[status]) {
+    //             groups[status] = [];
+    //         }
+    //         groups[status].push({ ...item });
+    //     });
 
-// -------------------------------------
-// 22. Getter for Grouping Documents by Status
-// -------------------------------------
-get groupedByStatus() {
-    const groups = {};
-    const archivedIds = new Set((this.archivedList || []).map(item => item.id));
+    //     return Object.entries(groups).map(([status, items]) => ({
+    //         status,
+    //         items
+    //     }));
+    // }
 
-    let filteredDocuments = (this.masterDocumentList || []).filter(item => {
-        if (!item) return false;
-        if (archivedIds.has(item.id)) return false;
-        if (this.selectedCategories.length === 0) return true;
-        // Match selected category names with the document's categoryName field
-        return this.selectedCategories.includes(item.categoryName);
-    });
+    // -------------------------------------
+    // 22. Getter for Grouping Documents by Status
+    // -------------------------------------
+    get groupedByStatus() {
+        const groups = {};
+        const archivedIds = new Set((this.archivedList || []).map(item => item.id));
 
-    filteredDocuments.forEach(item => {
-        const status = item.status || 'Other';
-        if (!groups[status]) {
-            groups[status] = [];
-        }
-        groups[status].push({ ...item });
-    });
+        let filteredDocuments = (this.masterDocumentList || []).filter(item => {
+            if (!item) return false;
+            if (archivedIds.has(item.id)) return false;
+            if (this.selectedCategories.length === 0) return true;
+            // Match selected category names with the document's categoryName field
+            return this.selectedCategories.includes(item.categoryName);
+        });
 
-    return Object.entries(groups).map(([status, items]) => ({
-        status,
-        items
-    }));
-}
+        filteredDocuments.forEach(item => {
+            const status = item.status || 'Other';
+            if (!groups[status]) {
+                groups[status] = [];
+            }
+            groups[status].push({ ...item });
+        });
+
+        return Object.entries(groups).map(([status, items]) => ({
+            status,
+            items
+        }));
+    }
     // -------------------------------------
     // 23. Getter for Grouping with Ready to Send Flag
     // -------------------------------------
@@ -612,26 +555,26 @@ get groupedByStatus() {
             isReadyToSend: this.isReadyToSend(group.status)
         }));
     }
-  get readyToSendDocsWithEmails() {
+    get readyToSendDocsWithEmails() {
         // Filter documents with 'Ready to Send' status and extract id and email
         console.log('masterDocumentList:', JSON.stringify(this.masterDocumentList));
-        
+
         const readyToSendDocs = (this.masterDocumentList || [])
-        .filter(doc =>
-            doc &&
-            doc.status === 'Ready to Send' &&
-            doc.assignedToEmail &&
-            doc.id
-        )
-        .map(doc => ({
-            id: doc.id,
-            email: doc.assignedToEmail,
-            // name:'Customer'
-            name: doc.assignedTo || 'Customer'
-        }));
-        
+            .filter(doc =>
+                doc &&
+                doc.status === 'Ready to Send' &&
+                doc.assignedToEmail &&
+                doc.id
+            )
+            .map(doc => ({
+                id: doc.id,
+                email: doc.assignedToEmail,
+                // name:'Customer'
+                name: doc.assignedTo || 'Customer'
+            }));
+
         // Return the array of objects containing doc ID and email
-        console.log('readyToSendDocs:',JSON.stringify(readyToSendDocs));
+        console.log('readyToSendDocs:', JSON.stringify(readyToSendDocs));
 
         return readyToSendDocs;
     }
@@ -658,49 +601,54 @@ get groupedByStatus() {
     // -------------------------------------
     // 27. Handler for Email Button Click
     // -------------------------------------
-  handleEmailClick(event) {
-    const groupId = event.currentTarget.dataset.groupId;
-    const readyToSendDocs = this.masterDocumentList.filter(doc => doc.status === 'Ready to Send');
-    
-    if (readyToSendDocs.length === 0) {
-        this.dispatchEvent(new ShowToastEvent({
-            title: 'Error',
-            message: 'No documents are ready to send.',
-            variant: 'error'
-        }));
-        return;
-    }
+    handleEmailClick(event) {
+        const groupId = event.currentTarget.dataset.groupId;
+        // const readyToSendDocs = this.masterDocumentList.filter(doc => doc.status === 'Ready to Send');
+        const readyToSendDocs = this.masterDocumentList.filter(
+            doc => doc.status === 'Ready to Send' && doc.isArchived === false
+        );
 
-    const documentIds = readyToSendDocs.map(doc => doc.id);
+        console.log('readyToSendDocs: ' + JSON.stringify(readyToSendDocs));
 
-    sendReadyToSendDocuments({ 
-        documentIds: documentIds,
-        recordId: this.recordId,
-        objectName: this.objectName
-    })
-    .then(result => {
-        if (result.success) {
-            this.dispatchEvent(new ShowToastEvent({
-                title: 'Success',
-                message: result.message,
-                variant: 'success'
-            }));
-        } else {
+        if (readyToSendDocs.length === 0) {
             this.dispatchEvent(new ShowToastEvent({
                 title: 'Error',
-                message: result.message,
+                message: 'No documents are ready to send.',
                 variant: 'error'
             }));
+            return;
         }
-    })
-    .catch(error => {
-        this.dispatchEvent(new ShowToastEvent({
-            title: 'Error',
-            message: error.body?.message || 'Failed to send email.',
-            variant: 'error'
-        }));
-    });
-}
+
+        const documentIds = readyToSendDocs.map(doc => doc.id);
+
+        sendReadyToSendDocuments({
+            documentIds: documentIds,
+            recordId: this.recordId,
+            objectName: this.objectName
+        })
+            .then(result => {
+                if (result.success) {
+                    this.dispatchEvent(new ShowToastEvent({
+                        title: 'Success',
+                        message: result.message,
+                        variant: 'success'
+                    }));
+                } else {
+                    this.dispatchEvent(new ShowToastEvent({
+                        title: 'Error',
+                        message: result.message,
+                        variant: 'error'
+                    }));
+                }
+            })
+            .catch(error => {
+                this.dispatchEvent(new ShowToastEvent({
+                    title: 'Error',
+                    message: error.body?.message || 'Failed to send email.',
+                    variant: 'error'
+                }));
+            });
+    }
     // -------------------------------------
     // 28. Handler to Close Email Popover
     // -------------------------------------
@@ -732,8 +680,27 @@ get groupedByStatus() {
     // -------------------------------------
     handleArchiveClick() {
         this.isArchived = !this.isArchived;
-        console.log('Archive button clicked!');
+        this.isLoading = true;
+          console.log('Archive button clicked!');
+        console.log('archivedWireResult', this.archivedWireResult);
+          if (this.archivedWireResult) {
+        refreshApex(this.archivedWireResult)
+            .then(() => {
+                this.archivedList = this.archivedWireResult.data;
+        this.isLoading = false;
+
+                console.log('Archived list refreshed');
+            })
+            .catch(error => {
+                console.error('Error refreshing archived list:', error);
+            });
     }
+      
+    }
+    get hasArchivedDocs() {
+    return this.archivedList && this.archivedList.length > 0;
+}
+
 
     // -------------------------------------
     // 32. Handler for Mortgage App Button Click
@@ -746,12 +713,12 @@ get groupedByStatus() {
     // 33. Handler for Category Filter Click
     // -------------------------------------
     handleCategoryClick(event) {
-        console.log('wiredDocumentResult: ',this.wiredDocumentResult);
-        
+        console.log('wiredDocumentResult: ', this.wiredDocumentResult);
+
         const clickedCategory = event.currentTarget.dataset.name;
-        console.log('clickedCategory: ',clickedCategory);
-        console.log('selectedCategories: ',this.selectedCategories);
-        
+        console.log('clickedCategory: ', clickedCategory);
+        console.log('selectedCategories: ', this.selectedCategories);
+
         if (clickedCategory === 'Reset') {
             this.selectedCategories = [];
         } else {
@@ -881,7 +848,7 @@ get groupedByStatus() {
             status: this.modalStatus || '',
             team: this.modalTeam || '',
             type: 'Task',
-            relatedTo: this.recordId,  
+            relatedTo: this.recordId,
             assignedToId: this.selectedUserId,
             objectName: this.objectName
 

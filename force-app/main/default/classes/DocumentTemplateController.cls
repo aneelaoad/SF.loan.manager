@@ -36,43 +36,97 @@ public with sharing class DocumentTemplateController {
      * @param docIds Set of Document__c IDs to query
      * @return List of populated DocumentItem wrappers
      */
-    private static List<DocumentItem> queryDocumentsAndWrap(Set<Id> docIds) {
-        if (docIds == null || docIds.isEmpty()) {
-            return new List<DocumentItem>();
-        }
 
-        // Query Document__c records with relevant fields
-        List<Document__c> docs = [
-            SELECT Id, Name, Category__c, Status__c, Team__c, Assigned_To__c, 
-                   Assigned_To__r.Name, Assigned_To__r.Email, Owner.Name, OwnerId, 
-                   Document_Template__c, Category__r.Name,Related_Contact__r.Email,Related_Contact__r.Name
-            FROM Document__c
-            WHERE Id IN :docIds
-        ];
-
-        // Transform to DocumentItem wrappers
-        List<DocumentItem> wrappedDocs = new List<DocumentItem>();
-        for (Document__c d : docs) {
-            DocumentItem item = new DocumentItem();
-            item.id = d.Id;
-            item.name = d.Name;
-            item.categoryId = d.Category__c;
-            item.status = d.Status__c;
-            item.team = d.Team__c;
-            // item.assignedTo = String.valueOf(d.Related_Contact__r.Name);
-            item.assignedTo = String.valueOf(d.Assigned_To__r.Name);
-            item.ownerId = d.OwnerId;
-            item.ownerName = d.Owner.Name;
-            item.assignedToEmail = d.Assigned_To__r.Email;
-            // item.assignedToEmail = d.Related_Contact__r.Email;
-
-            item.templateId = d.Document_Template__c;
-            item.categoryName = d.Category__r != null ? d.Category__r.Name : null;
-            wrappedDocs.add(item);
-        }
-
-        return wrappedDocs;
+     private static List<DocumentItem> queryDocumentsAndWrap(Set<Id> docIds) {
+    if (docIds == null || docIds.isEmpty()) {
+        return new List<DocumentItem>();
     }
+
+    // Query Document_Assignment__c to get IsArchived__c for each Document__c
+    Map<Id, Boolean> docIdToArchivedMap = new Map<Id, Boolean>();
+    for (Document_Assignment__c da : [
+        SELECT Document__c, IsArchived__c
+        FROM Document_Assignment__c
+        WHERE Document__c IN :docIds
+    ]) {
+        // If a Document__c has multiple assignments, prioritize unarchived or take the first
+        if (!docIdToArchivedMap.containsKey(da.Document__c)) {
+            docIdToArchivedMap.put(da.Document__c, da.IsArchived__c);
+        }
+    }
+
+    // Query Document__c records
+    List<Document__c> docs = [
+        SELECT Id, Name, Category__c, Status__c, Team__c, Assigned_To__c, 
+               Assigned_To__r.Name, Assigned_To__r.Email, Owner.Name, OwnerId, 
+               Document_Template__c, Category__r.Name,
+               Related_Contact__r.Email, Related_Contact__r.Name
+        FROM Document__c
+        WHERE Id IN :docIds
+    ];
+
+    // Transform to DocumentItem wrappers
+    List<DocumentItem> wrappedDocs = new List<DocumentItem>();
+    for (Document__c d : docs) {
+        DocumentItem item = new DocumentItem();
+        item.id = d.Id;
+        item.name = d.Name;
+        item.categoryId = d.Category__c;
+        item.status = d.Status__c;
+        item.team = d.Team__c;
+        item.assignedTo = String.valueOf(d.Assigned_To__r.Name);
+        item.ownerId = d.OwnerId;
+        item.ownerName = d.Owner.Name;
+        item.assignedToEmail = d.Assigned_To__r.Email;
+        item.templateId = d.Document_Template__c;
+        item.categoryName = d.Category__r != null ? d.Category__r.Name : null;
+
+        // Set archive status if available
+        item.isArchived = docIdToArchivedMap.containsKey(d.Id) ? docIdToArchivedMap.get(d.Id) : false;
+
+        wrappedDocs.add(item);
+    }
+
+    return wrappedDocs;
+}
+
+    // private static List<DocumentItem> queryDocumentsAndWrap(Set<Id> docIds) {
+    //     if (docIds == null || docIds.isEmpty()) {
+    //         return new List<DocumentItem>();
+    //     }
+
+    //     // Query Document__c records with relevant fields
+    //     List<Document__c> docs = [
+    //         SELECT Id, Name, Category__c, Status__c, Team__c, Assigned_To__c, 
+    //                Assigned_To__r.Name, Assigned_To__r.Email, Owner.Name, OwnerId, 
+    //                Document_Template__c, Category__r.Name,Related_Contact__r.Email,Related_Contact__r.Name
+    //         FROM Document__c
+    //         WHERE Id IN :docIds
+    //     ];
+
+    //     // Transform to DocumentItem wrappers
+    //     List<DocumentItem> wrappedDocs = new List<DocumentItem>();
+    //     for (Document__c d : docs) {
+    //         DocumentItem item = new DocumentItem();
+    //         item.id = d.Id;
+    //         item.name = d.Name;
+    //         item.categoryId = d.Category__c;
+    //         item.status = d.Status__c;
+    //         item.team = d.Team__c;
+    //         // item.assignedTo = String.valueOf(d.Related_Contact__r.Name);
+    //         item.assignedTo = String.valueOf(d.Assigned_To__r.Name);
+    //         item.ownerId = d.OwnerId;
+    //         item.ownerName = d.Owner.Name;
+    //         item.assignedToEmail = d.Assigned_To__r.Email;
+    //         // item.assignedToEmail = d.Related_Contact__r.Email;
+
+    //         item.templateId = d.Document_Template__c;
+    //         item.categoryName = d.Category__r != null ? d.Category__r.Name : null;
+    //         wrappedDocs.add(item);
+    //     }
+
+    //     return wrappedDocs;
+    // }
 
     // ==================== Section 1: Document Creation and Assignment Methods ====================
 
@@ -1155,6 +1209,8 @@ public static List<DocumentItem> getAssignedDocuments(Id recordId, String object
         @AuraEnabled public String templateId { get; set; }
         @AuraEnabled public String categoryName { get; set; }
         @AuraEnabled public String assignedToEmail  { get; set; }
+        @AuraEnabled public Boolean isArchived  { get; set; }
+        
     }
 
     /**

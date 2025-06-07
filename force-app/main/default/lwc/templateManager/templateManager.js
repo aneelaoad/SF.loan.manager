@@ -373,6 +373,7 @@ export default class TemplateManager extends LightningElement {
                 console.log('getDocumentsByTemplate : ', JSON.stringify(result));
                 this.documentList = [...this.documentList, ...result];
                 this.sendDocumentsToParent(result);
+                this.isTemplateDropdownOpen =false;
             })
             .catch(error => this.showError('Error fetching template items', error))
             .finally(() => (this.isLoading = false));
