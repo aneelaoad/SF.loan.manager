@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Task_Type__c</fullName>
+    <label>Task Type</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Y/N</fullName>
+                <default>false</default>
+                <label>Y/N</label>
+            </value>
+            <value>
+                <fullName>Contact Information</fullName>
+                <default>false</default>
+                <label>Contact Information</label>
+            </value>
+            <value>
+                <fullName>Credit Card Information</fullName>
+                <default>false</default>
+                <label>Credit Card Information</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

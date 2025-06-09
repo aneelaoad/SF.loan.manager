@@ -2,7 +2,7 @@
  * @description       : Controller class for managing document templates, assignments, and categories in Salesforce.
  * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
  * @group             : Document Management
- * @last modified on  : 06-07-2025
+ * @last modified on  : 06-09-2025
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 **/
 public with sharing class DocumentTemplateController {
@@ -185,6 +185,98 @@ public with sharing class DocumentTemplateController {
         List<DocumentItem> items = queryDocumentsAndWrap(new Set<Id>{doc.Id});
         return items.isEmpty() ? new DocumentItem() : items[0];
     }
+
+
+    public class TaskInputWrapper {
+    public String objectName;     // "Lead" or "Opportunity"
+    public Id recordId;           // Related record Id (Lead or Opportunity)
+    public String taskType;       // Changed from Id to String to match values like 'Y/N'
+
+    public Id contactId;
+    public Id assignedTo;
+    public Id categoryId;
+    public String name;
+    public String status;
+    public String category;
+
+    // Y/N specific
+    public String question;
+
+    // Credit Card specific
+    public String cardholderName;
+    public String cardNumber;
+    public Date expirationDate;
+    public String cvv;
+    public String zipCode;
+
+    // Contact Info specific
+    public String fullName;
+    public String email;
+    public String phone;
+    public String address;
+}
+
+
+@AuraEnabled
+public static DocumentItem createTask(Map<String, Object> payload) {
+    System.debug('--- START createTask ---');
+    System.debug('Payload: ' + JSON.serialize(payload));
+
+    TaskInputWrapper input = (TaskInputWrapper) JSON.deserialize(JSON.serialize(payload), TaskInputWrapper.class);
+    System.debug('Deserialized input: ' + JSON.serialize(input));
+
+    // Create the Document__c record
+    Document__c doc = new Document__c();
+    doc.Type__c = 'Task';
+    doc.Task_Type__c = input.taskType;
+    doc.Status__c = input.status;
+    doc.Assigned_To__c = input.assignedTo;
+    doc.Category__c = input.categoryId;
+    doc.Name = input.name;
+
+    // Task-specific fields
+    if (input.taskType == 'Y/N') {
+        doc.Question__c = input.question;
+    } else if (input.taskType == 'Credit Card Information') {
+        doc.Cardholder_Name__c = input.cardholderName;
+        doc.Card_Number__c = input.cardNumber;
+        doc.Expiration_Date__c = input.expirationDate;
+        doc.CVV__c = input.cvv;
+        doc.Zip_Code__c = input.zipCode;
+    } else if (input.taskType == 'Contact Information') {
+        doc.Full_Name__c = input.fullName;
+        doc.Email__c = input.email;
+        doc.Phone__c = input.phone;
+        doc.Address__c = input.address;
+    }
+
+    insert doc;
+    System.debug('Inserted Task Document: ' + doc.Id);
+
+    // Create Document_Assignment__c
+    if (input.objectName == 'Lead' || input.objectName == 'Opportunity') {
+        Document_Assignment__c assignment = new Document_Assignment__c();
+        assignment.Document__c = doc.Id;
+
+        if (input.objectName == 'Lead') {
+            assignment.Lead__c = input.recordId;
+            System.debug('Assigned to Lead: ' + input.recordId);
+        } else if (input.objectName == 'Opportunity') {
+            assignment.Loan__c = input.recordId;
+            System.debug('Assigned to Loan: ' + input.recordId);
+        }
+
+        insert assignment;
+        System.debug('Inserted Assignment: ' + assignment.Id);
+    } else {
+        throw new AuraHandledException('Invalid objectName. Must be "Lead" or "Opportunity".');
+    }
+
+    // Return wrapped result
+    List<DocumentItem> items = queryDocumentsAndWrap(new Set<Id>{doc.Id});
+    return items.isEmpty() ? new DocumentItem() : items[0];
+}
+
 
     /**
      * 1.2 Assigns a document to a specific record (Lead or Opportunity).

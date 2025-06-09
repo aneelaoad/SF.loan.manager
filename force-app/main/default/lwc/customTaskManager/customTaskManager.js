@@ -11,7 +11,8 @@ import deleteArchivedAssignments from '@salesforce/apex/DocumentTemplateControll
 import { getObjectInfo, getPicklistValues } from 'lightning/uiObjectInfoApi';
 import DOCUMENT_OBJECT from '@salesforce/schema/Document__c';
 import STATUS_FIELD from '@salesforce/schema/Document__c.Status__c';
-import createDocument from '@salesforce/apex/DocumentTemplateController.createDocument';
+import TASKTYPE_FIELD from '@salesforce/schema/Document__c.Task_Type__c';
+import createTask from '@salesforce/apex/DocumentTemplateController.createTask';
 import sendReadyToSendDocuments from '@salesforce/apex/DocumentTemplateController.sendReadyToSendDocuments';
 import restoreArchivedAssignments from '@salesforce/apex/DocumentTemplateController.restoreArchivedAssignments';
 import getActiveUsers from '@salesforce/apex/DocumentTemplateController.getActiveUsers';
@@ -41,6 +42,11 @@ export default class CustomTaskManager extends LightningElement {
     @track selectedDocumentCategory;
     showModal = false;
     categoryList = []
+    taskTypeOptions = []
+    showTaskTypes = false
+
+    taskType = '';
+    @track formData = {};
     // -------------------------------------
     // 04. Wired Method to Get Page Reference
     // -------------------------------------
@@ -151,8 +157,8 @@ export default class CustomTaskManager extends LightningElement {
     @wire(getArchivedDocuments, { recordId: '$recordId' })
     wiredArchivedDocs(result) {
         this.archivedWireResult = result;
-        console.log('getArchivedDocuments: '+JSON.stringify(this.archivedWireResult));
-        
+        console.log('getArchivedDocuments: ' + JSON.stringify(this.archivedWireResult));
+
         const { data, error } = result;
 
         if (data) {
@@ -182,67 +188,42 @@ export default class CustomTaskManager extends LightningElement {
             console.error('Error loading picklist values', error);
         }
     }
+    // -------------------------------------
+    // 10. Wired Method to Get Task Type Picklist Values
+    // -------------------------------------
+    @wire(getPicklistValues, {
+        recordTypeId: '$objectInfo.data.defaultRecordTypeId',
+        fieldApiName: TASKTYPE_FIELD
+    })
+    wiredTaskTypeValues({ error, data }) {
+        if (data) {
+            this.taskTypeOptions = data.values;
+            console.log('task types: ' + JSON.stringify(this.taskTypeOptions));
 
+        } else if (error) {
+            console.error('Error loading picklist values', error);
+        }
+    }
     // -------------------------------------
     // 11. Lifecycle Hook: Connected Callback
     // -------------------------------------
     connectedCallback() {
         this.refreshDocumentCategories();
-        // // Load allowed document categories on component initialization
-        // getAllowedDocumentCategories()
-        //     .then(result => {
-        //         console.log('Document Categories: ', result);
-        //         this.documentCategoryOptions = result.map(item => ({
-        //             label: item.name,
-        //             value: item.id
-        //         }));
-        //     })
-        //     .catch(error => this.showError('Error loading document categories', error))
-        //     .finally(() => (this.isLoading = false));
+
     }
     // Parent component JS
     handleCategoryCreated(event) {
         const newCategory = event.detail.category;
-        // console.log('Received new category from child:', newCategory);
-        // this.categoryList = [...this.categoryList, newCategory];
-        // this.categoryList = [...this.categoryList, newCategory]
 
-        //     console.log('Updated categoryList:', this.categoryList);
         this.refreshDocumentCategories();
-        // Add your logic here to handle the new category
-        // For example, you might add it to an array of categories:
-        // this.categories = [...this.categories, newCategory];
 
-        //    const newCategory = {
-        //         ...event.detail.category,      // Original fields
-        //         isReset: false,                // Default values
-        //         icon: 'utility:refresh',
-        //         circleClass: 'slds-circle slds-m-right_xx-small',
-        //         labelClass: 'slds-truncate'
-        //     };
-    }
-
-    // -------------------------------------
-    // 12. Handler for Document Category Change
-    // -------------------------------------
-    handleDocumentCategoryChange(event) {
-        console.log('handleDocumentCategoryChange', event);
-        this.selectedDocumentCategory = event.detail.value;
-    }
-
-    // -------------------------------------
-    // 13. Handler for Status Change
-    // -------------------------------------
-    handleStatusChange(event) {
-        this.selectedStatus = event.detail.value;
     }
 
     // -------------------------------------
     // 14. Handler for Deleting All Archived Documents
     // -------------------------------------
 
-    // -------------------------------------
-    // Shared Delete Archived Handler
+
     // -------------------------------------
     deleteArchivedDocuments(documentIds, name = null) {
         if (!documentIds || documentIds.length === 0) return;
@@ -265,7 +246,7 @@ export default class CustomTaskManager extends LightningElement {
                     variant: 'success'
                 }));
 
-                 return Promise.all([
+                return Promise.all([
                     refreshApex(this.archivedWireResult),
                     refreshApex(this.wiredDocumentResult) // Refresh active documents
                 ]);
@@ -309,7 +290,7 @@ export default class CustomTaskManager extends LightningElement {
         archiveDocumentAssignment({ documentId, recordId: this.recordId })
             .then(() => {
                 // Remove from master list
-                
+
                 this.masterDocumentList = this.masterDocumentList.filter(row => row.id !== documentId);
                 return Promise.all([
                     refreshApex(this.archivedWireResult),
@@ -405,81 +386,6 @@ export default class CustomTaskManager extends LightningElement {
         this.restoreDocumentsHelper(documentIds, 'All archived documents restored.');
     }
 
-    // handleRestoreArchived(event) {
-    //     const documentId = event.currentTarget.dataset.id;
-    //     const name = event.currentTarget.dataset.name;
-
-    //      console.log('documentId: ', documentId);
-    //      console.log('recordId: ', this.recordId);
-
-    //     restoreArchivedAssignments({ documentIds: [documentId], recordId: this.recordId })
-    //         .then((restoredDocuments) => {
-    //         console.log('restoredDocuments', restoredDocuments);
-    //             this.isArchived = false
-    //             // Remove from archived list
-    //             this.archivedList = this.archivedList.filter(doc => doc.id !== documentId);
-    //             // Refresh active documents to include restored one
-    //             console.log('handleRestoreArchived: ', this.archivedList);
-    //         //     if (restoredDocuments && restoredDocuments.length > 0) {
-    //             this.masterDocumentList = [...this.masterDocumentList, ...restoredDocuments];
-    //             // this.masterDocumentList = [...this.masterDocumentList, ...restoredDocuments];
-    //         // }
-    //         console.log('handleRestoreArchived: archivedList:', this.archivedList);
-    //         console.log('handleRestoreArchived: masterDocumentList:', this.masterDocumentList);
-    //             // console.log('handleRestoreArchived:');
-
-    //             // return refreshApex(this.wiredDocumentResult);
-    //         })
-    //         .then(() => {
-    //             this.dispatchEvent(new ShowToastEvent({
-    //                 title: 'Success',
-    //                 message: name+' restored successfully.',
-    //                 variant: 'success'
-    //             }));
-    //         })
-    //         .catch(error => {
-    //             console.error('Restore failed: ', error);
-    //             this.dispatchEvent(new ShowToastEvent({
-    //                 title: 'Error',
-    //                 message: 'Failed to restore document.',
-    //                 variant: 'error'
-    //             }));
-    //         });
-    // }
-
-    // // -------------------------------------
-    // // 20. Handler for Restoring All Archived Documents
-    // // -------------------------------------
-    // handleRestoreAllArchived() {
-    //     const documentIds = this.archivedList.map(item => item.id);
-    //     if (documentIds.length === 0) return;
-
-    //     restoreArchivedAssignments({ documentIds, recordId: this.recordId })
-    //         .then((restoredDocuments) => {
-    //             this.archivedList = [];
-    //             this.isArchive=false;
-    //             // Refresh active documents to include restored ones
-    //             if (restoredDocuments && restoredDocuments.length > 0) {
-    //             this.masterDocumentList = [...this.masterDocumentList, ...restoredDocuments];
-    //         }
-    //             return refreshApex(this.wiredDocumentResult);
-    //         })
-    //         .then(() => {
-    //             this.dispatchEvent(new ShowToastEvent({
-    //                 title: 'Restored',
-    //                 message: 'All archived documents restored.',
-    //                 variant: 'success'
-    //             }));
-    //         })
-    //         .catch(error => {
-    //             console.error('Restore All Failed: ', error);
-    //             this.dispatchEvent(new ShowToastEvent({
-    //                 title: 'Error',
-    //                 message: error.body?.message || 'Failed to restore archived documents.',
-    //                 variant: 'error'
-    //             }));
-    //         });
-    // }
 
     // -------------------------------------
     // 21. Helper Method to Check Ready to Send Status
@@ -488,35 +394,6 @@ export default class CustomTaskManager extends LightningElement {
         return status === 'Ready to Send';
     }
 
-    // -------------------------------------
-    // 22. Getter for Grouping Documents by Status
-    // // -------------------------------------
-
-
-    // get groupedByStatus() {
-    //     const groups = {};
-    //     const archivedIds = new Set((this.archivedList || []).map(item => item.id));
-
-    //     let filteredDocuments = (this.masterDocumentList || []).filter(item => {
-    //         if (!item) return false;
-    //         if (archivedIds.has(item.id)) return false;
-    //         if (this.selectedCategories.length === 0) return true;
-    //         return this.selectedCategories.includes(item.Category__c); // Use Category__c ID
-    //     });
-
-    //     filteredDocuments.forEach(item => {
-    //         const status = item.status || 'General';
-    //         if (!groups[status]) {
-    //             groups[status] = [];
-    //         }
-    //         groups[status].push({ ...item });
-    //     });
-
-    //     return Object.entries(groups).map(([status, items]) => ({
-    //         status,
-    //         items
-    //     }));
-    // }
 
     // -------------------------------------
     // 22. Getter for Grouping Documents by Status
@@ -681,25 +558,25 @@ export default class CustomTaskManager extends LightningElement {
     handleArchiveClick() {
         this.isArchived = !this.isArchived;
         this.isLoading = true;
-          console.log('Archive button clicked!');
+        console.log('Archive button clicked!');
         console.log('archivedWireResult', this.archivedWireResult);
-          if (this.archivedWireResult) {
-        refreshApex(this.archivedWireResult)
-            .then(() => {
-                this.archivedList = this.archivedWireResult.data;
-        this.isLoading = false;
+        if (this.archivedWireResult) {
+            refreshApex(this.archivedWireResult)
+                .then(() => {
+                    this.archivedList = this.archivedWireResult.data;
+                    this.isLoading = false;
 
-                console.log('Archived list refreshed');
-            })
-            .catch(error => {
-                console.error('Error refreshing archived list:', error);
-            });
-    }
-      
+                    console.log('Archived list refreshed');
+                })
+                .catch(error => {
+                    console.error('Error refreshing archived list:', error);
+                });
+        }
+
     }
     get hasArchivedDocs() {
-    return this.archivedList && this.archivedList.length > 0;
-}
+        return this.archivedList && this.archivedList.length > 0;
+    }
 
 
     // -------------------------------------
@@ -738,32 +615,7 @@ export default class CustomTaskManager extends LightningElement {
         }));
     }
 
-    // -------------------------------------
-    // 34. Handler for Checkbox Change
-    // -------------------------------------
-    handleCheckboxChange(event) {
-        const rowId = event.target.dataset.id;
-        const isChecked = event.target.checked;
 
-        const row = this.masterDocumentList.find(r => r.id === rowId);
-        if (row) {
-            row.isChecked = isChecked;
-        }
-    }
-
-    // -------------------------------------
-    // 35. Handler for Input Field Change
-    // -------------------------------------
-    handleInputChange(event) {
-        const rowId = event.target.dataset.id;
-        const field = event.target.dataset.field;
-        const value = event.target.value;
-
-        const row = this.masterDocumentList.find(r => r.id === rowId);
-        if (row && field) {
-            row[field] = value;
-        }
-    }
 
     // -------------------------------------
     // 36. Handler for Receiving Template Items
@@ -786,83 +638,142 @@ export default class CustomTaskManager extends LightningElement {
         }));
     }
 
-    // -------------------------------------
-    // 37. Handler for Modal Cancel
-    // -------------------------------------
-    handleModalCancel() {
-        this.showModal = false;
+
+    // ------------------------
+    // create task
+    // -------------------------
+@api sendFlag= false;
+    handleTaskTypes(event) {
+        this.showTaskTypes = !this.showTaskTypes;
+        if(showTaskTypes){
+            this.sendFlag=true
+        }
+        // this.taskTypeOptions
     }
-
-    // -------------------------------------
-    // 38. Handler for Adding a New Task
-    // -------------------------------------
-    handleAddTask() {
-        this.showModal = true;
-    }
-
-    // -------------------------------------
-    // 39. Property for Modal Template Name
-    // -------------------------------------
-    modalTemplateName;
-
-    // -------------------------------------
-    // 40. Handler for Modal Input Change
-    // -------------------------------------
     handleModalInputChange(event) {
-        this.modalTemplateName = event.target.value;
-        console.log('event.target.value: ', event.target.value);
-        console.log('modalTemplateName: ', this.modalTemplateName);
+        const { name, value } = event.target;
+        if (name === 'taskName') {
+            this.modalTemplateName = value;
+        }
+    }
+
+
+    // -------------------------------------
+    // 12. Handler for Document Category Change
+    // -------------------------------------
+    handleDocumentCategoryChange(event) {
+        console.log('handleDocumentCategoryChange', event);
+        this.selectedDocumentCategory = event.detail.value;
     }
 
     // -------------------------------------
-    // 41. Handler for Team Selection Change
-    // -------------------------------------
-    handleTeamChange(event) {
-        this.modalTeam = event.detail.value;
-    }
-
-    // -------------------------------------
-    // 42. Handler for Status Selection Change
+    // 13. Handler for Status Change
     // -------------------------------------
     handleStatusChange(event) {
-        this.modalStatus = event.detail.value;
+        this.selectedStatus = event.detail.value;
     }
 
-    // -------------------------------------
-    // 43. Handler for Notes Change
-    // -------------------------------------
-    handleNotesChange(event) {
-        this.modalNotes = event.detail.value;
-    }
+    handleInputChange(event) {
 
-    // -------------------------------------
-    // 44. Handler for Saving a New Document
-    // -------------------------------------
-    handleSaveNewDocument() {
-        this.isLoading = true;
-
-        // Prepare input object for document creation
-        const input = {
-            categoryId: this.selectedDocumentCategory,
-            name: this.modalTemplateName,
-            status: this.modalStatus || '',
-            team: this.modalTeam || '',
-            type: 'Task',
-            relatedTo: this.recordId,
-            assignedToId: this.selectedUserId,
-            objectName: this.objectName
-
+        const { name, value } = event.target;
+        this.formData = {
+            ...this.formData,
+            [name]: value
         };
+        console.log('name: ', name);
+        console.log('formData: ', JSON.stringify(this.formData));
 
-        console.log('input: ', JSON.stringify(input));
-
-        createDocument({ inputJson: JSON.stringify(input) })
-            .then((newDocument) => {
-                this.masterDocumentList = [...this.masterDocumentList, newDocument];
-                console.log('new Task: ', JSON.stringify(newDocument));
-                this.showModal = false;
-            })
-            .catch(error => console.error('Creation failed', error))
-            .finally(() => (this.isLoading = false));
     }
+
+    handleTaskClick(event) {
+        this.taskType = event.currentTarget.dataset.type;
+        console.log('Selected Task Type:', this.taskType);
+
+        // Reset form data on task type switch
+        this.formData = {};
+        this.showTaskTypes = false;
+        // Show modal with task-specific fields
+        this.showModal = !this.showModal;
+    }
+    handleModalCancel() {
+        this.showModal = false;
+
+    }
+    get isYN() {
+        return this.taskType === 'Y/N';
+    }
+    get isCreditCard() {
+        return this.taskType === 'Credit Card Information';
+    }
+    get isContactInfo() {
+        return this.taskType === 'Contact Information';
+    }
+    get modalTitle() {
+        return this.taskType ? `Add ${this.taskType} Task` : 'Add Task';
+    }
+
+    handleSubmit() {
+        this.isLoading = true;
+        const payload = {
+            recordId: this.recordId,
+            objectName: this.objectName,
+            name: this.modalTemplateName,
+            status: this.selectedStatus,
+            category: this.selectedDocumentCategory,
+            taskType: this.taskType,
+            loanId: this.loanId,
+            contactId: this.contactId,
+            assignedTo: this.selectedUserId,
+            categoryId: this.selectedDocumentCategory
+        };
+        console.log('payload: ', JSON.stringify(payload));
+
+        if (this.taskType === 'Y/N') {
+            payload.question = this.formData.question;
+        }
+
+        else if (this.taskType === 'Credit Card Information') {
+            Object.assign(payload, {
+                cardholderName: this.formData.cardholderName,
+                cardNumber: this.formData.cardNumber,
+                expirationDate: this.formData.expirationDate,
+                cvv: this.formData.cvv,
+                zipCode: this.formData.zipCode,
+            });
+        }
+        else if (this.taskType === 'Contact Information') {
+            Object.assign(payload, {
+                fullName: this.formData.fullName,
+                email: this.formData.email,
+                phone: this.formData.phone,
+                address: this.formData.address
+            });
+        }
+        console.log('payload: ', JSON.stringify(payload));
+
+        createTask({ payload })
+            .then(newDocument => {
+                console.log('Task Created:', newDocument);
+                this.dispatchEvent(
+                    new ShowToastEvent({
+                        title: 'Success',
+                        message: 'Task '+newDocument.name+ ' created successfully.',
+                        variant: 'success'
+                    })
+                );
+
+                // Update master list with new document
+                this.masterDocumentList = [...this.masterDocumentList, newDocument];
+
+                // Close modal and reset if needed
+                this.showModal = false;
+                this.isLoading = false;
+
+
+            })
+            .catch(error => {
+                console.error('Error creating task:', error);
+            });
+    }
+
 }

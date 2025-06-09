@@ -249,21 +249,37 @@
 .plus-icon {
     --slds-c-icon-color-foreground-default: rgb(255, 255, 255);
 }
+/* --- Base Theme Colors --- */
+:host {
+    --theme-primary: #1a73e8;
+    --theme-primary-light: #e8f0fe;
+    --theme-primary-dark: #1557b0;
+    --theme-secondary: #f8fafd;
+    --theme-border: #e1e7ef;
+    --theme-text: #3c4043;
+    --theme-text-light: #5f6368;
+}
+
+/* --- Button Styles --- */
 .template-button {
-    background-color: #1a73e8; /* Deep blue */
+    background-color: var(--theme-primary);
     color: white;
     border: none;
-    /* padding: 6px 12px; */
+    padding: 0.75rem 1.25rem;
     font-weight: 500;
+    font-size: 0.875rem;
     display: flex;
     align-items: center;
-    gap: 6px;
-    /* border-radius: 4px; */
-    transition: background-color 0.2s ease;
+    gap: 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .template-button:hover {
-    background-color: #155cc1;
+    background-color: var(--theme-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* --- ACCORDIONS --- */
