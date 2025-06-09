@@ -62,6 +62,7 @@ export default class TemplateManager extends LightningElement {
     @track availableDocuments = [];
     wiredTemplateCategoriesResult;
     @track availableTasks = []
+    wiredDocumentResult;
     // Static Options
     teamOptions = [
         { label: 'Underwriting', value: 'Underwriting' },
@@ -201,37 +202,26 @@ export default class TemplateManager extends LightningElement {
      * Fetches all available documents.
      */
     @wire(getAllDocuments)
-    wiredDocuments({ error, data }) {
+    wiredDocuments(result) {
+        this.wiredDocumentResult = result;  // Store the full wire result for refresh
+        const { data, error } = result;
+        
         if (data) {
             console.log('Documents fetched successfully:', data);
-
             this.availableDocuments = data.documents;
             this.availableTasks = data.tasks;
-            // console.log('Documents fetched successfully:', this.documents);
         } else if (error) {
             this.error = error;
             console.error('Error fetching documents:', this.error);
         }
     }
-//  @wire(getAllowedTemplateCategories)
-//     wiredCategories(result) {
-//         this.wiredTemplateCategoriesResult = result.data;
-//         console.log('result: ',result.data);
-//         console.log('wiredTemplateCategoriesResult: ',this.wiredTemplateCategoriesResult);
-        
-      
-//             // this.templateCategoryOptions = result.data.map(item => {
-//             //     const templateName = item.template?.name || '';
-//             //     return {
-//             //         categoryId: item.id,
-//             //         categoryName: item.name,
-//             //         templateId: item.template?.id,
-//             //         templateName: templateName,
-//             //         showEdit: true
-//             //     };
-//             // });
+
+     refreshDocuments() {
        
-//     }
+            refreshApex(this.wiredDocumentResult);
+      
+    }
+
      refreshTemplateCategories() {
         //  this.isLoading = true;
     getAllowedTemplateCategories()
@@ -379,73 +369,9 @@ export default class TemplateManager extends LightningElement {
             .finally(() => (this.isLoading = false));
     }
 
-    /**
-     * Fetches documents for a selected document category.
-     * @param event The click event containing the category ID and name
-     */
-    /**
-     * Fetches documents for a selected document category.
-     * @param event The click event containing the category ID and name
-     */
-    // handleDocumentCategoryClick(event) {
-    //     const categoryId = event.currentTarget.dataset.id;
-    //     const categoryName = event.currentTarget.dataset.categoryname;
-    //     this.isLoading = true;
-    //     console.log('Fetching documents for:', { categoryId, categoryName });
-
-    //     // Only fetch if a different category is selected
-    //     if (this.selectedDocumentCategoryId !== categoryId) {
-    //         this.selectedDocumentCategoryId = categoryId;
-    //         this.documentOptions = []; // Clear previous documents
-    //         getDocumentsByCategory({ categoryId })
-    //             .then(result => {
-    //                 console.log('getDocumentsByCategory result:', JSON.stringify(result));
-    //                 if (result && result.documents && Array.isArray(result.documents)) {
-    //                     this.documentOptions = [...result.documents]; // New array to ensure reactivity
-    //                     console.log('documentOptions set:', JSON.stringify(this.documentOptions));
-    //                     if (result.documents.length === 0) {
-    //                         console.warn('No documents found for category:', categoryName);
-    //                         this.showError('No Documents', `No documents available for category ${categoryName}.`);
-    //                     }
-    //                 } else {
-    //                     console.warn('Invalid or empty document list:', result);
-    //                     this.documentOptions = [];
-    //                     this.showError('Error', 'No documents found or invalid response.');
-    //                 }
-    //             })
-    //             .catch(error => {
-    //                 console.error('Error fetching documents by category:', error);
-    //                 this.documentOptions = [];
-    //                 this.showError('Error fetching documents by category', error);
-    //             })
-    //             .finally(() => {
-    //                 this.isLoading = false;
-    //             });
-    //     } else {
-    //         this.isLoading = false; // Skip fetch if same category
-    //     }
-    // }
+  
     isDocumentOptions = false
-    // handleDocumentCategoryClick(event) {
-    //     const categoryId = event.currentTarget.dataset.id;
-    //     const categoryName = event.currentTarget.dataset.categoryname;
-    //     this.isLoading = true;
-    //     console.log('categoryId:',categoryId);
-    //     console.log('categoryName:',categoryName);
-        
-    //     getDocumentsByCategory({ categoryId })
-    //         .then(result => {
-    //     console.log('result:',result);
-
-    //             if (result && result.documents) {
-    //                 this.documentOptions = result.documents;
-    //                 this.isDocumentOptions = true;
-    //                 console.log('documentOptions loaded:', this.documentOptions);
-    //             }
-    //         })
-    //         .catch(error => this.showError('Error fetching documents by category', error))
-    //         .finally(() => (this.isLoading = false));
-    // }
+  
 
     handleDocumentCategoryClick(event) {
     const categoryId = event.currentTarget.dataset.id;
@@ -695,6 +621,7 @@ export default class TemplateManager extends LightningElement {
         this.isEditModalOpen = true;
         this.templateDocumentList = [];
         console.log('event : ', event.currentTarget);
+        this.refreshDocuments();
     }
 
     /**
@@ -707,23 +634,38 @@ export default class TemplateManager extends LightningElement {
         this.selectedTemplateId = templateId;
         const categoryId = event.currentTarget.dataset.categoryid;
         const templateName = event.currentTarget.dataset.templatename;
+        
         console.log('templateId:', templateId);
         console.log('categoryId:', categoryId);
         console.log('templateName:', templateName);
+        
         if (!Array.isArray(this.templateCategoryOptions)) {
             console.error('templateCategoryOptions is not an array:', this.templateCategoryOptions);
             return;
         }
+        
         this.selectedTemplateForEdit = this.templateCategoryOptions.find(
             t => t.templateId === templateId
         );
+        
         if (!this.selectedTemplateForEdit) {
             console.error('No template found with templateId:', templateId);
             return;
         }
+        
         console.log('selectedTemplateForEdit:', JSON.stringify(this.selectedTemplateForEdit));
         this.isLoading = true;
-        getDocumentsByTemplate({ templateId: templateId, recordId: null, objectName: null })
+
+        // First refresh documents to ensure we have latest data
+        refreshApex(this.wiredDocumentResult)
+            .then(() => {
+                // Then get documents for this template
+                return getDocumentsByTemplate({ 
+                    templateId: templateId, 
+                    recordId: null, 
+                    objectName: null 
+                });
+            })
             .then(result => {
                 this.isEditModalOpen = true;
                 this.templateDocumentList = result;
@@ -750,47 +692,44 @@ export default class TemplateManager extends LightningElement {
         console.log('deletedItemIds : ', this.deletedItemIds);
         console.log('newItemIds : ', this.newItemIds);
         console.log('isNewTemplate ?: ', this.isNewTemplate);
-        if (!this.isNewTemplate) {
+        
+        const savePromise = !this.isNewTemplate ? 
             updateTemplateWithDocuments({
                 templateId: this.selectedTemplateId,
                 newTemplateName: this.editableTemplateName,
                 newItemIds: this.newItemIds,
                 deletedItemIds: this.deletedItemIds
-            })
-                .then((updatedTemplate) => {
-                  this.refreshTemplateCategories();
-
-                    this.showSuccess('Success', updatedTemplate.name+' Template updated successfully');
-                    console.log('Updated template:', updatedTemplate);
-                    this.templateDocumentList = updatedTemplate.documents;
-                    this.originalDocumentIds = updatedTemplate.documents.map(doc => doc.id);
-                    this.newItemIds = [];
-                    this.deletedItemIds = [];
-                    this.closeEditModal();
-                })
-                .catch((error) => {
-                    console.error('Error updating template:', error);
-                    this.showError('Error updating template', error);
-                });
-        } else {
+            }) :
             createTemplateWithDocuments({
                 templateName: this.editableTemplateName,
                 documentIds: this.newItemIds
-            })
-                .then((createdTemplate) => {
-                     this.refreshTemplateCategories();
-                    console.log('Created template:', createdTemplate);
+            });
 
-                    this.showSuccess('Success', createdTemplate.name+' Template is created Successfully');
-                    this.closeEditModal();
+        savePromise
+            .then((result) => {
+                // Refresh both template categories and documents
+                return Promise.all([
+                    this.refreshTemplateCategories(),
+                    refreshApex(this.wiredDocumentResult)
+                ]);
+            })
+            .then(() => {
+                const message = !this.isNewTemplate ? 
+                    'Template updated successfully' : 
+                    'Template created successfully';
+                this.showSuccess('Success', message);
+                this.closeEditModal();
+                if (this.isNewTemplate) {
                     this.editableTemplateName = '';
-                    this.refreshTemplateList();
-                })
-                .catch(error => {
-                    console.error('Error creating template:', error);
-                    this.showError('Error creating template', error);
-                });
-        }
+                }
+            })
+            .catch(error => {
+                console.error('Error saving template:', error);
+                this.showError('Error saving template', error);
+            })
+            .finally(() => {
+                this.isLoading = false;
+            });
     }
 
     /**
