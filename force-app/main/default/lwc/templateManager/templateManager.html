@@ -1,10 +1,4 @@
-<!--
-  @description       : LWC component for managing document and template selection
-  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
-  @group             : 
-  @last modified on  : 06-09-2025
-  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
--->
+<!-- Updated templateManager.html -->
 <template>
   <!-- Button Group -->
   <div class="button-group">
@@ -24,6 +18,28 @@
       ></lightning-icon>
       Document
     </button>
+    <div class="task-button-container">
+      <button class="template-button no-radius-right" onclick={handleTaskTypes} style="margin-left: 10px;">
+        <lightning-icon
+          icon-name="utility:add"
+          size="x-small"
+          class="plus-icon"
+        ></lightning-icon>
+        Task
+      </button>
+      <!-- Task Types Dropdown -->
+      <template if:true={showTaskTypes}>
+        <ul class="dropdown-list">
+          <template for:each={taskTypeOptions} for:item="task">
+            <li class="dropdown-item template-line" key={task.value}>
+              <span onclick={handleTaskClick} data-id={task.value} data-type={task.value}>
+                {task.label}
+              </span>
+            </li>
+          </template>
+        </ul>
+      </template>
+    </div>
   </div>
 
   <!-- Document Category Dropdown -->
@@ -53,7 +69,6 @@
           </button>
         </li>
       </template>
-
       <!-- Hardcoded New Document Option -->
       <li class="dropdown-item template-line">
         <span onclick={handleAddNewCategory}>
@@ -61,36 +76,32 @@
         </span>
       </li>
     </ul>
-
-   <!-- Sub-items for selected category -->
-<template if:true={isDocumentOptions}>
-  <ul class="dropdown-list left second-dropdown">
-    <template for:each={documentOptions} for:item="doc">
-      <li key={doc.id} class="dropdown-item template-line">
-        <span
-          data-id={doc.id}
-          data-name={doc.name}
-          data-type={doc.type}
-          data-category={doc.category}
-          data-status={doc.status}
-          data-owner={doc.owner}
-          data-team={doc.team}
-          onclick={handleDocumentSelect}
-        >
-          {doc.name}
-        </span>
-      </li>
+    <!-- Sub-items for selected category -->
+    <template if:true={isDocumentOptions}>
+      <ul class="dropdown-list left second-dropdown">
+        <template for:each={documentOptions} for:item="doc">
+          <li key={doc.id} class="dropdown-item template-line">
+            <span
+              data-id={doc.id}
+              data-name={doc.name}
+              data-type={doc.type}
+              data-category={doc.category}
+              data-status={doc.status}
+              data-owner={doc.owner}
+              data-team={doc.team}
+              onclick={handleDocumentSelect}
+            >
+              {doc.name}
+            </span>
+          </li>
+        </template>
+      </ul>
     </template>
-  </ul>
-</template>
-
   </template>
 
   <!-- Template Category Dropdown -->
   <template if:true={isTemplateDropdownOpen}>
     <ul class="dropdown-list right">
-      <!-- Loop through template categories -->
-      <!-- <template for:each={wiredTemplateCategoriesResult} for:item="template"> -->
       <template for:each={templateCategoryOptions} for:item="template">
         <li class="dropdown-item template-line" key={template.categoryId}>
           <span
@@ -100,7 +111,6 @@
           >
             {template.templateName}
           </span>
-          <!-- Show edit button if showEdit is true -->
           <template if:true={template.showEdit}>
             <button
               class="icon-edit-button"
@@ -163,71 +173,68 @@
                 </ol>
               </div>
             </div>
-            <!-- Right Column: Available Docs Grouped -->
-         <!-- Right Column: Available Items Grouped by Tabs -->
-<div class="slds-col slds-size_1-of-2 slds-p-left_small doc-list-column">
-  <p class="doc-title">Add Items</p>
-  <lightning-tabset class="slds-m-top_small">
-    <!-- Tab for Documents -->
-    <lightning-tab label="Documents">
-      <div class="scrollable-doc-list accordion-wrapper">
-        <lightning-accordion allow-multiple-sections-open class="accordionClass">
-          <template for:each={groupedAvailableDocuments} for:item="group">
-            <lightning-accordion-section key={group.name} name={group.name} label={group.name}>
-              <div class="accordion-docs-scroll">
-                <ol class="custom-doc-list">
-                  <template for:each={group.documents} for:item="doc">
-                    <li key={doc.id} class="doc-list-item">
-                      {doc.name}
-                      <lightning-button-icon
-                        icon-name="utility:add"
-                        alternative-text="Add"
-                        onclick={handleAddToTemplate}
-                        data-id={doc.id}
-                        class="slds-m-left_small"
-                        variant="bare"
-                      ></lightning-button-icon>
-                    </li>
-                  </template>
-                </ol>
-              </div>
-            </lightning-accordion-section>
-          </template>
-        </lightning-accordion>
-      </div>
-    </lightning-tab>
-
-    <!-- Tab for Tasks -->
-    <lightning-tab label="Tasks">
-      <div class="scrollable-doc-list accordion-wrapper">
-        <lightning-accordion allow-multiple-sections-open class="accordionClass">
-          <template for:each={groupedAvailableTasks} for:item="group">
-            <lightning-accordion-section key={group.name} name={group.name} label={group.name}>
-              <div class="accordion-docs-scroll">
-                <ol class="custom-doc-list">
-                  <template for:each={group.documents} for:item="doc">
-                    <li key={doc.id} class="doc-list-item">
-                      {doc.name}
-                      <lightning-button-icon
-                        icon-name="utility:add"
-                        alternative-text="Add"
-                        onclick={handleAddToTemplate}
-                        data-id={doc.id}
-                        class="slds-m-left_small"
-                        variant="bare"
-                      ></lightning-button-icon>
-                    </li>
-                  </template>
-                </ol>
-              </div>
-            </lightning-accordion-section>
-          </template>
-        </lightning-accordion>
-      </div>
-    </lightning-tab>
-  </lightning-tabset>
-</div>
-
+            <!-- Right Column: Available Items Grouped by Tabs -->
+            <div class="slds-col slds-size_1-of-2 slds-p-left_small doc-list-column">
+              <p class="doc-title">Add Items</p>
+              <lightning-tabset class="slds-m-top_small">
+                <!-- Tab for Documents -->
+                <lightning-tab label="Documents">
+                  <div class="scrollable-doc-list accordion-wrapper">
+                    <lightning-accordion allow-multiple-sections-open class="accordionClass">
+                      <template for:each={groupedAvailableDocuments} for:item="group">
+                        <lightning-accordion-section key={group.name} name={group.name} label={group.name}>
+                          <div class="accordion-docs-scroll">
+                            <ol class="custom-doc-list">
+                              <template for:each={group.documents} for:item="doc">
+                                <li key={doc.id} class="doc-list-item">
+                                  {doc.name}
+                                  <lightning-button-icon
+                                    icon-name="utility:add"
+                                    alternative-text="Add"
+                                    onclick={handleAddToTemplate}
+                                    data-id={doc.id}
+                                    class="slds-m-left_small"
+                                    variant="bare"
+                                  ></lightning-button-icon>
+                                </li>
+                              </template>
+                            </ol>
+                          </div>
+                        </lightning-accordion-section>
+                      </template>
+                    </lightning-accordion>
+                  </div>
+                </lightning-tab>
+                <!-- Tab for Tasks -->
+                <lightning-tab label="Tasks">
+                  <div class="scrollable-doc-list accordion-wrapper">
+                    <lightning-accordion allow-multiple-sections-open class="accordionClass">
+                      <template for:each={groupedAvailableTasks} for:item="group">
+                        <lightning-accordion-section key={group.name} name={group.name} label={group.name}>
+                          <div class="accordion-docs-scroll">
+                            <ol class="custom-doc-list">
+                              <template for:each={group.documents} for:item="doc">
+                                <li key={doc.id} class="doc-list-item">
+                                  {doc.name}
+                                  <lightning-button-icon
+                                    icon-name="utility:add"
+                                    alternative-text="Add"
+                                    onclick={handleAddToTemplate}
+                                    data-id={doc.id}
+                                    class="slds-m-left_small"
+                                    variant="bare"
+                                  ></lightning-button-icon>
+                                </li>
+                              </template>
+                            </ol>
+                          </div>
+                        </lightning-accordion-section>
+                      </template>
+                    </lightning-accordion>
+                  </div>
+                </lightning-tab>
+              </lightning-tabset>
+            </div>
           </div>
         </div>
         <footer class="slds-modal__footer custom-modal-footer">
@@ -236,7 +243,6 @@
         </footer>
       </div>
     </section>
-    <!-- <div class="slds-backdrop slds-backdrop_open"></div> -->
   </template>
 
   <!-- Spinner -->
@@ -244,7 +250,7 @@
     <lightning-spinner alternative-text="Loading..." size="medium"></lightning-spinner>
   </template>
 
-  <!-- New Document Modal -->
+  <!-- New Task Modal -->
   <template if:true={showModal}>
     <section role="dialog" class="slds-modal slds-fade-in-open custom-themed-modal">
       <div class="slds-modal__container custom-modal-container">
@@ -255,13 +261,23 @@
           <div class="slds-grid slds-wrap slds-gutters">
             <!-- Left Column -->
             <div class="slds-col slds-size_1-of-2">
-              <lightning-input
+
+               <lightning-combobox
+                label="Category"
+                value={modalCategory}
+                options={taskCategoryOptions}
+                onchange={handleTaskCategoryChange}
+                class="custom-input"
+              ></lightning-combobox>
+
+              <!-- <lightning-input
                 label="Category"
                 value={modalCategory}
                 disabled
                 class="custom-input"
-              ></lightning-input>
+              ></lightning-input> -->
               <lightning-input
+                name="taskName"
                 label="Item Name"
                 value={modalTemplateName}
                 onchange={handleModalInputChange}
@@ -278,65 +294,169 @@
                 onchange={handleStatusChange}
                 class="custom-input"
               ></lightning-combobox>
-                <lightning-combobox
-        name="user"
-        label="Assign To"
-        value={selectedUserId}
-        options={users}
-        onchange={handleUserChange}>
-    </lightning-combobox>
+              <lightning-combobox
+                name="user"
+                label="Assign To"
+                value={selectedUserId}
+                options={users}
+                onchange={handleUserChange}
+                class="custom-input"
+              ></lightning-combobox>
+            </div>
+            <!-- Dynamic Fields: Yes/No -->
+            <template if:true={isYN}>
+              <div class="slds-col slds-size_1-of-1">
+                <lightning-textarea
+                  name="question"
+                  label="Question"
+                  value={formData.question}
+                  onchange={handleInputChange}
+                  required
+                  class="custom-input"
+                ></lightning-textarea>
               </div>
-          
-          
+            </template>
+            <!-- Dynamic Fields: Credit Card -->
+            <template if:true={isCreditCard}>
+              <div class="slds-col slds-size_1-of-2">
+                <lightning-input
+                  name="cardholderName"
+                  label="Cardholder Name"
+                  value={formData.cardholderName}
+                  onchange={handleInputChange}
+                  required
+                  class="custom-input"
+                ></lightning-input>
+              </div>
+              <div class="slds-col slds-size_1-of-2">
+                <lightning-input
+                  name="cardNumber"
+                  label="Card Number"
+                  value={formData.cardNumber}
+                  onchange={handleInputChange}
+                  required
+                  class="custom-input"
+                ></lightning-input>
+              </div>
+              <div class="slds-col slds-size_1-of-2">
+                <lightning-input
+                  name="expirationDate"
+                  type="date"
+                  label="Expiration Date (MM/YY)"
+                  value={formData.expirationDate}
+                  onchange={handleInputChange}
+                  required
+                  class="custom-input"
+                ></lightning-input>
+              </div>
+              <div class="slds-col slds-size_1-of-2">
+                <lightning-input
+                  name="cvv"
+                  label="CVV"
+                  type="number"
+                  value={formData.cvv}
+                  onchange={handleInputChange}
+                  required
+                  class="custom-input"
+                ></lightning-input>
+              </div>
+              <div class="slds-col slds-size_1-of-2">
+                <lightning-input
+                  name="zipCode"
+                  label="Billing ZIP"
+                  type="number"
+                  value={formData.zipCode}
+                  onchange={handleInputChange}
+                  required
+                  class="custom-input"
+                ></lightning-input>
+              </div>
+            </template>
+            <!-- Dynamic Fields: Contact Info -->
+            <template if:true={isContactInfo}>
+              <div class="slds-col slds-size_1-of-2">
+                <lightning-input
+                  name="fullName"
+                  label="Full Name"
+                  value={formData.fullName}
+                  onchange={handleInputChange}
+                  required
+                  class="custom-input"
+                ></lightning-input>
+              </div>
+              <div class="slds-col slds-size_1-of-2">
+                <lightning-input
+                  name="email"
+                  type="email"
+                  label="Email"
+                  value={formData.email}
+                  onchange={handleInputChange}
+                  required
+                  class="custom-input"
+                ></lightning-input>
+              </div>
+              <div class="slds-col slds-size_1-of-2">
+                <lightning-input
+                  name="phone"
+                  type="tel"
+                  label="Phone"
+                  value={formData.phone}
+                  onchange={handleInputChange}
+                  required
+                  class="custom-input"
+                ></lightning-input>
+              </div>
+              <div class="slds-col slds-size_1-of-1">
+                <lightning-textarea
+                  name="address"
+                  label="Address"
+                  value={formData.address}
+                  onchange={handleInputChange}
+                  required
+                  class="custom-input"
+                ></lightning-textarea>
+              </div>
+            </template>
           </div>
         </div>
         <footer class="slds-modal__footer custom-footer">
           <lightning-button variant="neutral" label="Cancel" onclick={handleModalCancel}></lightning-button>
-          <lightning-button variant="brand" label="Save" onclick={handleSaveNewDocument}></lightning-button>
+          <lightning-button variant="brand" label="Save" onclick={handleSaveNewItem}></lightning-button>
         </footer>
       </div>
     </section>
-    <!-- <div class="slds-backdrop slds-backdrop_open"></div> -->
   </template>
 
-  <!-- ------------------------------------- -->
-<!-- New Document Category Modal -->
-<!-- ------------------------------------- -->
-<template if:true={showNewCategoryModal}>
-  <section role="dialog" class="slds-modal slds-fade-in-open custom-themed-modal">
-    <div class="slds-modal__container custom-modal-container">
-      <!-- Modal Header -->
-      <header class="slds-modal__header custom-header">
-        <h2 class="slds-modal__title">New Document Category</h2>
-        <button class="slds-button slds-button_icon slds-modal__close" title="Close" onclick={closeNewCategoryModal}>
-          <lightning-icon icon-name="utility:close" alternative-text="Close" size="small"></lightning-icon>
-        </button>
-      </header>
-
-      <!-- Modal Body -->
-      <div class="slds-modal__content slds-p-around_medium">
-        <lightning-input
-          label="Category Name"
-          value={newCategoryName}
-          onchange={handleNewCategoryInput}
-          required
-          class="custom-input"
-        ></lightning-input>
-        <lightning-textarea
-          label="Description (optional)"
-          value={newCategoryDescription}
-          onchange={handleNewCategoryDescriptionInput}
-          class="custom-input slds-m-top_small"
-        ></lightning-textarea>
+  <!-- New Document Category Modal -->
+  <template if:true={showNewCategoryModal}>
+    <section role="dialog" class="slds-modal slds-fade-in-open custom-themed-modal">
+      <div class="slds-modal__container custom-modal-container">
+        <header class="slds-modal__header custom-header">
+          <h2 class="slds-modal__title">New Document Category</h2>
+          <button class="slds-button slds-button_icon slds-modal__close" title="Close" onclick={closeNewCategoryModal}>
+            <lightning-icon icon-name="utility:close" alternative-text="Close" size="small"></lightning-icon>
+          </button>
+        </header>
+        <div class="slds-modal__content slds-p-around_medium">
+          <lightning-input
+            label="Category Name"
+            value={newCategoryName}
+            onchange={handleNewCategoryInput}
+            required
+            class="custom-input"
+          ></lightning-input>
+          <lightning-textarea
+            label="Description (optional)"
+            value={newCategoryDescription}
+            onchange={handleNewCategoryDescriptionInput}
+            class="custom-input slds-m-top_small"
+          ></lightning-textarea>
+        </div>
+        <footer class="slds-modal__footer custom-footer">
+          <lightning-button variant="neutral" label="Cancel" onclick={closeNewCategoryModal}></lightning-button>
+          <lightning-button variant="brand" label="Create" onclick={createNewCategory}></lightning-button>
+        </footer>
       </div>
-
-      <!-- Modal Footer -->
-      <footer class="slds-modal__footer custom-footer">
-        <lightning-button variant="neutral" label="Cancel" onclick={closeNewCategoryModal}></lightning-button>
-        <lightning-button variant="brand" label="Create" onclick={createNewCategory}></lightning-button>
-      </footer>
-    </div>
-  </section>
-</template>
-
+    </section>
+  </template>
 </template>
