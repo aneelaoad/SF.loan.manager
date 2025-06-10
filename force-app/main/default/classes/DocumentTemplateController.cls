@@ -2,7 +2,7 @@
  * @description       : Controller class for managing document templates, assignments, and categories in Salesforce.
  * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
  * @group             : Document Management
- * @last modified on  : 06-09-2025
+ * @last modified on  : 06-10-2025
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 **/
 public with sharing class DocumentTemplateController {
@@ -766,7 +766,6 @@ public static DocumentTypeWrapper getAllDocuments() {
 
         // 2.3.19 Fetch and wrap document details
         result = queryDocumentsAndWrap(docIds);
-
         // 2.3.20 Insert assignments if any
         if (!assignmentsToInsert.isEmpty()) {
             insert assignmentsToInsert;
@@ -774,6 +773,7 @@ public static DocumentTypeWrapper getAllDocuments() {
         } else {
             System.debug('2.3.22 No assignments to insert.');
         }
+        System.debug('result: '+result);
 
         return result;
     }

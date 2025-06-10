@@ -275,74 +275,183 @@ connectedCallback(){
   }
   handleTaskCategoryChange(event)
   {
+    console.log('handleTaskCategoryChange',event.detail.value);
+    
 this.modalCategory =event.detail.value;  
+
 
   }
 
   // Event Handlers
-  handleAddTemplate() {
+  // handleAddTemplate() {
+  //   this.isTemplateDropdownOpen = !this.isTemplateDropdownOpen;
+  //   this.isDocumentDropdownOpen = false;
+  //   this.showTaskTypes = false;
+  //   this.refreshTemplateCategories();
+  // }
+
+  
+
+  // handleAddDocument() {
+  //   this.isDocumentDropdownOpen = !this.isDocumentDropdownOpen;
+  //   this.isTemplateDropdownOpen = false;
+  //   this.showTaskTypes = false;
+  //   this.refreshDocumentCategories();
+  // }
+
+  // handleDocumentCategoryClick(event) {
+  //   const categoryId = event.currentTarget.dataset.id;
+  //   const categoryName = event.currentTarget.dataset.categoryname;
+  //   if (this.selectedDocumentCategoryId === categoryId) {
+  //     this.isDocumentOptions = false;
+  //     this.documentOptions = [];
+  //     this.selectedDocumentCategoryId = null;
+  //     return;
+  //   }
+  //   this.isLoading = true;
+  //   this.documentOptions = [];
+  //   this.selectedDocumentCategoryId = categoryId;
+  //   console.log('Fetching documents for:', { categoryId, categoryName });
+  //   getDocumentsByCategory({ categoryId })
+  //     .then(result => {
+  //       console.log('getDocumentsByCategory result:', result);
+  //       if (result && result.documents && result.documents.length > 0) {
+  //         this.documentOptions = [...result.documents];
+  //         this.isDocumentOptions = true;
+  //       } else {
+  //         this.showError('No Documents', `No documents found for category ${categoryName}.`);
+  //       }
+  //     })
+  //     .catch(error => {
+  //       this.showError('Error fetching documents by category', error);
+  //     })
+  //     .finally(() => {
+  //       this.isLoading = false;
+  //     });
+  // }
+
+  // Event Handlers
+  handleAddTemplate(event) {
     this.isTemplateDropdownOpen = !this.isTemplateDropdownOpen;
     this.isDocumentDropdownOpen = false;
     this.showTaskTypes = false;
-    this.refreshTemplateCategories();
+    if (this.isTemplateDropdownOpen) {
+      this.refreshTemplateCategories();
+      setTimeout(() => {
+        document.addEventListener('click', this.handleOutsideClickTemplate);
+      }, 0);
+    } else {
+      document.removeEventListener('click', this.handleOutsideClickTemplate);
+    }
   }
 
-  handleOutsideClick = (event) => {
-    const dropdowns = this.template.querySelectorAll('.dropdown-list');
-    let clickedInsideDropdown = false;
-    dropdowns.forEach(dropdown => {
-      if (dropdown.contains(event.target)) {
-        clickedInsideDropdown = true;
-      }
-    });
-    if (!clickedInsideDropdown) {
+  handleAddDocument(event) {
+    this.isDocumentDropdownOpen = !this.isDocumentDropdownOpen;
+    this.isTemplateDropdownOpen = false;
+    this.showTaskTypes = false;
+    if (this.isDocumentDropdownOpen) {
+      this.refreshDocumentCategories();
+      setTimeout(() => {
+        document.addEventListener('click', this.handleOutsideClickDocument);
+      }, 0);
+    } else {
+      document.removeEventListener('click', this.handleOutsideClickDocument);
+    }
+  }
+
+  handleTemplateCategoryClick(event) {
+    event.stopPropagation(); // Prevent outside click from closing dropdown
+    const templateId = event.currentTarget.dataset.id;
+    const templateName = event.currentTarget.dataset.value;
+    if (!templateId || !templateName) {
+      console.error('Invalid template data:', { templateId, templateName });
+      return;
+    }
+    this.isLoading = true;
+    getDocumentsByTemplate({ templateId, recordId: this.recordId, objectName: this.objectName })
+      .then(result => {
+        console.log('template documents:',JSON.stringify(result));
+        
+        if (result && Array.isArray(result)) {
+          this.documentList = [  this.documentList, ...result]
+          this.sendDocumentsToParent(this.documentList);
+          this.showSuccess('Success', `Documents loaded for template: ${templateName}`);
+        } else {
+          this.showError('No Documents', `No documents found for template: ${templateName}`);
+        }
+      })
+      .catch(error => {
+        this.showError('Error fetching template documents', error);
+        console.error('Error in handleTemplateCategoryClick:', error);
+      })
+      .finally(() => {
+        this.isLoading = false;
+        this.isTemplateDropdownOpen = false; // Close dropdown after selection
+        document.removeEventListener('click', this.handleOutsideClickTemplate);
+      });
+  }
+
+  handleDocumentCategoryClick(event) {
+    event.stopPropagation(); // Prevent outside click from closing dropdown
+    const categoryId = event.currentTarget.dataset.id;
+    const categoryName = event.currentTarget.dataset.categoryname;
+    if (!categoryId || !categoryName) {
+      console.error('Invalid category data:', { categoryId, categoryName });
+      return;
+    }
+    if (this.selectedDocumentCategoryId === categoryId) {
+      this.isDocumentOptions = false;
+      this.documentOptions = [];
+      this.selectedDocumentCategoryId = null;
+    } else {
+      this.isLoading = true;
+      this.documentOptions = [];
+      this.selectedDocumentCategoryId = categoryId;
+      getDocumentsByCategory({ categoryId })
+        .then(result => {
+          if (result && result.documents && Array.isArray(result.documents)) {
+            this.documentOptions = [...result.documents];
+            this.isDocumentOptions = true;
+          } else {
+            this.showError('No Documents', `No documents found for category: ${categoryName}`);
+          }
+        })
+        .catch(error => {
+          this.showError('Error fetching documents by category', error);
+          console.error('Error in handleDocumentCategoryClick:', error);
+        })
+        .finally(() => {
+          this.isLoading = false;
+        });
+    }
+  }
+
+  handleOutsideClickTemplate = (event) => {
+    if (!this.template.contains(event.target)) {
       this.isTemplateDropdownOpen = false;
+      document.removeEventListener('click', this.handleOutsideClickTemplate);
+    }
+  };
+
+  handleOutsideClickDocument = (event) => {
+    if (!this.template.contains(event.target)) {
       this.isDocumentDropdownOpen = false;
+      this.isDocumentOptions = false;
+      this.documentOptions = [];
+      this.selectedDocumentCategoryId = null;
+      document.removeEventListener('click', this.handleOutsideClickDocument);
+    }
+  };
+
+  handleOutsideClickTask = (event) => {
+    if (!this.template.contains(event.target)) {
       this.showTaskTypes = false;
-      document.removeEventListener('click', this.handleOutsideClick);
+      document.removeEventListener('click', this.handleOutsideClickTask);
     }
   };
 
   handleDropdownClick(event) {
     event.stopPropagation();
-  }
-
-  handleAddDocument() {
-    this.isDocumentDropdownOpen = !this.isDocumentDropdownOpen;
-    this.isTemplateDropdownOpen = false;
-    this.showTaskTypes = false;
-    this.refreshDocumentCategories();
-  }
-
-  handleDocumentCategoryClick(event) {
-    const categoryId = event.currentTarget.dataset.id;
-    const categoryName = event.currentTarget.dataset.categoryname;
-    if (this.selectedDocumentCategoryId === categoryId) {
-      this.isDocumentOptions = false;
-      this.documentOptions = [];
-      this.selectedDocumentCategoryId = null;
-      return;
-    }
-    this.isLoading = true;
-    this.documentOptions = [];
-    this.selectedDocumentCategoryId = categoryId;
-    console.log('Fetching documents for:', { categoryId, categoryName });
-    getDocumentsByCategory({ categoryId })
-      .then(result => {
-        console.log('getDocumentsByCategory result:', result);
-        if (result && result.documents && result.documents.length > 0) {
-          this.documentOptions = [...result.documents];
-          this.isDocumentOptions = true;
-        } else {
-          this.showError('No Documents', `No documents found for category ${categoryName}.`);
-        }
-      })
-      .catch(error => {
-        this.showError('Error fetching documents by category', error);
-      })
-      .finally(() => {
-        this.isLoading = false;
-      });
   }
 
   handleDocumentSelect(event) {
@@ -430,10 +539,23 @@ this.modalCategory =event.detail.value;
     };
   }
 
-  handleTaskTypes(event) {
+  // handleTaskTypes(event) {
+  //   this.showTaskTypes = !this.showTaskTypes;
+  //   this.isDocumentDropdownOpen = false;
+  //   this.isTemplateDropdownOpen = false;
+  // }
+
+    handleTaskTypes(event) {
     this.showTaskTypes = !this.showTaskTypes;
     this.isDocumentDropdownOpen = false;
     this.isTemplateDropdownOpen = false;
+    if (this.showTaskTypes) {
+      setTimeout(() => {
+        document.addEventListener('click', this.handleOutsideClickTask);
+      }, 0);
+    } else {
+      document.removeEventListener('click', this.handleOutsideClickTask);
+    }
   }
 
   handleTaskClick(event) {
@@ -464,7 +586,7 @@ this.modalCategory =event.detail.value;
         loanId: null,
         contactId: null,
         assignedTo: this.selectedUserId,
-        categoryId: this.modalCategoryId
+        categoryId: this.modalCategory
       };
       if (this.taskType === 'Y/N') {
         if (!this.formData.question?.trim()) {
@@ -505,6 +627,7 @@ this.modalCategory =event.detail.value;
           address: this.formData.address
         });
       }
+      console.log('511: payload:', JSON.stringify(payload))
       createTask({ payload })
         .then(newDocument => {
           this.showModal = false;
@@ -596,6 +719,8 @@ this.modalCategory =event.detail.value;
     this.templateDocumentList = [];
     this.newItemIds = [];
     this.deletedItemIds = [];
+    this.refreshDocuments();
+
   }
 
   handleEditTemplate(event) {
