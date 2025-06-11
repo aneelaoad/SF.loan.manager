@@ -11,7 +11,7 @@ export default class CustomDocuments extends LightningElement {
     @api recordId;
     objectName
     @track folders = [];
-    @track selectedFolder = 'all';
+    @track selectedFolder = 'other';
     @track documents = [];
     @track searchTerm = '';
     @track newFolderName = '';
@@ -29,6 +29,9 @@ export default class CustomDocuments extends LightningElement {
         }
     }
 
+    connectedCallback(){
+        this.fetchDocumentsForFolder(null);
+    }
     // Fetch all folders using @wire
     @wire(getFolders, { recordId: '$recordId' })
     wiredFolders(result) {
@@ -52,8 +55,8 @@ export default class CustomDocuments extends LightningElement {
     console.log('folderId : ', folderId);
 
     // If the 'all' folder is clicked, fetch documents for all and apply the selected class
-    if (folderId === 'all') {
-        this.selectedFolder = 'all';  // Set selected folder as 'all'
+    if (folderId === 'other') {
+        this.selectedFolder = 'other';  // Set selected folder as 'all'
         this.fetchDocumentsForFolder(null);  // Fetch documents for all folders
     } else {
         // Set selected folder to clicked folder
@@ -187,7 +190,8 @@ updateFolderClass() {
 
     // Show upload box if needed
     get showUploadBox() {
-        return this.selectedFolder !== 'all';
+        return this.selectedFolder !== 'other';
+        // return this.selectedFolder !== 'all';
     }
 
     // Check if the new folder form is visible
@@ -215,4 +219,17 @@ updateFolderClass() {
     handleDownload() {
         this.showToast('Success', 'Files downloaded.', 'success');
     }
+
+    get numberedDocuments() {
+    return this.filteredDocuments.map((doc, i) => ({
+        ...doc,
+        rowNumber: i + 1,
+         createdDate: new Date(doc.createdDate).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        })
+    }));
+}
+
 }

@@ -1,5 +1,6 @@
 .custom-container{
 	color : black;
+    height: 100vh !important;
 }
 .folder-panel {
     background-color: #f8f9fa;
@@ -70,4 +71,96 @@
     .icon-btn {
         display: none;
     }
+}
+
+.folder.selected {
+    border: 1px dashed #8c5ed4;
+    background-color: #f1eaff;
+}
+
+.upload-zone {
+    border: 2px dashed #a68ef1;
+    background-color: #f6f0ff;
+    color: #5e3ea1;
+    transition: all 0.3s ease;
+}
+
+.upload-zone:hover {
+    background-color: #ede1ff;
+    transform: scale(1.01);
+    box-shadow: 0 0 5px #c7a8ff;
+}
+
+.custom-container {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #2e2e3a;
+}
+
+/* Make headers purplish */
+.header-purple {
+    background-color: #f4f0fa;
+    color: #5f2b95;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 0.75rem;
+}
+
+/* Subtle row styling */
+.table-row:hover {
+    background-color: #f9f5ff;
+    transition: background-color 0.3s ease;
+}
+
+/* Style action icons in purple theme */
+.icon-purple lightning-primitive-icon {
+    fill: #6a1b9a; /* Deep purple */
+}
+
+.icon-purple:hover lightning-primitive-icon {
+    fill: #4a148c;
+}
+
+/* Optional: Number column style */
+.document-table td:first-child {
+    font-weight: 500;
+    color: #7e57c2;
+}
+
+/* Round table borders softly */
+.document-table {
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+.custom-search-container {
+    position: relative;
+    max-width: 400px;
+    margin-top: 0.5rem;
+}
+
+.custom-search-input input {
+    border: 2px solid #a678d1;
+    border-radius: 1.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.custom-search-input input:focus {
+    border-color: #7e57c2;
+    box-shadow: 0 0 0 3px rgba(126, 87, 194, 0.2);
+}
+
+.custom-search-input lightning-primitive-icon {
+    fill: #7e57c2;
+}
+
+.custom-badge {
+    background-color: #e0d7f6;
+    color: #4a148c;
+    font-weight: 500;
+    border-radius: 1rem;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    display: inline-block;
+    white-space: nowrap;
 }

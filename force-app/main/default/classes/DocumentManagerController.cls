@@ -69,13 +69,13 @@ public with sharing class DocumentManagerController {
 
         // Add "All" folder for documents not associated with any folder
         FolderWrapper allFolder = new FolderWrapper();
-        allFolder.id = 'all';
-        allFolder.name = 'All';
+        allFolder.id = 'other';
+        allFolder.name = 'Other';
         allFolder.documents = new List<DocumentFile>();
         for (ContentDocumentLink link : links) {
             ContentVersion version = latestVersions.get(link.ContentDocumentId);
             if (version != null && version.Folder__c == null) {
-                allFolder.documents.add(new DocumentFile(version, 'All'));
+                allFolder.documents.add(new DocumentFile(version, 'Other'));
             }
         }
         allFolder.count = allFolder.documents.size();
@@ -108,6 +108,8 @@ public static List<DocumentFile> getDocumentsForFolder(Id folderId, Id recordId)
     }
 
     // Query ContentVersions for the folder
+
+
     String query = 'SELECT Id, Title, FileType, VersionNumber, ContentDocumentId, CreatedDate, CreatedBy.Name, Folder__c ' +
                    'FROM ContentVersion ' +
                    'WHERE IsLatest = TRUE AND ContentDocumentId IN :contentDocIds';
@@ -124,7 +126,7 @@ public static List<DocumentFile> getDocumentsForFolder(Id folderId, Id recordId)
     // Loop through versions and add them to the documents list
     for (ContentVersion v : versions) {
         // If folderId is not null, find the folder name; otherwise, set to 'All'
-        String folderName = folderId != null ? [SELECT Name FROM Folder__c WHERE Id = :folderId LIMIT 1].Name : 'All';
+        String folderName = folderId != null ? [SELECT Name FROM Folder__c WHERE Id = :folderId LIMIT 1].Name : 'Other';
 
         documents.add(new DocumentFile(v, folderName));
     }
