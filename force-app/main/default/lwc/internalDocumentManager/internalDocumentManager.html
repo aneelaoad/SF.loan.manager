@@ -1,0 +1,111 @@
+<template>
+    <div class="slds-grid slds-gutters document-manager">
+        <!-- Left Sidebar: Folders -->
+        <div class="slds-col slds-size_1-of-4 folder-panel">
+            <div class="slds-p-around_medium">
+                <div style="margin-bottom: 25px">
+                    <div class="folder-name-wrapper">
+                        <h2 class="slds-text-heading_medium">Folders</h2>
+
+                        <template if:false={isFlolderFormVisible}>
+                            <!-- Full Button for large screens -->
+                            <div class="create-folder-btn full-btn">
+                                <lightning-button variant="brand" label="Create Folder"
+                                    onclick={createFolderButtonClick}>
+                                </lightning-button>
+                            </div>
+
+                            <!-- Icon Button for medium/small screens -->
+                            <div class="create-folder-btn icon-btn">
+                                <lightning-button-icon icon-name="utility:add" variant="brand"
+                                    alternative-text="Create Folder" onclick={createFolderButtonClick}
+                                    class="slds-button_icon slds-button_icon-border-filled slds-button_icon-small">
+                                </lightning-button-icon>
+                            </div>
+                        </template>
+                    </div>
+
+                    <template if:true={isFlolderFormVisible}>
+                        <lightning-input type="text" label="New Folder Name" value={newFolderName}
+                            onchange={handleFolderNameChange} class="slds-m-bottom_medium">
+                        </lightning-input>
+
+                        <template if:true={haveNewFolderName}>
+                            <div class="slds-grid">
+                                <div class="slds-col slds-size_1-of-1">
+                                    <button type="button" onclick={handleCreateFolderSubmit} class="slds-button slds-button_brand slds-button_stretch">Create Folder</button>
+                                </div>
+                            </div>
+                        </template>
+                    </template>
+                </div>
+
+                <ul class="folder-list">
+                    <template for:each={folders} for:item="folder">
+                        <li key={folder.id} class={folder.class} data-id={folder.id} onclick={handleFolderClick}>
+                            <lightning-icon icon-name="utility:open_folder" size="x-small"></lightning-icon>
+                            <span class="slds-m-left_small custom-folder-name" style="width: 100%">{folder.name} <span>({folder.count})</span></span>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Right Content: Documents -->
+        <div class="slds-col slds-size_3-of-4 slds-p-around_medium">
+            <div class="slds-grid slds-grid_align-spread slds-m-bottom_medium">
+                <div>
+                    <h2 class="slds-text-heading_medium">{showUploadBox}</h2>
+                </div>
+                <div>
+                    <lightning-button-icon icon-name="utility:refresh" alternative-text="Refresh" title="Refresh"
+                        onclick={handleRefresh}></lightning-button-icon>
+                    <lightning-button-icon icon-name="utility:expand_alt" alternative-text="Pop Out" title="Pop Out"
+                        class="slds-m-left_x-small"></lightning-button-icon>
+                    <lightning-button variant="brand" label="Download Files" class="slds-m-left_x-small"
+                        onclick={handleDownload}></lightning-button>
+                </div>
+            </div>
+
+            <lightning-input type="search" label="Search Documents" value={searchTerm} onchange={handleSearch}
+                class="slds-m-bottom_medium"></lightning-input>
+
+            <div class="document-upload-area">
+                <template if:true={showUploadBox}>
+                    <div class="upload-zone">
+                        <lightning-file-upload label="Upload Files" name="fileUploader" accept=".pdf,.png"
+                            record-id={recordId} disabled={isAllFolder}
+                            onuploadfinished={handleUploadFinished} multiple>
+                        </lightning-file-upload>
+                        <span class="slds-m-left_small">Or drop files</span>
+                    </div>
+                    <template if:true={isAllFolder}>
+                        <div class="slds-notify slds-notify_alert" style="margin-top: 10px">You can not upload files to
+                            the All folder. Please select a folder.</div>
+                    </template>
+                </template>
+            </div>
+
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-m-top_medium">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Folder</th>
+                        <th>File Type</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={filteredDocuments} for:item="doc">
+                        <tr key={doc.id}>
+                            <td>{doc.name}</td>
+                            <td>{doc.folder}</td>
+                            <td>{doc.fileType}</td>
+                            <td>{doc.createdDate}</td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</template>

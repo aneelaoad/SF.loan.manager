@@ -1,0 +1,73 @@
+.custom-container{
+	color : black;
+}
+.folder-panel {
+    background-color: #f8f9fa;
+    border-right: 1px solid #ddd;
+}
+.folder {
+    padding: 0.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+.folder:hover {
+    background-color: #eef2f7;
+}
+.folder.selected {
+    border: 1px dashed #006eff;
+    border-radius: 5px;
+    background-color: #e6f0ff;
+}
+.upload-zone {
+    border: 1px dashed #ccc;
+    padding: 2rem;
+    text-align: center;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.custom-folder-name{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.folder-name-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Show full button only on large screens */
+.full-btn {
+    display: block;
+}
+
+.icon-btn {
+    display: none;
+}
+
+/* Use media queries to toggle buttons on screen size */
+@media screen and (max-width: 1568px) {
+    .full-btn {
+        display: none;
+    }
+
+    .icon-btn {
+        display: block;
+    }
+}
+
+@media screen and (max-width: 1168px) {
+    .full-btn {
+        display: block;
+    }
+
+    .icon-btn {
+        display: none;
+    }
+}
