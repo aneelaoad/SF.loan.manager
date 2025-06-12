@@ -1,41 +1,57 @@
-.custom-container{
-	color : black;
+.custom-container {
+    color: black;
     height: 100vh !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #1c2c45;
 }
+
 .folder-panel {
-    background-color: #f8f9fa;
-    border-right: 1px solid #ddd;
+    background-color: #f4f9ff;
+    border-right: 1px solid #c7d8ec;
 }
+
 .folder {
     padding: 0.5rem;
     cursor: pointer;
     display: flex;
     align-items: center;
 }
+
 .folder:hover {
-    background-color: #eef2f7;
+    background-color: #e6f2ff;
 }
+
 .folder.selected {
-    border: 1px dashed #006eff;
+    border: 1px dashed #007bff;
     border-radius: 5px;
-    background-color: #e6f0ff;
+    background-color: #d9ecff;
 }
+
 .upload-zone {
-    border: 1px dashed #ccc;
+    border: 2px dashed #8fbffb;
     padding: 2rem;
     text-align: center;
     border-radius: 4px;
-    background-color: #f9f9f9;
+    background-color: #eef6ff;
+    color: #145ba3;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.3s ease;
 }
 
-.custom-folder-name{
+.upload-zone:hover {
+    background-color: #dbeeff;
+    transform: scale(1.01);
+    box-shadow: 0 0 5px #9acbff;
+}
+
+.custom-folder-name {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
+
 .folder-name-wrapper {
     display: flex;
     justify-content: space-between;
@@ -52,7 +68,6 @@
     display: none;
 }
 
-/* Use media queries to toggle buttons on screen size */
 @media screen and (max-width: 1568px) {
     .full-btn {
         display: none;
@@ -73,64 +88,42 @@
     }
 }
 
-.folder.selected {
-    border: 1px dashed #8c5ed4;
-    background-color: #f1eaff;
-}
-
-.upload-zone {
-    border: 2px dashed #a68ef1;
-    background-color: #f6f0ff;
-    color: #5e3ea1;
-    transition: all 0.3s ease;
-}
-
-.upload-zone:hover {
-    background-color: #ede1ff;
-    transform: scale(1.01);
-    box-shadow: 0 0 5px #c7a8ff;
-}
-
-.custom-container {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #2e2e3a;
-}
-
-/* Make headers purplish */
+/* Header blue styling */
 .header-purple {
-    background-color: #f4f0fa;
-    color: #5f2b95;
+    background-color: #eaf3ff;
+    color: #1e4f91;
     font-weight: 600;
     text-transform: uppercase;
     padding: 0.75rem;
 }
 
-/* Subtle row styling */
+/* Subtle row hover styling */
 .table-row:hover {
-    background-color: #f9f5ff;
+    background-color: #e6f3ff;
     transition: background-color 0.3s ease;
 }
 
-/* Style action icons in purple theme */
+/* Blue action icon styling */
 .icon-purple lightning-primitive-icon {
-    fill: #6a1b9a; /* Deep purple */
+    fill: #0056b3;
 }
 
 .icon-purple:hover lightning-primitive-icon {
-    fill: #4a148c;
+    fill: #003f7f;
 }
 
-/* Optional: Number column style */
+/* Emphasize first column number */
 .document-table td:first-child {
     font-weight: 500;
-    color: #7e57c2;
+    color: #0070e0;
 }
 
-/* Round table borders softly */
 .document-table {
     border-radius: 0.5rem;
     overflow: hidden;
 }
+
+/* Search bar styles */
 .custom-search-container {
     position: relative;
     max-width: 400px;
@@ -138,7 +131,7 @@
 }
 
 .custom-search-input input {
-    border: 2px solid #a678d1;
+    border: 2px solid #64a2f3;
     border-radius: 1.5rem;
     padding: 0.75rem 1.5rem;
     font-size: 0.95rem;
@@ -146,21 +139,54 @@
 }
 
 .custom-search-input input:focus {
-    border-color: #7e57c2;
-    box-shadow: 0 0 0 3px rgba(126, 87, 194, 0.2);
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
 }
 
 .custom-search-input lightning-primitive-icon {
-    fill: #7e57c2;
+    fill: #007bff;
 }
 
+/* Badge blue theme */
 .custom-badge {
-    background-color: #e0d7f6;
-    color: #4a148c;
+    background-color: #d2e6ff;
+    color: #004085;
     font-weight: 500;
     border-radius: 1rem;
     padding: 0.25rem 0.75rem;
     font-size: 0.75rem;
     display: inline-block;
     white-space: nowrap;
+}
+
+/* Loader */
+.custom-loader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.custom-spinner {
+    width: 48px;
+    height: 48px;
+    border: 6px solid rgba(100, 160, 255, 0.2);
+    border-top-color: #007bff;
+    border-radius: 50%;
+    animation: spin 1s ease-in-out infinite;
+}
+
+.loader-text {
+    margin-top: 0.75rem;
+    font-size: 1rem;
+    color: #0056b3;
+    font-weight: 500;
+    opacity: 0.85;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }

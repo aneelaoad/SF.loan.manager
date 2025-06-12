@@ -1,7 +1,7 @@
 /**
  * @description       : Controller for managing folders and file attachments related to Loan or Lead records.
  * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
- * @last modified on  : 06-11-2025
+ * @last modified on  : 06-12-2025
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 **/
 public with sharing class DocumentManagerController {
@@ -19,7 +19,7 @@ public with sharing class DocumentManagerController {
         List<Folder__c> folders = [
             SELECT Id, Name 
             FROM Folder__c 
-            WHERE Loan__c = :recordId 
+           WHERE Loan__c = :recordId OR Lead__c = :recordId
             ORDER BY CreatedDate DESC
         ];
 
@@ -134,6 +134,42 @@ public static List<DocumentFile> getDocumentsForFolder(Id folderId, Id recordId)
     return documents;
 }
 
+@AuraEnabled
+public static void deleteContentDocument(Id contentDocumentId) {
+    delete [SELECT Id FROM ContentDocument WHERE Id = :contentDocumentId];
+}
+
+@AuraEnabled
+public static void deleteDocumentLink(Id contentDocumentId, Id recordId) {
+    List<ContentDocumentLink> linksToDelete = [
+        SELECT Id 
+        FROM ContentDocumentLink 
+        WHERE ContentDocumentId = :contentDocumentId AND LinkedEntityId = :recordId
+    ];
+    
+    delete linksToDelete;
+}
+
+
+/**
+ * @description Returns the download URL for the latest version of a document.
+ * @param contentDocumentId The ID of the ContentDocument.
+ * @return The download URL as a string.
+ */
+@AuraEnabled(cacheable=true)
+public static String getDownloadUrl(Id contentDocumentId) {
+    ContentVersion version = [
+        SELECT Id 
+        FROM ContentVersion 
+        WHERE IsLatest = TRUE AND ContentDocumentId = :contentDocumentId 
+        LIMIT 1
+    ];
+
+    // Return the URL to download the file
+    return '/sfc/servlet.shepherd/version/download/' + version.Id;
+}
+
+
 
     /**
      * @description Creates a new folder and associates it with either a Lead or Loan record.
@@ -200,36 +236,7 @@ public static List<DocumentFile> getDocumentsForFolder(Id folderId, Id recordId)
             throw new AuraHandledException('Error linking file to folder: ' + e.getMessage());
         }
     }
-    // @AuraEnabled
-    // public static void handleFileUpload(Id contentDocumentId, String status, Id recordId, Id folderId) {
-    //     // Create ContentDocumentLink
-    //     List<ContentDocumentLink> existingLinks = [
-    //         SELECT Id 
-    //         FROM ContentDocumentLink 
-    //         WHERE ContentDocumentId = :contentDocumentId AND LinkedEntityId = :recordId
-    //     ];
-
-    //     if (existingLinks.isEmpty()) {
-    //         insert new ContentDocumentLink(
-    //             ContentDocumentId = contentDocumentId,
-    //             LinkedEntityId = recordId,
-    //             ShareType = 'V',
-    //             Visibility = 'AllUsers'
-    //         );
-    //     }
-
-    //     // Update ContentVersion with folder association
-    //     ContentVersion version = [
-    //         SELECT Id, Folder__c 
-    //         FROM ContentVersion 
-    //         WHERE ContentDocumentId = :contentDocumentId AND IsLatest = TRUE
-    //         LIMIT 1
-    //     ];
-    //     // if (folderId != null && folderId != 'all') {
-    //     //     version.Folder__c = folderId;
-    //     //     update version;
-    //     // }
-    // }
+    
 
     /**
      * @description Updates the status of a document (not yet implemented).
@@ -260,13 +267,14 @@ public static List<DocumentFile> getDocumentsForFolder(Id folderId, Id recordId)
      * @description Wrapper for a ContentVersion document with simplified display fields.
      */
     public class DocumentFile {
-        @AuraEnabled public String id;
+        @AuraEnabled public String id; // content version id
         @AuraEnabled public String title;
         @AuraEnabled public String fileType;
         @AuraEnabled public String versionNumber;
         @AuraEnabled public String createdDate;
         @AuraEnabled public String createdBy;
         @AuraEnabled public String folderName;
+         @AuraEnabled public String contentDocumentId;
 
         public DocumentFile(ContentVersion v, String folderName) {
             this.id = v.Id;
@@ -276,6 +284,7 @@ public static List<DocumentFile> getDocumentsForFolder(Id folderId, Id recordId)
             this.createdDate = String.valueOf(v.CreatedDate);
             this.createdBy = v.CreatedBy != null ? v.CreatedBy.Name : '';
             this.folderName = folderName;
+             this.contentDocumentId = v.ContentDocumentId;
         }
     }
 }
