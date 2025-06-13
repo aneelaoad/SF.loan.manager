@@ -169,6 +169,49 @@ public static String getDownloadUrl(Id contentDocumentId) {
     return '/sfc/servlet.shepherd/version/download/' + version.Id;
 }
 
+/**
+     * @description Retrieves download URLs for all files in a specified folder.
+     * @param folderId The ID of the folder, or null for unassociated documents.
+     * @param recordId The ID of the Loan or Lead record.
+     * @return A list of download URLs for the latest versions of the documents.
+     */
+    @AuraEnabled(cacheable=true)
+    public static List<String> getAllFilesDownloadUrls(Id folderId, Id recordId) {
+        List<String> downloadUrls = new List<String>();
+
+        // Query document links for this record
+        List<ContentDocumentLink> links = [
+            SELECT ContentDocumentId 
+            FROM ContentDocumentLink 
+            WHERE LinkedEntityId = :recordId
+        ];
+
+        // Collect ContentDocumentIds
+        Set<Id> contentDocIds = new Set<Id>();
+        for (ContentDocumentLink link : links) {
+            contentDocIds.add(link.ContentDocumentId);
+        }
+
+        // Query ContentVersions for the folder
+        String query = 'SELECT Id ' +
+                       'FROM ContentVersion ' +
+                       'WHERE IsLatest = TRUE AND ContentDocumentId IN :contentDocIds';
+
+        if (folderId != null) {
+            query += ' AND Folder__c = :folderId';
+        } else {
+            query += ' AND Folder__c = NULL';
+        }
+
+        List<ContentVersion> versions = Database.query(query);
+
+        // Generate download URLs
+        for (ContentVersion version : versions) {
+            downloadUrls.add('/sfc/servlet.shepherd/version/download/' + version.Id);
+        }
+
+        return downloadUrls;
+    }
 
 
     /**

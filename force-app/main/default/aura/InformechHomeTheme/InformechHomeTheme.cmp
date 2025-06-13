@@ -1,0 +1,71 @@
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 06-14-2025
+  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+-->
+<aura:component implements="forceCommunity:themeLayout,forceCommunity:layout"
+                access="global">
+
+    <!-- Builder‑injected regions -->
+    <aura:attribute name="header"           type="Aura.Component[]" />
+    <aura:attribute name="footer"           type="Aura.Component[]" />
+
+    <!-- Custom regions that appear in Experience Builder’s panel -->
+    <aura:attribute name="actionButton"     type="Aura.Component[]" />
+    <aura:attribute name="tiles"            type="Aura.Component[]" />
+    <aura:attribute name="rin"              type="Aura.Component[]" />
+    <aura:attribute name="addNotes"         type="Aura.Component[]" />
+    <aura:attribute name="internalDocs"     type="Aura.Component[]" />
+    <aura:attribute name="addMilestones"    type="Aura.Component[]" />
+
+    <!-- 🔗  Global styles (SLDS classes still available) -->
+    <aura:html tag="style">
+        .lp‑section               { border:1px solid #d8dde6; background:#fff; }
+        .lp‑section + .lp‑section { margin-top:1rem; }
+        .lp‑p                     { padding:1.5rem; }
+        .lp‑twoCol .lp‑left       { border-right:1px solid #d8dde6; }
+        .lp‑footer                { background:#f3f3f3; text-align:center; }
+    </aura:html>
+
+    <!-- ===== HEADER ===================================================== -->
+    <section class="lp‑section lp‑p">
+        {!v.header}
+    </section>
+
+    <!-- ===== ACTION BUTTON ROW ========================================= -->
+    <section class="lp‑section lp‑p slds-text-align_center">
+        {!v.actionButton}
+    </section>
+
+    <!-- ===== TILES / CARDS ROW ========================================= -->
+    <section class="lp‑section lp‑p">
+        {!v.tiles}
+    </section>
+
+    <!-- ===== RIN + ADD NOTES ========================================== -->
+    <section class="lp‑section lp‑twoCol slds-grid slds-wrap">
+        <div class="lp‑left slds-size_1-of-1 slds-large-size_8-of-12 lp‑p">
+            {!v.rin}
+        </div>
+        <div class="slds-size_1-of-1 slds-large-size_4-of-12 lp‑p">
+            {!v.addNotes}
+        </div>
+    </section>
+
+    <!-- ===== INTERNAL DOCS + ADD MILESTONES ============================ -->
+    <section class="lp‑section lp‑twoCol slds-grid slds-wrap">
+        <div class="lp‑left slds-size_1-of-1 slds-large-size_8-of-12 lp‑p">
+            {!v.internalDocs}
+        </div>
+        <div class="slds-size_1-of-1 slds-large-size_4-of-12 lp‑p">
+            {!v.addMilestones}
+        </div>
+    </section>
+
+    <!-- ===== FOOTER ==================================================== -->
+    <footer class="lp‑section lp‑footer lp‑p">
+        {!v.footer}
+    </footer>
+</aura:component>
