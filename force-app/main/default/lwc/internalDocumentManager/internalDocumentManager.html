@@ -2,7 +2,7 @@
   @description       : 
   @author            : ChangeMeIn@UserSettingsUnder.SFDoc
   @group             : 
-  @last modified on  : 06-12-2025
+  @last modified on  : 06-14-2025
   @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 -->
 <template>
@@ -10,10 +10,10 @@
 
 
         <!-- Folder Sidebar -->
-        <div class="slds-col slds-size_1-of-4 folder-panel" >
+        <div class="slds-col slds-size_1-of-4 folder-panel">
             <div class="slds-p-around_medium">
                 <div class="folder-name-wrapper slds-m-bottom_medium">
-                    <h2 class="slds-text-heading_medium" >Folders</h2>
+                    <h2 class="slds-text-heading_medium">Folders</h2>
                     <template if:false={isFlolderFormVisible}>
                         <div class="create-folder-btn full-btn">
                             <lightning-button variant="brand" label="Create Folder" onclick={createFolderButtonClick}>
@@ -55,14 +55,14 @@
 
         <!-- Document Panel -->
         <div class="slds-col slds-size_3-of-4 slds-p-around_medium" style="background-color: white;">
-            
+
             <div class="slds-grid slds-grid_align-spread slds-m-bottom_medium">
                 <h2 class="slds-text-heading_medium" style="color: black;">Documents</h2>
                 <div>
                     <lightning-button-icon icon-name="utility:refresh" title="Refresh"
                         onclick={handleRefresh}></lightning-button-icon>
-                    <lightning-button-icon icon-name="utility:expand_alt" title="Pop Out"
-                        class="slds-m-left_x-small" onclick={popOut}></lightning-button-icon>
+                    <lightning-button-icon icon-name="utility:expand_alt" title="Pop Out" class="slds-m-left_x-small"
+                        onclick={popOut}></lightning-button-icon>
                     <!-- <lightning-button variant="neutral" label="Download All" class="slds-m-left_x-small"
                         onclick={handleDownload}></lightning-button> -->
                 </div>
@@ -90,60 +90,56 @@
                     </div>
                 </template>
             </template>
-<div class="document-table-wrapper responsive-table-container">
+            <div class="document-table-wrapper responsive-table-container">
 
-    <template if:true={isLoading}>
-        <div class="custom-loader-container">
-            <div class="custom-spinner"></div>
-            <p class="loader-text">Loading...</p>
-        </div>
-    </template>
+                <template if:true={isLoading}>
+                    <div class="custom-loader-container">
+                        <div class="custom-spinner"></div>
+                        <p class="loader-text">Loading...</p>
+                    </div>
+                </template>
 
-    <template if:false={isLoading}>
-        <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-m-top_medium document-table">
-
-
-                <thead>
-                    <tr class="table-header">
-                        <th class="header-purple">No.</th>
-                        <th class="header-purple">Name</th>
-                        <th class="header-purple">Folder</th>
-                        <th class="header-purple">Type</th>
-                        <th class="header-purple">Created</th>
-                        <th class="header-purple slds-text-align_center">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <template for:each={numberedDocuments} for:item="doc">
-                        <tr key={doc.id} class="table-row">
-                            <td>{doc.rowNumber}</td>
-                            <td>{doc.title}</td>
-                            <td> <span class="slds-badge custom-badge">{doc.folderName}</span></td>
-                            <td>{doc.fileType}</td>
-                            <td>
-
-                                {doc.createdDate}
-
-
-                            </td>
-
-                            <td class="slds-text-align_center">
-                                <lightning-button-icon icon-name="utility:download" alternative-text="Download"
-                                    class="slds-m-right_x-small icon-purple" onclick={handleDownload}
-                                    data-id={doc.contentDocumentId}>
-                                </lightning-button-icon>
-                                <lightning-button-icon icon-name="utility:delete" alternative-text="Delete"
-                                    class="icon-purple" data-id={doc.contentDocumentId} data-name={doc.title} onclick={handleDeleteFile}>
-                                </lightning-button-icon>
-                            </td>
-                        </tr>
-                    </template>
-                </tbody>
-            </table>
-    </template>
+                <template if:false={isLoading}>
+                    <div class="table-scroll-container">
+                    <table
+                        class="slds-table slds-table_cell-buffer slds-table_bordered slds-m-top_medium document-table">
+                        <thead>
+                            <tr class="table-header">
+                                <th class="header-purple fixed-height">No.</th>
+                                <th class="header-purple fixed-height">Name</th>
+                                <th class="header-purple fixed-height">Folder</th>
+                                <th class="header-purple fixed-height">Type</th>
+                                <th class="header-purple fixed-height">Created</th>
+                                <th class="header-purple fixed-height slds-text-align_center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template for:each={numberedDocuments} for:item="doc">
+                                <tr key={doc.id} class="table-row fixed-height">
+                                    <td>{doc.rowNumber}</td>
+                                    <td>{doc.title}</td>
+                                    <td><span class="slds-badge custom-badge">{doc.folderName}</span></td>
+                                    <td>{doc.fileType}</td>
+                                    <td>{doc.createdDate}</td>
+                                    <td class="slds-text-align_center">
+                                        <lightning-button-icon icon-name="utility:download" alternative-text="Download"
+                                            class="slds-m-right_x-small icon-purple" onclick={handleDownload}
+                                            data-id={doc.contentDocumentId}>
+                                        </lightning-button-icon>
+                                        <lightning-button-icon icon-name="utility:delete" alternative-text="Delete"
+                                            class="icon-purple" data-id={doc.contentDocumentId} data-name={doc.title}
+                                            onclick={handleDeleteFile}>
+                                        </lightning-button-icon>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
 </div>
+                </template>
+            </div>
 
-            
+
 
         </div>
     </div>

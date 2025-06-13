@@ -190,3 +190,49 @@
         transform: rotate(360deg);
     }
 }
+/* Ensure table header height and alignment */
+.document-table thead th {
+    height: 48px;
+    vertical-align: middle;
+    line-height: 1.2;
+    padding: 0.75rem;
+}
+
+/* Fix consistent row height for all table rows */
+.document-table tbody tr {
+    height: 48px;
+    vertical-align: middle;
+}
+/* Wrap table in scrollable container */
+.table-scroll-container {
+    max-height: 400px; /* adjust as needed */
+    overflow-y: auto;
+    display: block;
+}
+
+/* Ensure consistent row height */
+.document-table tbody tr {
+    height: 48px;
+    vertical-align: middle;
+}
+
+/* Sticky table header */
+.document-table thead th {
+    position: sticky !important;
+    top: 0;
+    background-color: #eaf3ff; /* match .header-purple */
+    z-index: 1;
+}
+/* Ensure table header height and alignment */
+.document-table thead th {
+    height: 48px;
+    vertical-align: middle;
+    line-height: 1.2;
+    padding: 0.75rem;
+}
+
+/* Fix consistent row height for all table rows */
+.document-table tbody tr {
+    height: 48px;
+    vertical-align: middle;
+}

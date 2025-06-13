@@ -1,27 +1,36 @@
 /**
- * @description       : Controller for managing folders and file attachments related to Loan or Lead records.
+ * @description       : Controller for managing folders and file attachments related to Loan, Lead, or User records.
  * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
- * @last modified on  : 06-12-2025
+ * @last modified on  : 06-14-2025
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 **/
 public with sharing class DocumentManagerController {
 
     /**
      * @description Retrieves all folders and their associated documents for a given record.
-     * @param recordId The ID of the Loan or Lead record.
+     * @param recordId The ID of the Loan, Lead, or User record.
+     * @param objectName The API name of the object ('Lead', 'Opportunity', or 'User').
+     * @param isExperienceSite Indicates if the context is an Experience Site user.
      * @return A list of folder wrappers, each containing folder details and documents.
      */
     @AuraEnabled(cacheable=true)
-    public static List<FolderWrapper> getFolders(Id recordId) {
+    public static List<FolderWrapper> getFolders(Id recordId, String objectName, Boolean isExperienceSite) {
         List<FolderWrapper> folderList = new List<FolderWrapper>();
 
         // Query all folders related to the given record
-        List<Folder__c> folders = [
-            SELECT Id, Name 
-            FROM Folder__c 
-           WHERE Loan__c = :recordId OR Lead__c = :recordId
-            ORDER BY CreatedDate DESC
-        ];
+        String folderQuery = 'SELECT Id, Name FROM Folder__c WHERE ';
+        if (isExperienceSite || objectName == 'User') {
+            folderQuery += 'User__c = :recordId';
+        } else if (objectName == 'Opportunity') {
+            folderQuery += 'Loan__c = :recordId';
+        } else if (objectName == 'Lead') {
+            folderQuery += 'Lead__c = :recordId';
+        } else {
+            throw new AuraHandledException('Invalid object type. Must be Lead, Opportunity, or User.');
+        }
+        folderQuery += ' ORDER BY CreatedDate DESC';
+
+        List<Folder__c> folders = Database.query(folderQuery);
 
         // Query document links for this record
         List<ContentDocumentLink> links = [
@@ -86,93 +95,121 @@ public with sharing class DocumentManagerController {
 
     /**
      * @description Retrieves documents for a specific folder.
-     * @param folderId The ID of the folder, or 'all' for unassociated documents.
-     * @param recordId The ID of the Loan or Lead record.
+     * @param folderId The ID of the folder, or null for unassociated documents.
+     * @param recordId The ID of the Loan, Lead, or User record.
      * @return A list of document wrappers.
      */
-   @AuraEnabled
-public static List<DocumentFile> getDocumentsForFolder(Id folderId, Id recordId) {
-    List<DocumentFile> documents = new List<DocumentFile>();
+    @AuraEnabled
+    public static List<DocumentFile> getDocumentsForFolder(Id folderId, Id recordId) {
+        List<DocumentFile> documents = new List<DocumentFile>();
 
-    // Query document links for this record
-    List<ContentDocumentLink> links = [
-        SELECT ContentDocumentId 
-        FROM ContentDocumentLink 
-        WHERE LinkedEntityId = :recordId
-    ];
+        // Query document links for this record
+        List<ContentDocumentLink> links = [
+            SELECT ContentDocumentId 
+            FROM ContentDocumentLink 
+            WHERE LinkedEntityId = :recordId
+        ];
 
-    // Collect ContentDocumentIds
-    Set<Id> contentDocIds = new Set<Id>();
-    for (ContentDocumentLink link : links) {
-        contentDocIds.add(link.ContentDocumentId);
+        // Collect ContentDocumentIds
+        Set<Id> contentDocIds = new Set<Id>();
+        for (ContentDocumentLink link : links) {
+            contentDocIds.add(link.ContentDocumentId);
+        }
+
+        // Query ContentVersions for the folder
+        String query = 'SELECT Id, Title, FileType, VersionNumber, ContentDocumentId, CreatedDate, CreatedBy.Name, Folder__c ' +
+                       'FROM ContentVersion ' +
+                       'WHERE IsLatest = TRUE AND ContentDocumentId IN :contentDocIds';
+
+        // Handle the case where we want to get all documents (folderId is null or blank)
+        if (folderId != null) {
+            query += ' AND Folder__c = :folderId';
+        } else {
+            query += ' AND Folder__c = NULL';
+        }
+
+        List<ContentVersion> versions = Database.query(query);
+
+        // Loop through versions and add them to the documents list
+        for (ContentVersion v : versions) {
+            // If folderId is not null, find the folder name; otherwise, set to 'Other'
+            String folderName = folderId != null ? [SELECT Name FROM Folder__c WHERE Id = :folderId LIMIT 1].Name : 'Other';
+            documents.add(new DocumentFile(v, folderName));
+        }
+        System.debug('documents: ' + documents);
+        return documents;
     }
 
-    // Query ContentVersions for the folder
-
-
-    String query = 'SELECT Id, Title, FileType, VersionNumber, ContentDocumentId, CreatedDate, CreatedBy.Name, Folder__c ' +
-                   'FROM ContentVersion ' +
-                   'WHERE IsLatest = TRUE AND ContentDocumentId IN :contentDocIds';
-
-    // Handle the case where we want to get all documents (folderId is null or blank)
-    if (folderId != null) {
-        query += ' AND Folder__c = :folderId';
-    } else {
-        query += ' AND Folder__c = NULL';
+    /**
+     * @description Deletes a ContentDocument.
+     * @param contentDocumentId The ID of the ContentDocument to delete.
+     */
+    @AuraEnabled
+    public static void deleteContentDocument(Id contentDocumentId) {
+       try {
+            delete [SELECT Id FROM ContentDocument WHERE Id = :contentDocumentId];
+        } catch (Exception e) {
+            throw new AuraHandledException('Error deleting document: ' + e.getMessage());
+        }
     }
 
-    List<ContentVersion> versions = Database.query(query);
+    /**
+     * @description Deletes a ContentDocumentLink for a specific record.
+     * @param contentDocumentId The ID of the ContentDocument.
+     * @param recordId The ID of the associated record.
+     */
+     @AuraEnabled
+    public static void deleteDocumentLink(Id contentDocumentId, Id recordId) {
+        try {
+            List<ContentDocumentLink> linksToDelete = [
+                SELECT Id, Visibility, ShareType 
+                FROM ContentDocumentLink 
+                WHERE ContentDocumentId = :contentDocumentId AND LinkedEntityId = :recordId
+            ];
 
-    // Loop through versions and add them to the documents list
-    for (ContentVersion v : versions) {
-        // If folderId is not null, find the folder name; otherwise, set to 'All'
-        String folderName = folderId != null ? [SELECT Name FROM Folder__c WHERE Id = :folderId LIMIT 1].Name : 'Other';
+            if (linksToDelete.isEmpty()) {
+                throw new AuraHandledException('No document link found for the specified document and record.');
+            }
 
-        documents.add(new DocumentFile(v, folderName));
+            // Check if the user has permission to delete the ContentDocumentLink
+            if (!Schema.sObjectType.ContentDocumentLink.isDeletable()) {
+                throw new AuraHandledException('User does not have permission to delete document links.');
+            }
+
+            // For Experience Site users, ensure they can only delete links with appropriate visibility
+            Boolean isExperienceSite = Site.getSiteId() != null;
+            for (ContentDocumentLink link : linksToDelete) {
+                if (isExperienceSite && link.Visibility != 'AllUsers') {
+                    throw new AuraHandledException('Cannot delete document link: Insufficient visibility access for Experience Site user.');
+                }
+            }
+
+            delete linksToDelete;
+        } catch (Exception e) {
+            throw new AuraHandledException('Error deleting document link: ' + e.getMessage());
+        }
     }
-    System.Debug('documents: '+documents);
-    return documents;
-}
 
-@AuraEnabled
-public static void deleteContentDocument(Id contentDocumentId) {
-    delete [SELECT Id FROM ContentDocument WHERE Id = :contentDocumentId];
-}
+    /**
+     * @description Returns the download URL for the latest version of a document.
+     * @param contentDocumentId The ID of the ContentDocument.
+     * @return The download URL as a string.
+     */
+    @AuraEnabled(cacheable=true)
+    public static String getDownloadUrl(Id contentDocumentId) {
+        ContentVersion version = [
+            SELECT Id 
+            FROM ContentVersion 
+            WHERE IsLatest = TRUE AND ContentDocumentId = :contentDocumentId 
+            LIMIT 1
+        ];
+        return '/sfc/servlet.shepherd/version/download/' + version.Id;
+    }
 
-@AuraEnabled
-public static void deleteDocumentLink(Id contentDocumentId, Id recordId) {
-    List<ContentDocumentLink> linksToDelete = [
-        SELECT Id 
-        FROM ContentDocumentLink 
-        WHERE ContentDocumentId = :contentDocumentId AND LinkedEntityId = :recordId
-    ];
-    
-    delete linksToDelete;
-}
-
-
-/**
- * @description Returns the download URL for the latest version of a document.
- * @param contentDocumentId The ID of the ContentDocument.
- * @return The download URL as a string.
- */
-@AuraEnabled(cacheable=true)
-public static String getDownloadUrl(Id contentDocumentId) {
-    ContentVersion version = [
-        SELECT Id 
-        FROM ContentVersion 
-        WHERE IsLatest = TRUE AND ContentDocumentId = :contentDocumentId 
-        LIMIT 1
-    ];
-
-    // Return the URL to download the file
-    return '/sfc/servlet.shepherd/version/download/' + version.Id;
-}
-
-/**
+    /**
      * @description Retrieves download URLs for all files in a specified folder.
      * @param folderId The ID of the folder, or null for unassociated documents.
-     * @param recordId The ID of the Loan or Lead record.
+     * @param recordId The ID of the Loan, Lead, or User record.
      * @return A list of download URLs for the latest versions of the documents.
      */
     @AuraEnabled(cacheable=true)
@@ -213,27 +250,32 @@ public static String getDownloadUrl(Id contentDocumentId) {
         return downloadUrls;
     }
 
-
     /**
-     * @description Creates a new folder and associates it with either a Lead or Loan record.
+     * @description Creates a new folder and associates it with a Lead, Loan, or User record.
      * @param name The name of the folder.
      * @param recordId The associated record ID.
-     * @param objectName Must be 'Lead' or 'Opportunity'.
+     * @param objectName Must be 'Lead', 'Opportunity', or 'User'.
+     * @param isExperienceSite Indicates if the context is an Experience Site user.
      * @return The newly created Folder__c record.
      */
     @AuraEnabled
-    public static Folder__c createFolder(String name, Id recordId, String objectName) {
+    public static Folder__c createFolder(String name, Id recordId, String objectName, Boolean isExperienceSite) {
         Folder__c folder = new Folder__c(Name = name);
-
-        if (objectName == 'Lead') {
-            folder.Lead__c = recordId;
+System.debug('isExperienceSite:'+isExperienceSite);
+System.debug('objectName:'+objectName);
+        if (isExperienceSite || objectName == 'User') {
+            folder.User__c = recordId;
         } else if (objectName == 'Opportunity') {
             folder.Loan__c = recordId;
+        } else if (objectName == 'Lead') {
+            folder.Lead__c = recordId;
         } else {
-            throw new AuraHandledException('Invalid object type. Must be either Lead or Opportunity.');
+            throw new AuraHandledException('Invalid object type. Must be Lead, Opportunity, or User.');
         }
 
         insert folder;
+System.debug('folder:'+folder);
+
         return folder;
     }
 
@@ -241,13 +283,19 @@ public static String getDownloadUrl(Id contentDocumentId) {
      * @description Associates an uploaded document with a record and folder.
      * @param contentDocumentId The ID of the ContentDocument.
      * @param status Optional document status.
-     * @param recordId The Loan or Lead record ID.
+     * @param recordId The Loan, Lead, or User record ID.
      * @param folderId The ID of the folder, or null if not specified.
+     * @param objectName The API name of the object ('Lead', 'Opportunity', or 'User').
+     * @param isExperienceSite Indicates if the context is an Experience Site user.
      */
-
-     @AuraEnabled
-    public static void handleFileUpload(Id contentDocumentId, String status, Id recordId, Id folderId) {
+    @AuraEnabled
+    public static void handleFileUpload(Id contentDocumentId, String status, Id recordId, Id folderId, String objectName, Boolean isExperienceSite) {
         try {
+            // Validate object type
+            if (!(isExperienceSite || objectName == 'User' || objectName == 'Lead' || objectName == 'Opportunity')) {
+                throw new AuraHandledException('Invalid object type. Must be Lead, Opportunity, or User.');
+            }
+
             // Check if the ContentDocument is already linked to the record
             List<ContentDocumentLink> existingLinks = [
                 SELECT Id, LinkedEntityId 
@@ -260,26 +308,29 @@ public static String getDownloadUrl(Id contentDocumentId) {
                 // Create a new ContentDocumentLink only if it doesn't already exist
                 ContentDocumentLink contentDocLink = new ContentDocumentLink();
                 contentDocLink.ContentDocumentId = contentDocumentId;
-                contentDocLink.LinkedEntityId = recordId;  // Link it to the record (Loan, Lead, etc.)
-                contentDocLink.ShareType = 'V';  // View access
-                contentDocLink.Visibility = 'AllUsers';  // Visibility set to 'AllUsers'
-
+                contentDocLink.LinkedEntityId = recordId;
+                contentDocLink.ShareType = 'V';
+                contentDocLink.Visibility = 'AllUsers';
                 insert contentDocLink;
             }
 
-            // Now update the Folder__c reference on the ContentVersion record
-            List<ContentVersion> contentVersions = [SELECT Id, Folder__c FROM ContentVersion WHERE ContentDocumentId = :contentDocumentId LIMIT 1];
+            // Update the Folder__c reference on the ContentVersion record
+            List<ContentVersion> contentVersions = [
+                SELECT Id, Folder__c 
+                FROM ContentVersion 
+                WHERE ContentDocumentId = :contentDocumentId 
+                LIMIT 1
+            ];
 
             if (!contentVersions.isEmpty()) {
                 ContentVersion contentVersion = contentVersions[0];
-                contentVersion.Folder__c = folderId;  // Assign the folder to this ContentVersion
+                contentVersion.Folder__c = folderId;
                 update contentVersion;
             }
         } catch (Exception e) {
             throw new AuraHandledException('Error linking file to folder: ' + e.getMessage());
         }
     }
-    
 
     /**
      * @description Updates the status of a document (not yet implemented).
@@ -297,6 +348,28 @@ public static String getDownloadUrl(Id contentDocumentId) {
     }
 
     /**
+     * @description Retrieves the context for the current user, including Experience Site details.
+     * @return A wrapper containing user context information.
+     */
+    @AuraEnabled(cacheable=true)
+    public static UserContextWrapper getCurrentUserContext() {
+        UserContextWrapper context = new UserContextWrapper();
+        context.userId = UserInfo.getUserId();
+        context.isExperienceSite = Site.getSiteId() != null;
+        context.objectName = context.isExperienceSite ? 'User' : null;
+        return context;
+    }
+
+    /**
+     * @description Wrapper for user context information.
+     */
+    public class UserContextWrapper {
+        @AuraEnabled public Id userId;
+        @AuraEnabled public Boolean isExperienceSite;
+        @AuraEnabled public String objectName;
+    }
+
+    /**
      * @description Wrapper for a folder and its associated documents.
      */
     public class FolderWrapper {
@@ -310,14 +383,14 @@ public static String getDownloadUrl(Id contentDocumentId) {
      * @description Wrapper for a ContentVersion document with simplified display fields.
      */
     public class DocumentFile {
-        @AuraEnabled public String id; // content version id
+        @AuraEnabled public String id;
         @AuraEnabled public String title;
         @AuraEnabled public String fileType;
         @AuraEnabled public String versionNumber;
         @AuraEnabled public String createdDate;
         @AuraEnabled public String createdBy;
         @AuraEnabled public String folderName;
-         @AuraEnabled public String contentDocumentId;
+        @AuraEnabled public String contentDocumentId;
 
         public DocumentFile(ContentVersion v, String folderName) {
             this.id = v.Id;
@@ -327,7 +400,7 @@ public static String getDownloadUrl(Id contentDocumentId) {
             this.createdDate = String.valueOf(v.CreatedDate);
             this.createdBy = v.CreatedBy != null ? v.CreatedBy.Name : '';
             this.folderName = folderName;
-             this.contentDocumentId = v.ContentDocumentId;
+            this.contentDocumentId = v.ContentDocumentId;
         }
     }
 }

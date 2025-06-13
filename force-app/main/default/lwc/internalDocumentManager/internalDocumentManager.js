@@ -5,14 +5,17 @@ import getFolders from '@salesforce/apex/DocumentManagerController.getFolders';
 import getDocumentsForFolder from '@salesforce/apex/DocumentManagerController.getDocumentsForFolder';
 import handleFileUpload from '@salesforce/apex/DocumentManagerController.handleFileUpload';
 import createFolder from '@salesforce/apex/DocumentManagerController.createFolder';
-import deleteDocumentLink from '@salesforce/apex/DocumentManagerController.deleteDocumentLink';
+import deleteDocumentLink from '@salesforce/apex/DocumentManagerController.deleteContentDocument';
 import getDownloadUrl from '@salesforce/apex/DocumentManagerController.getDownloadUrl';
+import getCurrentUserContext from '@salesforce/apex/DocumentManagerController.getCurrentUserContext';
 import { CurrentPageReference } from 'lightning/navigation';
 import { NavigationMixin } from 'lightning/navigation';
 
 export default class InternalDocumentManager extends NavigationMixin(LightningElement) {
     @api recordId;
     objectName;
+    userId;
+    isExperienceSite = false;
     @track folders = [];
     @track selectedFolder = 'other';
     @track documents = [];
@@ -24,63 +27,59 @@ export default class InternalDocumentManager extends NavigationMixin(LightningEl
     isLoading = true;
     acceptedFormats = ['.pdf', '.png', '.jpg', '.jpeg', '.doc', '.docx'];
 
-    // @wire(CurrentPageReference)
-    // getPageReference(pageRef) {
-    //     console.log('doc pageRef:', pageRef);
-       
-        
-    //     if (pageRef) {
-    //         this.recordId = pageRef.attributes.recordId;
-    //         this.objectName = pageRef.attributes.objectApiName;
-    //         // this.recordId = pageRef.state.c__recordId;
-    //         // this.objectName = pageRef.state.c__objectName;
+    async connectedCallback() {
+        try {
+            const context = await getCurrentUserContext();
+            console.log('context:', context);
 
-    //         console.log('recordId:', this.recordId);
-    //         console.log('objectName:', this.objectName);
-            
-    //     }
-    // }
+            this.isExperienceSite = context.isExperienceSite;
+            if (this.isExperienceSite) {
+                this.objectName = context.objectName;
+                this.userId = context.userId;
+                this.recordId = context.userId; // Use userId as recordId for Experience Site users
+                console.log('Experience Site - objectName:', this.objectName, 'userId:', this.userId);
+            }
+            // If not an Experience Site, recordId and objectName will be set by getPageReference
+            await this.refreshData();
+        } catch (error) {
+            console.error('Error fetching user context:', error);
+            this.showToast('Error', 'Failed to load user context', 'error');
+            this.isLoading = false;
+        }
+    }
+
     @wire(CurrentPageReference)
-getPageReference(pageRef) {
-    if (pageRef) {
-        // For Record Page
-        if (pageRef.attributes && pageRef.attributes.recordId) {
-            this.recordId = pageRef.attributes.recordId;
-            this.objectName = pageRef.attributes.objectApiName;
+    getPageReference(pageRef) {
+        if (!this.isExperienceSite && pageRef) {
+            // For Record Page
+            if (pageRef.attributes && pageRef.attributes.recordId) {
+                this.recordId = pageRef.attributes.recordId;
+                this.objectName = pageRef.attributes.objectApiName;
+            }
+            // For App Page with state params (passed from popOut())
+            if (pageRef.state && pageRef.state.c__recordId) {
+                this.recordId = pageRef.state.c__recordId;
+                this.objectName = pageRef.state.c__objectName;
+            }
+            console.log('recordId:', this.recordId, 'objectName:', this.objectName);
         }
-
-        // For App Page with state params (passed from popOut())
-        if (pageRef.state && pageRef.state.c__recordId) {
-            this.recordId = pageRef.state.c__recordId;
-            this.objectName = pageRef.state.c__objectName;
-        }
-
-        console.log('recordId:', this.recordId);
-        console.log('objectName:', this.objectName);
-    }
-}
-
-
-    connectedCallback() {
-        this.refreshData();
     }
 
-     popOut() {
+    popOut() {
         console.log('pop!');
-        
-        // Navigate to the full-width App Page and pass recordId in state
         this[NavigationMixin.Navigate]({
             type: 'standard__navItemPage',
             attributes: {
-                apiName: 'Document_Manager' // Your App Page Name
+                apiName: 'Document_Manager'
             },
             state: {
                 c__recordId: this.recordId,
-                c__objectName:this.objectName
+                c__objectName: this.objectName
             }
         });
     }
-    @wire(getFolders, { recordId: '$recordId' })
+
+    @wire(getFolders, { recordId: '$recordId', objectName: '$objectName', isExperienceSite: '$isExperienceSite' })
     wiredFolders(result) {
         this.wiredFoldersResult = result;
         if (result.data) {
@@ -97,6 +96,7 @@ getPageReference(pageRef) {
     }
 
     handleFolderClick(event) {
+        this.searchTerm = ''
         const folderId = event.currentTarget.dataset.id;
         this.selectedFolder = folderId;
         this.fetchDocumentsForFolder(folderId === 'other' ? null : folderId);
@@ -111,17 +111,16 @@ getPageReference(pageRef) {
     }
 
     async fetchDocumentsForFolder(folderId) {
-         this.isLoading = true;
+        this.isLoading = true;
         try {
             const docs = await getDocumentsForFolder({ folderId, recordId: this.recordId });
             this.documents = docs;
         } catch (error) {
             this.showToast('Error', 'Failed to load documents', 'error');
             this.documents = [];
+        } finally {
+            this.isLoading = false;
         }
-         finally {
-        this.isLoading = false;
-    }
     }
 
     async refreshData() {
@@ -131,24 +130,25 @@ getPageReference(pageRef) {
             await this.fetchDocumentsForFolder(this.selectedFolder === 'other' ? null : this.selectedFolder);
         } catch (error) {
             this.showToast('Error', 'Failed to refresh data', 'error');
-        }finally {
-        this.isLoading = false;
-    }
+        } finally {
+            this.isLoading = false;
+        }
     }
 
     handleSearch(event) {
         this.searchTerm = event.target.value;
     }
 
-    get filteredDocuments() {
+      get filteredDocuments() {
         if (!this.searchTerm) return this.documents;
         const term = this.searchTerm.toLowerCase();
         return this.documents.filter(doc =>
-            (doc.name || '').toLowerCase().includes(term) ||
-            (doc.folder || '').toLowerCase().includes(term) ||
+            (doc.title || '').toLowerCase().includes(term) ||
+            (doc.folderName || '').toLowerCase().includes(term) ||
             (doc.fileType || '').toLowerCase().includes(term)
         );
     }
+
 
     createFolderButtonClick() {
         this.showNewFolderForm = true;
@@ -161,7 +161,12 @@ getPageReference(pageRef) {
 
     async handleCreateFolderSubmit() {
         try {
-            await createFolder({ name: this.newFolderName, recordId: this.recordId, objectName: this.objectName });
+            await createFolder({
+                name: this.newFolderName,
+                recordId: this.recordId,
+                objectName: this.objectName,
+                isExperienceSite: this.isExperienceSite
+            });
             this.showNewFolderForm = false;
             this.showToast('Success', 'Folder created successfully!', 'success');
             await this.refreshData();
@@ -178,7 +183,9 @@ getPageReference(pageRef) {
                     contentDocumentId: file.documentId,
                     status: 'Uploaded',
                     recordId: this.recordId,
-                    folderId: this.selectedFolder
+                    folderId: this.selectedFolder,
+                    objectName: this.objectName,
+                    isExperienceSite: this.isExperienceSite
                 })
             );
             await Promise.all(uploadPromises);
@@ -194,10 +201,11 @@ getPageReference(pageRef) {
         const fileName = event.currentTarget.dataset.name;
         try {
             await deleteDocumentLink({ contentDocumentId, recordId: this.recordId });
-            this.showToast('Success', fileName+' file deleted successfully', 'success');
+            this.showToast('Success', fileName + ' file deleted successfully', 'success');
             await this.refreshData();
         } catch (error) {
-            this.showToast('Error', 'Failed to delete file', 'error');
+            console.error(error)
+            this.showToast('Error', error.message, 'error');
         }
     }
 
@@ -227,13 +235,10 @@ getPageReference(pageRef) {
         } finally {
             this.isLoading = false;
         }
-        // await this.refreshData();
-        // this.showToast('Success', 'Data refreshed successfully.', 'success');
     }
 
     handleDownload(event) {
         const contentDocumentId = event.currentTarget.dataset.id;
-
         getDownloadUrl({ contentDocumentId })
             .then((url) => {
                 window.open(url, '_blank');
@@ -241,7 +246,6 @@ getPageReference(pageRef) {
             .catch((error) => {
                 console.error('Download failed', error);
             });
-
     }
 
     get numberedDocuments() {
