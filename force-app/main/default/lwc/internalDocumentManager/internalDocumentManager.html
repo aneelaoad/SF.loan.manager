@@ -93,10 +93,11 @@
             <div class="document-table-wrapper responsive-table-container">
 
                 <template if:true={isLoading}>
-                    <div class="custom-loader-container">
+                    <c-custom-loader></c-custom-loader>
+                    <!-- <div class="custom-loader-container">
                         <div class="custom-spinner"></div>
                         <p class="loader-text">Loading...</p>
-                    </div>
+                    </div> -->
                 </template>
 
                 <template if:false={isLoading}>

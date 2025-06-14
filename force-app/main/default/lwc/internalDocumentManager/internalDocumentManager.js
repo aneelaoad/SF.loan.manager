@@ -7,7 +7,7 @@ import handleFileUpload from '@salesforce/apex/DocumentManagerController.handleF
 import createFolder from '@salesforce/apex/DocumentManagerController.createFolder';
 import deleteDocumentLink from '@salesforce/apex/DocumentManagerController.deleteContentDocument';
 import getDownloadUrl from '@salesforce/apex/DocumentManagerController.getDownloadUrl';
-import getCurrentUserContext from '@salesforce/apex/DocumentManagerController.getCurrentUserContext';
+import getCurrentUserContext from '@salesforce/apex/UtilityClass.getCurrentUserContext';
 import { CurrentPageReference } from 'lightning/navigation';
 import { NavigationMixin } from 'lightning/navigation';
 

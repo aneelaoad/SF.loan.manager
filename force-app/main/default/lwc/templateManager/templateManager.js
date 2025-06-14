@@ -18,12 +18,14 @@ import createDocument from '@salesforce/apex/DocumentTemplateController.createDo
 import createDocumentCategory from '@salesforce/apex/DocumentTemplateController.createDocumentCategory';
 import getActiveUsers from '@salesforce/apex/DocumentTemplateController.getActiveUsers';
 import createTask from '@salesforce/apex/DocumentTemplateController.createTask';
+import getCurrentUserContext from '@salesforce/apex/UtilityClass.getCurrentUserContext';
 
 export default class TemplateManager extends LightningElement {
   // API Properties
   @api recordId;
-  users = [];
-  selectedUserId;
+  @api isDropdrownsVisble;
+  @track users = [];
+  @track selectedUserId;
   // Boolean Flags
   @track isTemplateDropdownOpen = false;
   @track isDocumentDropdownOpen = false;
@@ -33,6 +35,7 @@ export default class TemplateManager extends LightningElement {
   @track isNewTemplate = false;
   @track showTaskTypes = false;
   @track isDocumentOptions = false;
+  @track isExperienceSite = false;
   // String Properties
   @track objectName;
   @track selectedTemplateCategory = '';
@@ -58,6 +61,7 @@ export default class TemplateManager extends LightningElement {
   @track documentsForTemplate = [];
   @track statusOptions = [];
   @track taskTypeOptions = [];
+  @track taskCategoryOptions = [];
   @track templateDocumentList = [];
   @track newItemIds = [];
   @track deletedItemIds = [];
@@ -151,11 +155,31 @@ export default class TemplateManager extends LightningElement {
     return this.taskType === 'Contact Information';
   }
 
-  @api isDropdrownsVisble;
-
   // Lifecycle Hooks
   connectedCallback() {
-    console.log('this.isDropdrownsVisble : ', this.isDropdrownsVisble);
+    this.isLoading = true;
+    getCurrentUserContext()
+      .then(context => {
+        console.log('Template Manager - context:', context);
+        this.isExperienceSite = context.isExperienceSite;
+        if (this.isExperienceSite) {
+          this.objectName = 'User';
+          this.recordId = context.userId;
+          console.log('Template Manager - Experience Site: objectName:', this.objectName, 'recordId:', this.recordId);
+        } else {
+          // For internal users, rely on CurrentPageReference to set recordId and objectName
+          console.log('Template Manager - Internal User: awaiting CurrentPageReference');
+        }
+        this.refreshData();
+      })
+      .catch(error => {
+        console.error('Error fetching user context:', error);
+        this.showError('Error', 'Failed to load user context.');
+        this.isLoading = false;
+      })
+      .finally(() => {
+        console.log('isDropdrownsVisble:', this.isDropdrownsVisble);
+      });
   }
 
   // Wired Methods
@@ -177,10 +201,11 @@ export default class TemplateManager extends LightningElement {
 
   @wire(CurrentPageReference)
   getPageReference(pageRef) {
-    if (pageRef) {
-      console.log('CurrentPageReference : ', pageRef);
+    if (pageRef && !this.isExperienceSite) {
+      console.log('CurrentPageReference:', pageRef);
       this.recordId = pageRef.attributes.recordId;
       this.objectName = pageRef.attributes.objectApiName;
+      console.log('Internal User - objectName:', this.objectName, 'recordId:', this.recordId);
     }
   }
 
@@ -206,9 +231,9 @@ export default class TemplateManager extends LightningElement {
   wiredTaskTypeValues({ error, data }) {
     if (data) {
       this.taskTypeOptions = data.values;
-      console.log('task types: ' + JSON.stringify(this.taskTypeOptions));
+      console.log('Task types:', JSON.stringify(this.taskTypeOptions));
     } else if (error) {
-      console.error('Error loading picklist values', error);
+      console.error('Error loading task type picklist values', error);
     }
   }
 
@@ -222,8 +247,14 @@ export default class TemplateManager extends LightningElement {
       this.availableTasks = data.tasks;
     } else if (error) {
       this.error = error;
-      console.error('Error fetching documents:', this.error);
+      console.error('Error fetching documents:', error);
     }
+  }
+
+  refreshData() {
+    this.refreshTemplateCategories();
+    this.refreshDocumentCategories();
+    this.refreshDocuments();
   }
 
   refreshDocuments() {
@@ -237,7 +268,7 @@ export default class TemplateManager extends LightningElement {
   }
 
   refreshTemplateCategories() {
-  
+    this.isLoading = true;
     getAllowedTemplateCategories()
       .then(result => {
         this.templateCategoryOptions = result.map(item => {
@@ -254,84 +285,30 @@ export default class TemplateManager extends LightningElement {
       .catch(error => this.showError('Error loading template categories', error))
       .finally(() => (this.isLoading = false));
   }
-connectedCallback(){
-    this.refreshDocumentCategories();
-}
-@track taskCategoryOptions = []
+
   refreshDocumentCategories() {
+    this.isLoading = true;
     getAllowedDocumentCategories()
       .then(result => {
         console.log('getAllowedDocumentCategories:', result);
         this.documentCategoryOptions = result;
-        this.taskCategoryOptions= result.map(item => ({
-                    label: item.name,
-                    value: item.id
-         }));
-        // this.isDocumentDropdownOpen = !this.isDocumentDropdownOpen;
-        // this.isTemplateDropdownOpen = false;
+        this.taskCategoryOptions = result.map(item => ({
+          label: item.name,
+          value: item.id
+        }));
       })
       .catch(error => this.showError('Error loading document categories', error))
       .finally(() => (this.isLoading = false));
   }
-  handleTaskCategoryChange(event)
-  {
-    console.log('handleTaskCategoryChange',event.detail.value);
-    
-this.modalCategory =event.detail.value;  
 
-
+  handleTaskCategoryChange(event) {
+    console.log('handleTaskCategoryChange:', event.detail.value);
+    this.modalCategory = event.detail.value;
   }
 
   // Event Handlers
-  // handleAddTemplate() {
-  //   this.isTemplateDropdownOpen = !this.isTemplateDropdownOpen;
-  //   this.isDocumentDropdownOpen = false;
-  //   this.showTaskTypes = false;
-  //   this.refreshTemplateCategories();
-  // }
-
-  
-
-  // handleAddDocument() {
-  //   this.isDocumentDropdownOpen = !this.isDocumentDropdownOpen;
-  //   this.isTemplateDropdownOpen = false;
-  //   this.showTaskTypes = false;
-  //   this.refreshDocumentCategories();
-  // }
-
-  // handleDocumentCategoryClick(event) {
-  //   const categoryId = event.currentTarget.dataset.id;
-  //   const categoryName = event.currentTarget.dataset.categoryname;
-  //   if (this.selectedDocumentCategoryId === categoryId) {
-  //     this.isDocumentOptions = false;
-  //     this.documentOptions = [];
-  //     this.selectedDocumentCategoryId = null;
-  //     return;
-  //   }
-  //   this.isLoading = true;
-  //   this.documentOptions = [];
-  //   this.selectedDocumentCategoryId = categoryId;
-  //   console.log('Fetching documents for:', { categoryId, categoryName });
-  //   getDocumentsByCategory({ categoryId })
-  //     .then(result => {
-  //       console.log('getDocumentsByCategory result:', result);
-  //       if (result && result.documents && result.documents.length > 0) {
-  //         this.documentOptions = [...result.documents];
-  //         this.isDocumentOptions = true;
-  //       } else {
-  //         this.showError('No Documents', `No documents found for category ${categoryName}.`);
-  //       }
-  //     })
-  //     .catch(error => {
-  //       this.showError('Error fetching documents by category', error);
-  //     })
-  //     .finally(() => {
-  //       this.isLoading = false;
-  //     });
-  // }
-
-  // Event Handlers
   handleAddTemplate(event) {
+    event.preventDefault();
     this.isTemplateDropdownOpen = !this.isTemplateDropdownOpen;
     this.isDocumentDropdownOpen = false;
     this.showTaskTypes = false;
@@ -346,6 +323,7 @@ this.modalCategory =event.detail.value;
   }
 
   handleAddDocument(event) {
+    event.preventDefault();
     this.isDocumentDropdownOpen = !this.isDocumentDropdownOpen;
     this.isTemplateDropdownOpen = false;
     this.showTaskTypes = false;
@@ -360,7 +338,7 @@ this.modalCategory =event.detail.value;
   }
 
   handleTemplateCategoryClick(event) {
-    event.stopPropagation(); // Prevent outside click from closing dropdown
+    event.stopPropagation();
     const templateId = event.currentTarget.dataset.id;
     const templateName = event.currentTarget.dataset.value;
     if (!templateId || !templateName) {
@@ -370,10 +348,9 @@ this.modalCategory =event.detail.value;
     this.isLoading = true;
     getDocumentsByTemplate({ templateId, recordId: this.recordId, objectName: this.objectName })
       .then(result => {
-        console.log('template documents:',JSON.stringify(result));
-        
+        console.log('Template documents:', JSON.stringify(result));
         if (result && Array.isArray(result)) {
-          this.documentList = [  this.documentList, ...result]
+          this.documentList = [...this.documentList, ...result];
           this.sendDocumentsToParent(this.documentList);
           this.showSuccess('Success', `Documents loaded for template: ${templateName}`);
         } else {
@@ -386,13 +363,13 @@ this.modalCategory =event.detail.value;
       })
       .finally(() => {
         this.isLoading = false;
-        this.isTemplateDropdownOpen = false; // Close dropdown after selection
+        this.isTemplateDropdownOpen = false;
         document.removeEventListener('click', this.handleOutsideClickTemplate);
       });
   }
 
   handleDocumentCategoryClick(event) {
-    event.stopPropagation(); // Prevent outside click from closing dropdown
+    event.stopPropagation();
     const categoryId = event.currentTarget.dataset.id;
     const categoryName = event.currentTarget.dataset.categoryname;
     if (!categoryId || !categoryName) {
@@ -427,14 +404,16 @@ this.modalCategory =event.detail.value;
   }
 
   handleOutsideClickTemplate = (event) => {
-    if (!this.template.contains(event.target)) {
+    const templateElement = this.template.querySelector('.template-dropdown');
+    if (templateElement && !templateElement.contains(event.target)) {
       this.isTemplateDropdownOpen = false;
       document.removeEventListener('click', this.handleOutsideClickTemplate);
     }
   };
 
   handleOutsideClickDocument = (event) => {
-    if (!this.template.contains(event.target)) {
+    const documentElement = this.template.querySelector('.document-dropdown');
+    if (documentElement && !documentElement.contains(event.target)) {
       this.isDocumentDropdownOpen = false;
       this.isDocumentOptions = false;
       this.documentOptions = [];
@@ -444,7 +423,8 @@ this.modalCategory =event.detail.value;
   };
 
   handleOutsideClickTask = (event) => {
-    if (!this.template.contains(event.target)) {
+    const taskElement = this.template.querySelector('.task-dropdown');
+    if (taskElement && !taskElement.contains(event.target)) {
       this.showTaskTypes = false;
       document.removeEventListener('click', this.handleOutsideClickTask);
     }
@@ -487,7 +467,7 @@ this.modalCategory =event.detail.value;
           this.sendDocumentsToParent([newDoc]);
         })
         .catch(error => {
-          this.showError('Duplicate Document', error);
+          this.showError('Duplicate Document', error.body?.message || 'Error assigning document.');
           console.error('Error assigning document to record:', error);
         });
     }
@@ -539,13 +519,8 @@ this.modalCategory =event.detail.value;
     };
   }
 
-  // handleTaskTypes(event) {
-  //   this.showTaskTypes = !this.showTaskTypes;
-  //   this.isDocumentDropdownOpen = false;
-  //   this.isTemplateDropdownOpen = false;
-  // }
-
-    handleTaskTypes(event) {
+  handleTaskTypes(event) {
+    event.preventDefault();
     this.showTaskTypes = !this.showTaskTypes;
     this.isDocumentDropdownOpen = false;
     this.isTemplateDropdownOpen = false;
@@ -563,7 +538,6 @@ this.modalCategory =event.detail.value;
     this.formData = {};
     this.showTaskTypes = false;
     this.modalCategoryId = '';
-    // this.modalCategory = '';
     this.modalHeader = this.taskType ? `Add ${this.taskType} Task` : 'Add Task';
     this.modalTemplateName = '';
     this.showModal = true;
@@ -627,7 +601,7 @@ this.modalCategory =event.detail.value;
           address: this.formData.address
         });
       }
-      console.log('511: payload:', JSON.stringify(payload))
+      console.log('Create task payload:', JSON.stringify(payload));
       createTask({ payload })
         .then(newDocument => {
           this.showModal = false;
@@ -638,7 +612,7 @@ this.modalCategory =event.detail.value;
           this.sendDocumentsToParent([newDocument]);
         })
         .catch(error => {
-          this.showError('Creation failed', error);
+          this.showError('Creation failed', error.body?.message || 'Error creating task.');
           console.error('Error creating task:', error);
         })
         .finally(() => (this.isLoading = false));
@@ -662,7 +636,10 @@ this.modalCategory =event.detail.value;
           this.documentList = [...this.documentList, newDocument];
           this.sendDocumentsToParent([newDocument]);
         })
-        .catch(error => this.showError('Creation failed', error))
+        .catch(error => {
+          this.showError('Creation failed', error.body?.message || 'Error creating document.');
+          console.error('Error creating document:', error);
+        })
         .finally(() => (this.isLoading = false));
     }
   }
@@ -713,6 +690,7 @@ this.modalCategory =event.detail.value;
   }
 
   handleAddNewTemplate(event) {
+    event.preventDefault();
     this.editableTemplateName = '';
     this.isNewTemplate = true;
     this.isEditModalOpen = true;
@@ -720,10 +698,10 @@ this.modalCategory =event.detail.value;
     this.newItemIds = [];
     this.deletedItemIds = [];
     this.refreshDocuments();
-
   }
 
   handleEditTemplate(event) {
+    event.preventDefault();
     this.refreshDocuments();
     this.isNewTemplate = false;
     const templateId = event.currentTarget.dataset.templateid;
@@ -765,6 +743,7 @@ this.modalCategory =event.detail.value;
       this.showError('Error', 'Template name is required.');
       return;
     }
+    this.isLoading = true;
     if (!this.isNewTemplate) {
       updateTemplateWithDocuments({
         templateId: this.selectedTemplateId,
@@ -782,8 +761,9 @@ this.modalCategory =event.detail.value;
           this.closeEditModal();
         })
         .catch((error) => {
-          this.showError('Error updating template', error);
-        });
+          this.showError('Error updating template', error.body?.message || 'Error updating template.');
+        })
+        .finally(() => (this.isLoading = false));
     } else {
       createTemplateWithDocuments({
         templateName: this.editableTemplateName,
@@ -798,8 +778,9 @@ this.modalCategory =event.detail.value;
           this.deletedItemIds = [];
         })
         .catch(error => {
-          this.showError('Error creating template', error);
-        });
+          this.showError('Error creating template', error.body?.message || 'Error creating template.');
+        })
+        .finally(() => (this.isLoading = false));
     }
   }
 
@@ -874,6 +855,7 @@ this.modalCategory =event.detail.value;
       this.showError('Error', 'Category name cannot be empty.');
       return;
     }
+    this.isLoading = true;
     createDocumentCategory({ name: categoryName })
       .then((newCategory) => {
         this.refreshDocumentCategories();
@@ -889,6 +871,7 @@ this.modalCategory =event.detail.value;
       })
       .catch(error => {
         this.showError('Error', error.body?.message || 'Failed to create category.');
-      });
+      })
+      .finally(() => (this.isLoading = false));
   }
 }

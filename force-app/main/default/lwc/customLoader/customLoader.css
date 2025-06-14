@@ -1,0 +1,32 @@
+
+/* Loader */
+.custom-loader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.custom-spinner {
+    width: 48px;
+    height: 48px;
+    border: 6px solid rgba(100, 160, 255, 0.2);
+    border-top-color: #007bff;
+    border-radius: 50%;
+    animation: spin 1s ease-in-out infinite;
+}
+
+.loader-text {
+    margin-top: 0.75rem;
+    font-size: 1rem;
+    color: #0056b3;
+    font-weight: 500;
+    opacity: 0.85;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

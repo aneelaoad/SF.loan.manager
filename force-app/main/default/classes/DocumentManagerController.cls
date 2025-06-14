@@ -347,27 +347,7 @@ System.debug('folder:'+folder);
         // TODO: Update a related custom object like Document__c with the new status
     }
 
-    /**
-     * @description Retrieves the context for the current user, including Experience Site details.
-     * @return A wrapper containing user context information.
-     */
-    @AuraEnabled(cacheable=true)
-    public static UserContextWrapper getCurrentUserContext() {
-        UserContextWrapper context = new UserContextWrapper();
-        context.userId = UserInfo.getUserId();
-        context.isExperienceSite = Site.getSiteId() != null;
-        context.objectName = context.isExperienceSite ? 'User' : null;
-        return context;
-    }
-
-    /**
-     * @description Wrapper for user context information.
-     */
-    public class UserContextWrapper {
-        @AuraEnabled public Id userId;
-        @AuraEnabled public Boolean isExperienceSite;
-        @AuraEnabled public String objectName;
-    }
+  
 
     /**
      * @description Wrapper for a folder and its associated documents.
