@@ -1,0 +1,104 @@
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 06-14-2025
+  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+-->
+<aura:component implements="forceCommunity:availableForAllPageTypes"
+                access="global">
+
+    <!-- ───────────── State ───────────── -->
+    <aura:attribute name="isOpen"      type="Boolean" default="false"/>
+    <aura:attribute name="recordType"  type="String"/>
+    <aura:attribute name="newRecord"   type="Object"  default="{}"/>
+
+    <!-- ───────────── Styles ───────────── -->
+    <aura:html tag="style">
+        .action-bar {
+            text-align:right;
+            margin-bottom:1rem;
+            font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+        }
+
+        /* Smooth, branded buttons */
+        .THIS .slds-button_brand {
+            background:#007bff;
+            border-color:#007bff;
+            transition:box-shadow .2s ease, transform .2s ease;
+        }
+        .THIS .slds-button_brand:hover {
+            background:#005ece;
+            border-color:#005ece;
+            transform:translateY(-1px);
+            box-shadow:0 4px 12px rgba(0,123,255,.25);
+        }
+        .THIS .slds-button_brand:focus {
+            outline:none;
+            box-shadow:0 0 0 2px #8fbffb;
+        }
+
+        /* Modal polish */
+        .THIS .slds-modal__container {
+            border-radius:8px;
+            box-shadow:0 6px 24px rgba(0,123,255,.2);
+        }
+        .THIS .slds-modal__header {
+            background:#eaf3ff;
+            border-bottom:1px solid #c7d8ec;
+            color:#1e4f91;
+        }
+        .THIS .slds-modal__footer {
+            background:#f4f9ff;
+            border-top:1px solid #c7d8ec;
+        }
+    </aura:html>
+
+    <!-- ───────────── Action buttons ───────────── -->
+    <div class="action-bar">
+        <lightning:button label="Create Lead"
+                          variant="brand"
+                          iconName="utility:add"
+                          class="slds-m-right_small"
+                          onclick="{!c.openModal}"/>
+        <lightning:button label="Create Opportunity"
+                          variant="brand"
+                          iconName="utility:add"
+                          onclick="{!c.openModal}"/>
+    </div>
+
+    <!-- ───────────── Modal ───────────── -->
+    <aura:if isTrue="{!v.isOpen}">
+        <section role="dialog" tabindex="-1"
+                 class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+
+                <header class="slds-modal__header">
+                    <h2 class="slds-text-heading_medium">{!v.recordType}</h2>
+                    <lightning:buttonIcon iconName="utility:close"
+                                          alternativeText="Close"
+                                          class="slds-modal__close"
+                                          onclick="{!c.closeModal}"/>
+                </header>
+
+                <div class="slds-modal__content slds-p-around_medium">
+                    <lightning:input name="Name"  label="Name"
+                                     value="{!v.newRecord.Name}"
+                                     onchange="{!c.handleChange}"/>
+                    <lightning:input name="Email" label="Email"
+                                     value="{!v.newRecord.Email}"
+                                     onchange="{!c.handleChange}"/>
+                </div>
+
+                <footer class="slds-modal__footer">
+                    <lightning:button label="Cancel" variant="neutral"
+                                      onclick="{!c.closeModal}"/>
+                    <lightning:button label="Save"   variant="brand"
+                                      onclick="{!c.createRecord}"/>
+                </footer>
+
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </aura:if>
+</aura:component>

@@ -2,7 +2,7 @@
  * @description       : Utility class providing common methods including user context info.
  * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
  * @group             : Utilities
- * @last modified on  : 06-14-2025
+ * @last modified on  : 06-16-2025
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 **/
 public with sharing class UtilityClass {
@@ -53,5 +53,25 @@ public with sharing class UtilityClass {
     public static Boolean isUserInProfile(String profileName) {
         User u = [SELECT Profile.Name FROM User WHERE Id = :UserInfo.getUserId()];
         return u.Profile.Name == profileName;
+    }
+    @AuraEnabled(cacheable=true)
+
+    public static String getObjectNameFromId(Id recordId) {
+        if (recordId == null) return null;
+
+        // Get prefix (first 3 characters) of the record ID
+        String keyPrefix = String.valueOf(recordId).substring(0, 3);
+
+        // Use the Describe API to map the prefix to the object
+        Map<String, Schema.SObjectType> globalDescribe = Schema.getGlobalDescribe();
+        for (Schema.SObjectType sobjectType : globalDescribe.values()) {
+            Schema.DescribeSObjectResult describe = sobjectType.getDescribe();
+            if (describe.getKeyPrefix() == keyPrefix) {
+                System.Debug(describe.getName());
+                return describe.getName(); // Return object API name
+            }
+        }
+
+        return null; // If no match found
     }
 }

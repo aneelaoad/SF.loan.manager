@@ -1,0 +1,95 @@
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 06-14-2025
+  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+-->
+<aura:component controller="RecordCountController"
+    implements="forceCommunity:availableForAllPageTypes,flexipage:availableForAllPageTypes,force:hasRecordId"
+    access="global">
+
+    <aura:attribute name="recordCounts" type="Map" />
+
+    <aura:handler name="init" value="{!this}" action="{!c.init}" />
+
+    <aura:html tag="style">
+        .themed-card {
+            background-color: #f4f9ff;
+            border: 1px solid #c7d8ec;
+            border-radius: 3px;
+            transition: transform 0.2s ease;
+        }
+
+        .themed-card:hover {
+            background-color: #e6f2ff;
+            transform: scale(1.01);
+            box-shadow: 0 0 8px rgba(0, 123, 255, 0.1);
+        }
+
+        .count {
+            color: #007bff;
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .slds-text-align_center p:last-child {
+            color: #1e4f91;
+            font-size: 0.9rem;
+        }
+
+        .slds-card__header-title {
+            color: #1c2c45;
+        }
+    </aura:html>
+
+    <div class="slds-grid slds-wrap slds-p-around_medium" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex !important;  justify-content: space-around;">
+        <!-- Accounts -->
+        <div class="slds-col slds-size_1-of-2 slds-large-size_3-of-12 slds-p-around_small" data-object="Account" onclick="{!c.navigateToListView}">
+            <lightning:card class="themed-card">
+                <h1 style="text-align:center; font-size:18px">Accounts</h1>
+                <div class="slds-p-horizontal_small slds-text-align_center">
+                    <p class="count">{!v.recordCounts.Account}</p>
+                    <p>View all Accounts</p>
+                </div>
+            </lightning:card>
+        </div>
+
+        <!-- Leads -->
+        <div class="slds-col slds-size_1-of-2 slds-large-size_3-of-12 slds-p-around_small" data-object="Lead" onclick="{!c.navigateToListView}">
+            <lightning:card title="" class="themed-card">
+                <h1 style="text-align:center; font-size:18px">Leads</h1>
+
+                <div class="slds-p-horizontal_small slds-text-align_center">
+                    <p class="count">{!v.recordCounts.Lead}</p>
+                    <p>View all Leads</p>
+                </div>
+            </lightning:card>
+        </div>
+
+        <!-- Loans -->
+        <div class="slds-col slds-size_1-of-2 slds-large-size_3-of-12 slds-p-around_small" data-object="Opportunity" onclick="{!c.navigateToListView}">
+            <lightning:card title="" class="themed-card">
+                <h1 style="text-align:center; font-size:18px">Loans</h1>
+
+                <div class="slds-p-horizontal_small slds-text-align_center">
+                    <p class="count">{!v.recordCounts.Opportunity}</p>
+                    <p>View all Loans</p>
+                </div>
+            </lightning:card>
+        </div>
+
+        <!-- Cases -->
+        <div class="slds-col slds-size_1-of-2 slds-large-size_3-of-12 slds-p-around_small" data-object="Case" onclick="{!c.navigateToListView}">
+            <lightning:card title="" class="themed-card">
+                <h1 style="text-align:center; font-size:18px">Cases</h1>
+
+                <div class="slds-p-horizontal_small slds-text-align_center">
+                    <p class="count">{!v.recordCounts.Case}</p>
+                    <p>View all Cases</p>
+                </div>
+            </lightning:card>
+        </div>
+    </div>
+</aura:component>

@@ -1,4 +1,13 @@
 /* --- BUTTONS --- */
+:host {
+    --theme-primary: #1a73e8;
+    --theme-primary-light: #e8f0fe;
+    --theme-primary-dark: #1557b0;
+    --theme-secondary: #f8fafd;
+    --theme-border: #e1e7ef;
+    --theme-text: #3c4043;
+    --theme-text-light: #5f6368;
+}
 .button-group {
   display: inline-flex;
   border-radius: 0.25rem;
@@ -7,22 +16,26 @@
 }
 
 .template-button {
-  background-color: #0070d2;
+  background-color: var(--theme-primary);
   color: white;
   border: none;
   padding: 0.75rem 1.25rem;
   cursor: pointer;
-  font-weight: bold;
-  font-size: 0.95rem;
+  font-weight: 500;
+  font-size: 0.875rem;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .template-button:hover {
-  background-color: #005fb2;
+  background-color: var(--theme-primary-dark);
+  background-color: var(--theme-secondary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
-
 
 .no-radius-right {
   border-top-right-radius: 0;
@@ -56,9 +69,8 @@
 .dropdown-list.left {
   margin-left: 8.5rem;
 }
-.second-dropdown{
+.second-dropdown {
   margin-left: 20.5rem !important
-
 }
 
 .dropdown-item {
@@ -77,7 +89,7 @@
 .add-icon {
   background-color: transparent;
   border: none;
-  color: #0070d2;
+  color: var(--theme-primary);
   font-size: 1.2rem;
   cursor: pointer;
   padding: 0;
@@ -85,7 +97,7 @@
 }
 
 .add-icon:hover {
-  color: #005fb2;
+  color: var(--theme-primary-dark);
 }
 
 .template-line {
@@ -104,8 +116,10 @@
 }
 
 .custom-modal-header {
-  background-color: #e3f2fd;
-  color: black;
+  /* background-color: #e3f2fd; */
+    background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+
+  color: white;
   border-top-left-radius: 1rem;
   border-top-right-radius: 1rem;
   padding: 1.5rem;
@@ -117,7 +131,9 @@
 }
 
 .custom-modal-footer {
-  background-color: #e3f2fd;
+  /* background-color: #e3f2fd; */
+  background-color: var(--theme-secondary);
+
   border-bottom-left-radius: 1rem;
   border-bottom-right-radius: 1rem;
   padding: 1rem 1.5rem;
@@ -186,7 +202,6 @@
   left: 0;
   top: 0.1rem;
   background: #d9f2e6;
-  /* color: #2e7d32; */
   font-weight: bold;
   width: 1.5rem;
   height: 1.5rem;
@@ -249,6 +264,7 @@
 .plus-icon {
     --slds-c-icon-color-foreground-default: rgb(255, 255, 255);
 }
+
 /* --- Base Theme Colors --- */
 :host {
     --theme-primary: #1a73e8;
@@ -258,28 +274,6 @@
     --theme-border: #e1e7ef;
     --theme-text: #3c4043;
     --theme-text-light: #5f6368;
-}
-
-/* --- Button Styles --- */
-.template-button {
-    background-color: var(--theme-primary);
-    color: white;
-    border: none;
-    padding: 0.75rem 1.25rem;
-    font-weight: 500;
-    font-size: 0.875rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.template-button:hover {
-    background-color: var(--theme-primary-dark);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* --- ACCORDIONS --- */
@@ -308,38 +302,43 @@
   font-size: 12px;
 }
 
-.slds-accordion__summary-heading{
+.slds-accordion__summary-heading {
   font-size: 12px;
   color: red;
 }
 
 .custom-themed-modal .slds-modal__container {
-  /* background: #f0faff; */
   border-radius: 8px;
-  /* border: 1px solid #b0e2ff; */
 }
 
 .custom-header {
   background: #e0f7f1;
   border-bottom: 1px solid #b5e6dc;
+  color: white;
+  border-bottom: 1px solid  var(--theme-secondary);
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
+
+  
 }
 
 .custom-footer {
   background: #f0faff;
   border-top: 1px solid #b0e2ff;
+  border-top: 1px solid  var(--theme-secondary);
+  background:  var(--theme-secondary);
+
 }
 
 .custom-input {
   margin-bottom: 1rem;
 }
-.slds-modal__content{
+.slds-modal__content {
   background: white;
-    box-shadow: rgba(0, 0, 0, 0.2) 0px 12px 28px 0px, rgba(0, 0, 0, 0.1) 0px 2px 4px 0px, rgba(255, 255, 255, 0.05) 0px 0px 0px 1px inset;
+  box-shadow: rgba(0, 0, 0, 0.2) 0px 12px 28px 0px, rgba(0, 0, 0, 0.1) 0px 2px 4px 0px, rgba(255, 255, 255, 0.05) 0px 0px 0px 1px inset;
 }
 
-
 /* ----------------------
-TABLE CSSS
+TABLE CSS
 --------------------- */
 .col-name {
   width: 25%;
@@ -385,7 +384,8 @@ th, td {
 }
 
 .table-header {
-  background-color: #e3f2fd; /* Light blue header */
+  background-color: var(--theme-primary);
+  color: white;
 }
 
 .custom-themed-table th,
@@ -394,8 +394,8 @@ th, td {
 }
 
 .custom-badge {
-  background-color: #e3f2fd; /* Light blue badge */
-  color: #1a237e; /* Indigo text */
+  background-color: var(--theme-primary);
+  color: white;
   font-weight: 500;
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;

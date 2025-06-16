@@ -1,3 +1,10 @@
+/**
+ * @description       : 
+ * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+ * @group             : 
+ * @last modified on  : 06-14-2025
+ * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+**/
 public with sharing class NotesController {
 
     // Mapping of object API names to Note__c lookup field names
@@ -7,12 +14,7 @@ public with sharing class NotesController {
         // Add more object mappings as needed
     };
 
-    private static String getLookupFieldForObject(String objectName) {
-        if (!OBJECT_FIELD_MAP.containsKey(objectName)) {
-            throw new AuraHandledException('Unsupported object: ' + objectName);
-        }
-        return OBJECT_FIELD_MAP.get(objectName);
-    }
+   
 
     // @AuraEnabled(cacheable=true)
     // public static List<NoteWrapper> getNotes(Id recordId, String objectName) {
@@ -39,26 +41,25 @@ public with sharing class NotesController {
     //         throw new AuraHandledException('Error fetching notes: ' + e.getMessage());
     //     }
     // }
-    @AuraEnabled(cacheable=true)
-public static List<NoteWrapper> getNotes(Id recordId, String objectName) {
+ @AuraEnabled(cacheable=true)
+public static List<NoteWrapper> getNotes(Id recordId) {
     try {
         if (String.isBlank(recordId)) {
             throw new AuraHandledException('Record ID is required to fetch notes.');
         }
 
-        // Dynamically determine the field name (Lead__c or Loan__c) based on objectName
-        String fieldName = getLookupFieldForObject(objectName);
-        System.debug('fieldName: ' + fieldName);
+        if (!Schema.SObjectType.Note__c.isAccessible()) {
+            throw new AuraHandledException('Insufficient permissions to access Note__c object.');
+        }
 
-        // Dynamically construct the query
-        // Ensure the relevant lookup field is included in the SELECT clause.
-        // String query = 'SELECT Id, Subject__c, Body__c, Owner.Name, OwnerId, CreatedDate, Role__c, ' + fieldName + 
-        //                ' FROM Note__c WHERE ' + fieldName + ' = :recordId ORDER BY CreatedDate DESC';
-        String query = 'SELECT Id, Subject__c, Body__c, Owner.Name, OwnerId, CreatedDate, Role__c, Loan__c, Lead__c' + 
-                       ' FROM Note__c WHERE ' + fieldName + ' = :recordId ORDER BY CreatedDate DESC';
-        List<Note__c> notes = Database.query(query);
+        // Fetch notes where the recordId matches any of the possible lookup fields
+        List<Note__c> notes = [
+            SELECT Id, Subject__c, Body__c, Owner.Name, OwnerId, CreatedDate, Role__c, User__c, Loan__c, Lead__c
+            FROM Note__c
+            WHERE Lead__c = :recordId OR Loan__c = :recordId OR User__c = :recordId
+            ORDER BY CreatedDate DESC
+        ];
 
-        // Prepare the result list
         List<NoteWrapper> results = new List<NoteWrapper>();
         for (Note__c note : notes) {
             results.add(new NoteWrapper(note));
@@ -71,48 +72,59 @@ public static List<NoteWrapper> getNotes(Id recordId, String objectName) {
 }
 
 
-    @AuraEnabled
-    public static NoteWrapper createNote(Id recordId, String objectName, String subject, String body, String role) {
-        try {
-            if (String.isBlank(recordId)) {
-                throw new AuraHandledException('Record ID is required to create a note.');
-            }
-            if (String.isBlank(subject)) {
-                throw new AuraHandledException('Subject is required to create a note.');
-            }
 
-            // Determine the lookup field dynamically based on the object name (Lead or Opportunity)
-            String fieldName = getLookupFieldForObject(objectName);
-
-            List<String> roleList = String.isNotBlank(role) ? role.split(',') : new List<String>();
-            String roleString = String.join(roleList, ';');
-
-            // Create the new note object
-            Note__c note = new Note__c(
-                Subject__c = subject,
-                Body__c = body,
-                Role__c = roleString
-            );
-
-            // Dynamically assign the recordId to the correct lookup field (Lead__c or Loan__c)
-            note.put(fieldName, recordId); // Dynamically assign the lookup field
-
-            // Create the note in Salesforce
-            NoteService.createNotes(new List<Note__c>{note});
-
-            // Fetch the created note details
-            Note__c createdNote = [
-                SELECT Id, Subject__c, Body__c, Owner.Name, Role__c, Loan__c, Lead__c, OwnerId, CreatedDate 
-                FROM Note__c 
-                WHERE Id = :note.Id
-                WITH SECURITY_ENFORCED
-            ];
-
-            return new NoteWrapper(createdNote);
-        } catch (Exception e) {
-            throw new AuraHandledException('Error creating note: ' + e.getMessage());
+  @AuraEnabled
+public static NoteWrapper createNote(Id recordId, String objectName, String subject, String body, String role) {
+    try {
+        if (String.isBlank(recordId)) {
+            throw new AuraHandledException('Record ID is required to create a note.');
         }
+        if (String.isBlank(subject)) {
+            throw new AuraHandledException('Subject is required to create a note.');
+        }
+        if (!Schema.SObjectType.Note__c.isCreateable()) {
+            throw new AuraHandledException('Insufficient permissions to create Note__c records.');
+        }
+
+        List<String> roleList = String.isNotBlank(role) ? role.split(',') : new List<String>();
+        String roleString = String.join(roleList, ';');
+
+        // Create the note record
+        Note__c note = new Note__c(
+            Subject__c = subject,
+            Body__c = body,
+            Role__c = roleString
+        );
+
+        // Assign the recordId to the appropriate lookup field based on objectName
+        if (objectName == 'Lead') {
+            note.Lead__c = recordId;
+        } else if (objectName == 'Opportunity') {
+            note.Loan__c = recordId; // Assuming Loan__c is the lookup to Opportunity
+        } else if (objectName == 'User') {
+            note.User__c = recordId;
+        } else {
+            throw new AuraHandledException('Unsupported object type for note creation: ' + objectName);
+        }
+
+        // Insert the note
+        NoteService.createNotes(new List<Note__c>{note});
+
+        // Query the inserted note with security enforced
+        Note__c createdNote = [
+            SELECT Id, Subject__c, Body__c, Owner.Name, Role__c, Loan__c, Lead__c, User__c, OwnerId, CreatedDate 
+            FROM Note__c 
+            WHERE Id = :note.Id 
+            WITH SECURITY_ENFORCED
+        ];
+
+        return new NoteWrapper(createdNote);
+
+    } catch (Exception e) {
+        throw new AuraHandledException('Error creating note: ' + e.getMessage());
     }
+}
+
 
     @AuraEnabled
     public static NoteWrapper updateNote(Id noteId, String subject, String body) {

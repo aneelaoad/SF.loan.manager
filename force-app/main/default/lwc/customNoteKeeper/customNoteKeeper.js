@@ -6,10 +6,9 @@ import updateNote from '@salesforce/apex/NotesController.updateNote';
 import { CurrentPageReference } from 'lightning/navigation';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import noAssistance from '@salesforce/resourceUrl/NoAsisstentceSvg';
-import getActiveUsers from '@salesforce/apex/NotesController.getActiveUsers';
 import { getRecord } from 'lightning/uiRecordApi';
 import NAME_FIELD from '@salesforce/schema/Opportunity.Name';
-import { LightningConfirm } from 'lightning/confirm';
+import getCurrentUserContext from '@salesforce/apex/UtilityClass.getCurrentUserContext';
 
 
 export default class CustomNoteKeeper extends LightningElement {
@@ -102,22 +101,28 @@ export default class CustomNoteKeeper extends LightningElement {
         }
     }
     connectedCallback() {
-        // this.isLoading = true;
-        // getNotes({ recordId: this.recordId })
-        //     .then(result => {
-        //         this.allNotes = result;
-        //         this.filteredNotes = result;
-        //     })
-        //     .catch(error => {
-        //         this.showErrorMessage('Error fetching notes: ' + this.getErrorMessage(error));
-        //     })
-        //     .finally(() => {
-        //         this.isLoading = false;
-        //     });
+       getCurrentUserContext()
+      .then(context => {
+        this.isExperienceSite = context.isExperienceSite;
+        if (this.isExperienceSite) {
+          this.objectName = context.objectName
+          this.recordId = context.userId;
+          console.log('Experience Site - objectName:', this.objectName, 'recordId:', this.recordId);
+        }
+        // this.refreshDocumentCategories();
+      })
+      .catch(error => {
+        console.error('Error fetching user context:', error);
+        this.showToast('Error', 'Failed to load user context.', 'error');
+        this.isLoading = false;
+      })
+      .finally(() => {
+        this.isLoading = false;
+      });
     }
   loadNotes() {
         if (!this.recordId) return;
-        getNotes({ recordId: this.recordId, objectName: this.objectApiName})
+        getNotes({ recordId: this.recordId})
             .then(result => {
                   this.allNotes = result;
                 this.filteredNotes = result;

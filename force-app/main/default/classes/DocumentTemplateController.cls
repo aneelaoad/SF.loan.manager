@@ -2,7 +2,7 @@
  * @description       : Controller class for managing document templates, assignments, and categories in Salesforce.
  * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
  * @group             : Document Management
- * @last modified on  : 06-14-2025
+ * @last modified on  : 06-16-2025
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 **/
 public with sharing class DocumentTemplateController {
@@ -941,6 +941,20 @@ public with sharing class DocumentTemplateController {
         return result;
     }
 
+     private static String getObjectNameFromId(Id recordId) {
+        if (recordId == null) return null;
+        String keyPrefix = String.valueOf(recordId).substring(0, 3);
+        Map<String, Schema.SObjectType> globalDescribe = Schema.getGlobalDescribe();
+
+        for (Schema.SObjectType sobjectType : globalDescribe.values()) {
+            Schema.DescribeSObjectResult describe = sobjectType.getDescribe();
+            if (describe.getKeyPrefix() == keyPrefix) {
+                return describe.getName();
+            }
+        }
+        return null;
+    }
+
     // ==================== Section 5: Email Sending Methods ====================
 
     @AuraEnabled
@@ -953,6 +967,12 @@ public with sharing class DocumentTemplateController {
         if (String.isBlank(recordId)) {
             return new GenericResponseWrapper(false, 'Record ID is required.');
         }
+
+         if (objectName == 'objectkey') {
+            objectName = getObjectNameFromId(recordId);
+            System.debug('Resolved objectName: ' + objectName);
+        }
+
 
         try {
             List<Document__c> documents = [
@@ -993,18 +1013,18 @@ public with sharing class DocumentTemplateController {
                 ownerId = oppRecord.OwnerId;
             } 
             
-            else if (objectName == 'User') {
-                User userRecord = [
-                    SELECT Id, Email, Name
-                    FROM User
-                    WHERE Id = :recordId
-                    LIMIT 1
-                ];
-                System.debug('userRecord: ' + userRecord);
-                recipientEmail = userRecord.Email;
-                recipientName = userRecord.Name;
-                // ownerId = userRecord.OwnerId;
-            }
+            // else if (objectName == 'User') {
+            //     User userRecord = [
+            //         SELECT Id, Email, Name
+            //         FROM User
+            //         WHERE Id = :recordId
+            //         LIMIT 1
+            //     ];
+            //     System.debug('userRecord: ' + userRecord);
+            //     recipientEmail = userRecord.Email;
+            //     recipientName = userRecord.Name;
+            //     ownerId = userRecord.OwnerId;
+            // }
             
             
             else {

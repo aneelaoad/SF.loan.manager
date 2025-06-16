@@ -58,13 +58,28 @@ lightning-button.button-new {
     padding: 1rem;
     display: flex;
     align-items: center;
+    border-left:2px solid #ddd;
+    border-right:2px solid #ddd
 }
 .slds-modal__footer {
     /* background-color: #f9fafc; */
     border-top: 1px solid #ddd;
     padding: 1rem;
 }
-
+footer{
+      background: white;
+      border-bottom: 2px solid #dddd;
+      border-right: 2px solid #dddd;
+      border-left: 2px solid #dddd;
+     /* box-shadow: 0 0 6px 3px rgba(0, 0, 0, 0.3); */
+}
+.slds-modal__content{
+      border-right: 2px solid #dddd;
+      border-left: 2px solid #dddd;
+}
+.slds-modal__container{
+    /* background-color: green; */
+}
 /* Improve spacing in modal content */
 .slds-modal__content lightning-input,
 .slds-modal__content lightning-textarea {
@@ -123,13 +138,13 @@ lightning-button.button-new {
 
 /* Override modal content layout */
 .custom-modal .slds-modal__container {
-    background-color: white;
+    /* background-color: white; */
     height: 85%;
     margin: 0;
     /* border-radius: 12px 12px 0 0; */
     width: 100%;
     max-width: 700px;
-    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.25);
+    /* box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.25); */
 }
 
 /* Custom slide-up animation */

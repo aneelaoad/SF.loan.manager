@@ -2,7 +2,7 @@
   @description       : 
   @author            : ChangeMeIn@UserSettingsUnder.SFDoc
   @group             : 
-  @last modified on  : 06-10-2025
+  @last modified on  : 06-16-2025
   @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 -->
 <template>
@@ -14,8 +14,7 @@
     <div class="button-row">
       <!-- Left Button Group -->
       <div class="left-group">
-        <c-template-manager ontemplateitemsloaded={handleTemplateItems}
-          oncategorycreated={handleCategoryCreated} is-dropdowns-visible={sendFlag}></c-template-manager>
+        <c-template-manager ontemplateitemsloaded={handleTemplateItems} oncategorycreated={handleCategoryCreated} primary-theme={primaryTheme} secondary-theme={secondaryTheme} ></c-template-manager>
          <!-- Wrap button and dropdown in a relative container -->
           
   <div class="task-button-container">
@@ -378,7 +377,7 @@
       <div class="slds-align_absolute-center slds-text-align_center slds-p-vertical_large empty-state">
         <p class="slds-text-heading_small">No items or Templates</p>
         <p>Select a template or add item needed</p>
-        <c-template-manager ontemplateitemsloaded={handleTemplateItems}></c-template-manager>
+        <c-template-manager ontemplateitemsloaded={handleTemplateItems} oncategorycreated={handleCategoryCreated} primary-theme={primaryTheme} secondary-theme={secondaryTheme} ></c-template-manager>
       </div>
     </template>
   </div>

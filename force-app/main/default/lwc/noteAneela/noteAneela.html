@@ -1,0 +1,125 @@
+<template>
+
+    <!-- ========= Row 1 – Action Buttons ========= -->
+    <div class="row row-actions slds-var-p-around_small">
+        <lightning-button-group>
+            <lightning-button label="Search Notes" icon-name="utility:search" onclick={toggleSearch}></lightning-button>
+            <lightning-button label="Filter by User" icon-name="utility:user" variant={userFilterVariant} onclick={toggleUserFilter}></lightning-button>
+            <lightning-button label="New Note" icon-name="utility:new" variant="brand" onclick={openNewModal}></lightning-button>
+        </lightning-button-group>
+        <!-- collapsible search box -->
+        <template if:true={showSearch}>
+            <lightning-input class="search-box slds-m-left_small" type="search" placeholder="Search…" value={searchTerm} onchange={handleSearch}></lightning-input>
+        </template>
+    </div>
+
+ <!-- ========= Row 2 – Role Filters with Icons ========= -->
+<div class="row row-filters slds-var-p-around_small slds-grid slds-wrap slds-align-start">
+
+    <!-- main button group -->
+    <lightning-button-group class="role-btn-group">
+        <template for:each={roleFiltersComputed} for:item="role">
+            <lightning-button
+                key={role.label}
+                label={role.label}
+                icon-name={role.icon}
+                icon-position="left"
+                variant={role.variant}
+                class="role-btn"
+                data-role={role.label}
+                onclick={handleRoleClick}>
+            </lightning-button>
+        </template>
+    </lightning-button-group>
+
+    <!-- live summary of selected roles -->
+    <template if:true={hasSelectedRoles}>
+        <div class="selected-summary slds-m-left_large">
+            <span class="slds-text-title_caps slds-m-right_x-small">Selected:</span>
+            <template for:each={selectedRolesArr} for:item="role">
+                <span key={role} class="chip">{role}</span>
+            </template>
+        </div>
+    </template>
+
+</div>
+
+
+   <!-- ========= Row 3 – Notes Card View ========= -->
+<div class="row row-cards slds-var-p-around_small slds-grid slds-wrap slds-gutters">
+    <template for:each={visibleNotes} for:item="note">
+        <div key={note.id} class="slds-col slds-size_1-of-1">
+            <div class="note-card slds-box slds-p-around_medium slds-m-bottom_small slds-theme_default">
+                <div class="slds-grid slds-grid_align-spread slds-m-bottom_x-small">
+                    <h3 class="slds-text-heading_small slds-truncate">{note.name}</h3>
+                    <div>
+                        <lightning-button-icon icon-name="utility:edit"
+                                               alternative-text="Edit"
+                                               class="slds-m-right_x-small"
+                                               data-id={note.id}
+                                               onclick={openEditModal}>
+                        </lightning-button-icon>
+                        <lightning-button-icon icon-name="utility:delete"
+                                               alternative-text="Delete"
+                                               variant="destructive"
+                                               data-id={note.id}
+                                               onclick={openDeleteModal}>
+                        </lightning-button-icon>
+                    </div>
+                </div>
+                <p class="slds-text-body_regular slds-m-bottom_small">{note.body}</p>
+                <div class="slds-text-color_weak slds-text-body_small">
+                    Owner: {note.owner} &nbsp;&nbsp;|&nbsp;&nbsp; Created: {note.created}
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template if:true={isEmpty}>
+        <p class="slds-text-body_regular slds-text-color_weak slds-align_absolute-center slds-m-top_medium">‑‑ No notes match the current filters ‑‑</p>
+    </template>
+</div>
+
+
+    <!-- ========= New / Edit Modal ========= -->
+    <template if:true={showEditor}>
+        <section role="dialog" class="modal slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-modal__title">{modalTitle}</h2>
+                </header>
+
+                <div class="slds-modal__content slds-var-p-around_medium">
+                    <lightning-input label="Name" value={draft.name} data-field="name" onchange={updateDraft}></lightning-input>
+                    <lightning-textarea label="Body" value={draft.body} data-field="body" onchange={updateDraft}></lightning-textarea>
+                </div>
+
+                <footer class="slds-modal__footer">
+                    <lightning-button label="Cancel" variant="neutral" onclick={closeEditor}></lightning-button>
+                    <lightning-button label={saveLabel} variant="brand" class="slds-m-left_small" onclick={saveNote}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- ========= Delete Confirmation ========= -->
+    <template if:true={showDeleteConfirm}>
+        <section role="alertdialog" class="modal slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header slds-theme_destructive">
+                    <h2 class="slds-modal__title slds-hyphenate">Delete Note?</h2>
+                </header>
+                <div class="slds-modal__content slds-var-p-around_medium">
+                    <p>Are you sure you want to delete <strong>{deleteTarget.name}</strong>?</p>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button label="Cancel" onclick={closeDelete}></lightning-button>
+                    <lightning-button label="Delete" variant="destructive" class="slds-m-left_small" onclick={confirmDelete}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+</template>

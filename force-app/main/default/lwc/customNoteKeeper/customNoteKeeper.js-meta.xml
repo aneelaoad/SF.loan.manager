@@ -10,6 +10,8 @@
 		<target>lightning__RecordPage</target>
 		<target>lightning__RecordAction</target>
 		<target>lightning__Inbox</target>
+		 <target>lightningCommunity__Default</target>
+        <target>lightningCommunity__Page</target>
 	</targets>
 	 <targetConfigs>
         <targetConfig targets="lightning__RecordPage">

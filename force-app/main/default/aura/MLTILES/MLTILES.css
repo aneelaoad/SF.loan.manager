@@ -1,0 +1,63 @@
+/* .THIS {
+    text-align: center;
+}
+
+.THIS .slds-col {
+    cursor: pointer;
+    background-color: #f4f6f9;
+    border-radius: 0.25rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.THIS .slds-col:hover {
+    background-color: #e0e5ec;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.THIS .slds-col p {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: #555;
+}
+
+.THIS .count{
+    font-size:30px !important; 
+    color: #FF9905 !important;
+} */
+
+
+.THIS {
+    text-align: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.THIS .slds-col {
+        width:290px;
+    cursor: pointer;
+    /* background-color: #f4f9ff; */
+    border-radius: 0.2rem;
+    text-align: center;
+    /* margin: 0 8px; */
+    border: 1px solid #c7d8ec;
+    box-shadow: 0 1px 4px rgba(0, 123, 255, 0.15);
+    transition: all 0.25s ease;
+}
+
+.THIS .slds-col:hover {
+    /* background-color: #e6f2ff; */
+    box-shadow: 0 6px 12px rgba(0, 123, 255, 0.2);
+    transform: scale(1.01);
+}
+
+.THIS .slds-col p {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: #1e4f91;
+}
+
+.THIS .count {
+    font-size: 1.75rem !important;
+    color: #007bff !important;
+    font-weight: 600;
+}

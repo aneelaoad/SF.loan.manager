@@ -1,0 +1,49 @@
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 06-16-2025
+  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+-->
+<aura:component controller="RecordCountController" 
+    implements="forceCommunity:availableForAllPageTypes,flexipage:availableForAllPageTypes,force:hasRecordId" 
+    access="global">
+    
+    <aura:attribute name="recordCounts" type="Map" />
+    <aura:handler name="init" value="{!this}" action="{!c.init}"/>
+
+    <div class="slds-grid slds-wrap slds-p-around_medium" style="display: flex; justify-content:space-around">
+        <div class="tile-wrapper slds-col slds-size_1-of-2 slds-large-size_3-of-12 slds-p-around_small" data-object="Account" onclick="{!c.navigateToListView}">
+            <div class="tile-box">
+                <!-- <h1>Accounts</h1> -->
+                <p class="count-text">{!v.recordCounts.Account}</p>
+                <p class="label-text">View all Accounts</p>
+            </div>
+        </div>
+
+        <div class="tile-wrapper slds-col slds-size_1-of-2 slds-large-size_3-of-12 slds-p-around_small" data-object="Lead" onclick="{!c.navigateToListView}">
+            <div class="tile-box">
+                <!-- <h1>Leads</h1> -->
+
+                <p class="count-text">{!v.recordCounts.Lead}</p>
+                <p class="label-text">View all Leads</p>
+            </div>
+        </div>
+
+        <div class="tile-wrapper slds-col slds-size_1-of-2 slds-large-size_3-of-12 slds-p-around_small" data-object="Opportunity" onclick="{!c.navigateToListView}">
+            <div class="tile-box">
+                <!-- <h1>Loans</h1> -->
+
+                <p class="count-text">{!v.recordCounts.Opportunity}</p>
+                <p class="label-text">View all Loans</p>
+            </div>
+        </div>
+
+        <div class="tile-wrapper slds-col slds-size_1-of-2 slds-large-size_3-of-12 slds-p-around_small" data-object="Case" onclick="{!c.navigateToListView}">
+            <div class="tile-box">
+                <p class="count-text">{!v.recordCounts.Case}</p>
+                <p class="label-text">View all Cases</p>
+            </div>
+        </div>
+    </div>
+</aura:component>

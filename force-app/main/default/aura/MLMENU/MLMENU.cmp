@@ -1,0 +1,22 @@
+<!-- communityNavigationMenu.cmp -->
+<aura:component implements="forceCommunity:availableForAllPageTypes" access="global">
+    <aura:attribute name="menuItems" type="List" />
+
+    <div class="topnav">
+        <!-- Company logo -->
+        <a href="#home" class="logo">
+            <img src="{!$Resource.MLLOGO}" alt="Company Logo" class="company-logo" />
+        </a>
+
+        <!-- Navigation items -->
+        <a data-object="Account" onclick="{!c.navigateToListView}" href="javascript:void(0);">Accounts</a>
+        <a data-object="Lead" onclick="{!c.navigateToListView}" href="javascript:void(0);">Leads</a>
+        <a data-object="Opportunity" onclick="{!c.navigateToListView}" href="javascript:void(0);">Opportunities</a>
+        <a data-object="Case" onclick="{!c.navigateToListView}" href="javascript:void(0);">Cases</a>
+
+        <aura:iteration items="{!v.menuItems}" var="menuItem">
+            <a data-object="{!menuItem.object}" onclick="{!c.navigateToListView}" href="javascript:void(0);">{!menuItem.label}</a>
+        </aura:iteration>
+    </div>
+
+</aura:component>

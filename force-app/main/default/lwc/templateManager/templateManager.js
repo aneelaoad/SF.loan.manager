@@ -23,7 +23,8 @@ import getCurrentUserContext from '@salesforce/apex/UtilityClass.getCurrentUserC
 export default class TemplateManager extends LightningElement {
   // API Properties
   @api recordId;
-  @api isDropdrownsVisble;
+  @api primaryTheme; // Receive primaryTheme from parent
+    @api secondaryTheme;
   @track users = [];
   @track selectedUserId;
   // Boolean Flags
@@ -94,9 +95,7 @@ export default class TemplateManager extends LightningElement {
     }
     const categoryMap = {};
     const seenDocIds = new Set();
-    const selectedIds = new Set(
-      (this.templateDocumentList || []).map(d => d.id)
-    );
+    const selectedIds = new Set((this.templateDocumentList || []).map(d => d.id));
     this.availableDocuments.forEach(doc => {
       if (!doc || !doc.id || seenDocIds.has(doc.id) || selectedIds.has(doc.id)) {
         return;
@@ -122,9 +121,7 @@ export default class TemplateManager extends LightningElement {
 
   get groupedAvailableTasks() {
     const grouped = {};
-    const selectedIds = new Set(
-      (this.templateDocumentList || []).map(d => d.id)
-    );
+    const selectedIds = new Set((this.templateDocumentList || []).map(d => d.id));
     if (this.availableTasks) {
       this.availableTasks.forEach(doc => {
         if (!doc || !doc.id || selectedIds.has(doc.id)) {
@@ -157,6 +154,15 @@ export default class TemplateManager extends LightningElement {
 
   // Lifecycle Hooks
   connectedCallback() {
+    console.log('this.primaryColor: ', this.primaryTheme);
+    
+    // Set CSS custom properties for themes
+        if (this.primaryTheme) {
+            this.template.host.style.setProperty('--theme-primary', this.primaryTheme);
+        }
+        if (this.secondaryTheme) {
+            this.template.host.style.setProperty('--theme-secondary', this.secondaryTheme);
+        }
     this.isLoading = true;
     getCurrentUserContext()
       .then(context => {
@@ -165,21 +171,62 @@ export default class TemplateManager extends LightningElement {
         if (this.isExperienceSite) {
           this.objectName = 'User';
           this.recordId = context.userId;
-          console.log('Template Manager - Experience Site: objectName:', this.objectName, 'recordId:', this.recordId);
-        } else {
-          // For internal users, rely on CurrentPageReference to set recordId and objectName
-          console.log('Template Manager - Internal User: awaiting CurrentPageReference');
+          console.log('Experience Site: objectName:', this.objectName, 'recordId:', this.recordId);
         }
         this.refreshData();
       })
       .catch(error => {
         console.error('Error fetching user context:', error);
         this.showError('Error', 'Failed to load user context.');
-        this.isLoading = false;
       })
       .finally(() => {
-        console.log('isDropdrownsVisble:', this.isDropdrownsVisble);
+        console.log('this.isDropdrownsVisble:', this.isDropdrownsVisble);
+        this.isLoading = false;
       });
+  }
+
+  // Helper Methods
+  refreshData() {
+    this.refreshTemplateCategories();
+    this.refreshDocumentCategories();
+    this.refreshDocuments();
+  }
+
+  refreshDocuments() {
+    refreshApex(this.wiredDocumentsResult)
+      .then(() => console.log('Documents refreshed'))
+      .catch(error => console.error('Refresh error:', error));
+  }
+
+  refreshTemplateCategories() {
+    this.isLoading = true;
+    getAllowedTemplateCategories()
+      .then(result => {
+        this.templateCategoryOptions = result.map(item => ({
+          categoryId: item.id,
+          categoryName: item.name,
+          templateId: item.template?.id,
+          templateName: item.template?.name || '',
+          showEdit: true
+        }));
+      })
+      .catch(error => this.showError('Error', 'Failed to load template categories.'))
+      .finally(() => (this.isLoading = false));
+  }
+
+  refreshDocumentCategories() {
+    this.isLoading = true;
+    getAllowedDocumentCategories()
+      .then(result => {
+        console.log('Document categories:', result);
+        this.documentCategoryOptions = result;
+        this.taskCategoryOptions = result.map(item => ({
+          label: item.name,
+          value: item.id
+        }));
+      })
+      .catch(error => this.showError('Error', 'Failed to load document categories.'))
+      .finally(() => (this.isLoading = false));
   }
 
   // Wired Methods
@@ -195,45 +242,35 @@ export default class TemplateManager extends LightningElement {
     }
   }
 
-  handleUserChange(event) {
-    this.selectedUserId = event.detail.value;
-  }
-
   @wire(CurrentPageReference)
   getPageReference(pageRef) {
     if (pageRef && !this.isExperienceSite) {
       console.log('CurrentPageReference:', pageRef);
       this.recordId = pageRef.attributes.recordId;
       this.objectName = pageRef.attributes.objectApiName;
-      console.log('Internal User - objectName:', this.objectName, 'recordId:', this.recordId);
+      console.log('Internal User: objectName:', this.objectName, 'recordId:', this.recordId);
     }
   }
 
   @wire(getObjectInfo, { objectApiName: DOCUMENT_OBJECT })
   objectInfo;
 
-  @wire(getPicklistValues, {
-    recordTypeId: '$objectInfo.data.defaultRecordTypeId',
-    fieldApiName: STATUS_FIELD
-  })
+  @wire(getPicklistValues, { recordTypeId: '$objectInfo.data.defaultRecordTypeId', fieldApiName: STATUS_FIELD })
   wiredPicklistValues({ error, data }) {
     if (data) {
       this.statusOptions = data.values;
     } else if (error) {
-      console.error('Error loading picklist values', error);
+      console.error('Error loading status picklist values:', error);
     }
   }
 
-  @wire(getPicklistValues, {
-    recordTypeId: '$objectInfo.data.defaultRecordTypeId',
-    fieldApiName: TASKTYPE_FIELD
-  })
+  @wire(getPicklistValues, { recordTypeId: '$objectInfo.data.defaultRecordTypeId', fieldApiName: TASKTYPE_FIELD })
   wiredTaskTypeValues({ error, data }) {
     if (data) {
       this.taskTypeOptions = data.values;
       console.log('Task types:', JSON.stringify(this.taskTypeOptions));
     } else if (error) {
-      console.error('Error loading task type picklist values', error);
+      console.error('Error loading task type picklist values:', error);
     }
   }
 
@@ -242,68 +279,13 @@ export default class TemplateManager extends LightningElement {
     this.wiredDocumentsResult = result;
     const { error, data } = result;
     if (data) {
-      console.log('Documents fetched successfully:', data);
+      console.log('Documents fetched:', data);
       this.availableDocuments = data.documents;
       this.availableTasks = data.tasks;
     } else if (error) {
-      this.error = error;
       console.error('Error fetching documents:', error);
+      this.showError('Error', 'Failed to fetch documents.');
     }
-  }
-
-  refreshData() {
-    this.refreshTemplateCategories();
-    this.refreshDocumentCategories();
-    this.refreshDocuments();
-  }
-
-  refreshDocuments() {
-    refreshApex(this.wiredDocumentsResult)
-      .then(() => {
-        console.log('🔄 Documents refreshed');
-      })
-      .catch(error => {
-        console.error('Refresh error:', error);
-      });
-  }
-
-  refreshTemplateCategories() {
-    this.isLoading = true;
-    getAllowedTemplateCategories()
-      .then(result => {
-        this.templateCategoryOptions = result.map(item => {
-          const templateName = item.template?.name || '';
-          return {
-            categoryId: item.id,
-            categoryName: item.name,
-            templateId: item.template?.id,
-            templateName: templateName,
-            showEdit: true
-          };
-        });
-      })
-      .catch(error => this.showError('Error loading template categories', error))
-      .finally(() => (this.isLoading = false));
-  }
-
-  refreshDocumentCategories() {
-    this.isLoading = true;
-    getAllowedDocumentCategories()
-      .then(result => {
-        console.log('getAllowedDocumentCategories:', result);
-        this.documentCategoryOptions = result;
-        this.taskCategoryOptions = result.map(item => ({
-          label: item.name,
-          value: item.id
-        }));
-      })
-      .catch(error => this.showError('Error loading document categories', error))
-      .finally(() => (this.isLoading = false));
-  }
-
-  handleTaskCategoryChange(event) {
-    console.log('handleTaskCategoryChange:', event.detail.value);
-    this.modalCategory = event.detail.value;
   }
 
   // Event Handlers
@@ -337,6 +319,51 @@ export default class TemplateManager extends LightningElement {
     }
   }
 
+  handleTaskTypes(event) {
+    event.preventDefault();
+    this.showTaskTypes = !this.showTaskTypes;
+    this.isDocumentDropdownOpen = false;
+    this.isTemplateDropdownOpen = false;
+    if (this.showTaskTypes) {
+      setTimeout(() => {
+        document.addEventListener('click', this.handleOutsideClickTask);
+      }, 0);
+    } else {
+      document.removeEventListener('click', this.handleOutsideClickTask);
+    }
+  }
+
+  handleOutsideClickTemplate = (event) => {
+    if (!this.template.contains(event.target)) {
+      console.log('Clicked outside template dropdown');
+      this.isTemplateDropdownOpen = false;
+      document.removeEventListener('click', this.handleOutsideClickTemplate);
+    }
+  };
+
+  handleOutsideClickDocument = (event) => {
+    if (!this.template.contains(event.target)) {
+      console.log('Clicked outside document dropdown');
+      this.isDocumentDropdownOpen = false;
+      this.isDocumentOptions = false;
+      this.documentOptions = [];
+      this.selectedDocumentCategoryId = null;
+      document.removeEventListener('click', this.handleOutsideClickDocument);
+    }
+  };
+
+  handleOutsideClickTask = (event) => {
+    if (!this.template.contains(event.target)) {
+      console.log('Clicked outside task dropdown');
+      this.showTaskTypes = false;
+      document.removeEventListener('click', this.handleOutsideClickTask);
+    }
+  };
+
+  handleDropdownClick(event) {
+    event.stopPropagation();
+  }
+
   handleTemplateCategoryClick(event) {
     event.stopPropagation();
     const templateId = event.currentTarget.dataset.id;
@@ -358,7 +385,7 @@ export default class TemplateManager extends LightningElement {
         }
       })
       .catch(error => {
-        this.showError('Error fetching template documents', error);
+        this.showError('Error', 'Failed to fetch template documents.');
         console.error('Error in handleTemplateCategoryClick:', error);
       })
       .finally(() => {
@@ -394,44 +421,13 @@ export default class TemplateManager extends LightningElement {
           }
         })
         .catch(error => {
-          this.showError('Error fetching documents by category', error);
+          this.showError('Error', 'Failed to fetch documents by category.');
           console.error('Error in handleDocumentCategoryClick:', error);
         })
         .finally(() => {
           this.isLoading = false;
         });
     }
-  }
-
-  handleOutsideClickTemplate = (event) => {
-    const templateElement = this.template.querySelector('.template-dropdown');
-    if (templateElement && !templateElement.contains(event.target)) {
-      this.isTemplateDropdownOpen = false;
-      document.removeEventListener('click', this.handleOutsideClickTemplate);
-    }
-  };
-
-  handleOutsideClickDocument = (event) => {
-    const documentElement = this.template.querySelector('.document-dropdown');
-    if (documentElement && !documentElement.contains(event.target)) {
-      this.isDocumentDropdownOpen = false;
-      this.isDocumentOptions = false;
-      this.documentOptions = [];
-      this.selectedDocumentCategoryId = null;
-      document.removeEventListener('click', this.handleOutsideClickDocument);
-    }
-  };
-
-  handleOutsideClickTask = (event) => {
-    const taskElement = this.template.querySelector('.task-dropdown');
-    if (taskElement && !taskElement.contains(event.target)) {
-      this.showTaskTypes = false;
-      document.removeEventListener('click', this.handleOutsideClickTask);
-    }
-  };
-
-  handleDropdownClick(event) {
-    event.stopPropagation();
   }
 
   handleDocumentSelect(event) {
@@ -444,31 +440,20 @@ export default class TemplateManager extends LightningElement {
     if (!alreadyExists) {
       this.documentList = [
         ...this.documentList,
-        {
-          id: documentId,
-          name: selectedLabel,
-          type: 'document',
-          status: status,
-          team: team,
-          category: category
-        }
+        { id: documentId, name: selectedLabel, type: 'document', status, team, category }
       ];
     }
     if (this.recordId && this.objectName && documentId) {
-      assignDocumentToRecord({
-        documentId: documentId,
-        recordId: this.recordId,
-        objectName: this.objectName
-      })
-        .then((newDoc) => {
+      assignDocumentToRecord({ documentId, recordId: this.recordId, objectName: this.objectName })
+        .then(newDoc => {
           this.showSuccess('Success', 'Document added');
           this.isDocumentDropdownOpen = false;
           this.documentOptions = [];
           this.sendDocumentsToParent([newDoc]);
         })
         .catch(error => {
-          this.showError('Duplicate Document', error.body?.message || 'Error assigning document.');
-          console.error('Error assigning document to record:', error);
+          this.showError('Error', error.body?.message || 'Error assigning document.');
+          console.error('Error assigning document:', error);
         });
     }
   }
@@ -483,6 +468,11 @@ export default class TemplateManager extends LightningElement {
     this.taskType = '';
     this.formData = {};
     this.showModal = true;
+  }
+
+  handleTaskCategoryChange(event) {
+    console.log('handleTaskCategoryChange:', event.detail.value);
+    this.modalCategory = event.detail.value;
   }
 
   handleModalInputChange(event) {
@@ -513,24 +503,7 @@ export default class TemplateManager extends LightningElement {
 
   handleInputChange(event) {
     const { name, value } = event.target;
-    this.formData = {
-      ...this.formData,
-      [name]: value
-    };
-  }
-
-  handleTaskTypes(event) {
-    event.preventDefault();
-    this.showTaskTypes = !this.showTaskTypes;
-    this.isDocumentDropdownOpen = false;
-    this.isTemplateDropdownOpen = false;
-    if (this.showTaskTypes) {
-      setTimeout(() => {
-        document.addEventListener('click', this.handleOutsideClickTask);
-      }, 0);
-    } else {
-      document.removeEventListener('click', this.handleOutsideClickTask);
-    }
+    this.formData = { ...this.formData, [name]: value };
   }
 
   handleTaskClick(event) {
@@ -583,7 +556,7 @@ export default class TemplateManager extends LightningElement {
           cardNumber: this.formData.cardNumber,
           expirationDate: this.formData.expirationDate,
           cvv: this.formData.cvv,
-          zipCode: this.formData.zipCode,
+          zipCode: this.formData.zipCode
         });
       } else if (this.taskType === 'Contact Information') {
         const requiredFields = ['fullName', 'email', 'phone', 'address'];
@@ -607,12 +580,12 @@ export default class TemplateManager extends LightningElement {
           this.showModal = false;
           this.isTemplateDropdownOpen = false;
           this.isDocumentDropdownOpen = false;
-          this.showSuccess('Success', 'Task ' + newDocument.name + ' created successfully.');
+          this.showSuccess('Success', `Task ${newDocument.name} created.`);
           this.documentList = [...this.documentList, newDocument];
           this.sendDocumentsToParent([newDocument]);
         })
         .catch(error => {
-          this.showError('Creation failed', error.body?.message || 'Error creating task.');
+          this.showError('Error', error.body?.message || 'Error creating task.');
           console.error('Error creating task:', error);
         })
         .finally(() => (this.isLoading = false));
@@ -628,16 +601,16 @@ export default class TemplateManager extends LightningElement {
         assignedToId: this.selectedUserId
       };
       createDocument({ inputJson: JSON.stringify(input) })
-        .then((newDocument) => {
+        .then(newDocument => {
           this.showModal = false;
           this.isTemplateDropdownOpen = false;
           this.isDocumentDropdownOpen = false;
-          this.showSuccess('Created successfully', newDocument.name + ' document created.');
+          this.showSuccess('Success', `${newDocument.name} document created.`);
           this.documentList = [...this.documentList, newDocument];
           this.sendDocumentsToParent([newDocument]);
         })
         .catch(error => {
-          this.showError('Creation failed', error.body?.message || 'Error creating document.');
+          this.showError('Error', error.body?.message || 'Error creating document.');
           console.error('Error creating document:', error);
         })
         .finally(() => (this.isLoading = false));
@@ -658,16 +631,10 @@ export default class TemplateManager extends LightningElement {
 
   handleAddToTemplate(event) {
     const docId = event.currentTarget.dataset.id;
-    let doc = this.availableDocuments.find(d => d.id === docId);
-    if (!doc) {
-      doc = this.availableTasks.find(t => t.id === docId);
-    }
+    let doc = this.availableDocuments.find(d => d.id === docId) || this.availableTasks.find(t => t.id === docId);
     if (doc) {
       this.templateDocumentList = [...this.templateDocumentList, doc];
-      if (
-        !this.newItemIds.includes(docId) &&
-        !this.originalDocumentIds?.includes(docId)
-      ) {
+      if (!this.newItemIds.includes(docId) && !this.originalDocumentIds?.includes(docId)) {
         this.newItemIds.push(docId);
       }
       if (this.isNewTemplate && !this.newItemIds.includes(docId)) {
@@ -706,32 +673,25 @@ export default class TemplateManager extends LightningElement {
     this.isNewTemplate = false;
     const templateId = event.currentTarget.dataset.templateid;
     this.selectedTemplateId = templateId;
-    const categoryId = event.currentTarget.dataset.categoryid;
     if (!Array.isArray(this.templateCategoryOptions)) {
       console.error('templateCategoryOptions is not an array:', this.templateCategoryOptions);
       return;
     }
-    this.selectedTemplateForEdit = this.templateCategoryOptions.find(
-      t => t.templateId === templateId
-    );
+    this.selectedTemplateForEdit = this.templateCategoryOptions.find(t => t.templateId === templateId);
     if (!this.selectedTemplateForEdit) {
       console.error('No template found with templateId:', templateId);
       return;
     }
     this.isLoading = true;
-    getDocumentsByTemplate({ templateId: templateId, recordId: null, objectName: null })
+    getDocumentsByTemplate({ templateId, recordId: null, objectName: null })
       .then(result => {
         this.isEditModalOpen = true;
         this.templateDocumentList = result;
         this.originalDocumentIds = result.map(doc => doc.id);
         this.editableTemplateName = this.selectedTemplateForEdit.templateName;
       })
-      .catch(error => {
-        this.showError('Error fetching template items', error);
-      })
-      .finally(() => {
-        this.isLoading = false;
-      });
+      .catch(error => this.showError('Error', 'Failed to fetch template items.'))
+      .finally(() => (this.isLoading = false));
   }
 
   get templateNameValue() {
@@ -751,35 +711,31 @@ export default class TemplateManager extends LightningElement {
         newItemIds: this.newItemIds,
         deletedItemIds: this.deletedItemIds
       })
-        .then((updatedTemplate) => {
+        .then(updatedTemplate => {
           this.refreshTemplateCategories();
-          this.showSuccess('Success', updatedTemplate.name + ' Template updated successfully');
+          this.showSuccess('Success', `${updatedTemplate.name} Template updated.`);
           this.templateDocumentList = updatedTemplate.documents;
           this.originalDocumentIds = updatedTemplate.documents.map(doc => doc.id);
           this.newItemIds = [];
           this.deletedItemIds = [];
           this.closeEditModal();
         })
-        .catch((error) => {
-          this.showError('Error updating template', error.body?.message || 'Error updating template.');
-        })
+        .catch(error => this.showError('Error', error.body?.message || 'Error updating template.'))
         .finally(() => (this.isLoading = false));
     } else {
       createTemplateWithDocuments({
         templateName: this.editableTemplateName,
         documentIds: this.newItemIds
       })
-        .then((createdTemplate) => {
+        .then(createdTemplate => {
           this.refreshTemplateCategories();
-          this.showSuccess('Success', createdTemplate.name + ' Template is created Successfully');
+          this.showSuccess('Success', `${createdTemplate.name} Template created.`);
           this.closeEditModal();
           this.editableTemplateName = '';
           this.newItemIds = [];
           this.deletedItemIds = [];
         })
-        .catch(error => {
-          this.showError('Error creating template', error.body?.message || 'Error creating template.');
-        })
+        .catch(error => this.showError('Error', error.body?.message || 'Error creating template.'))
         .finally(() => (this.isLoading = false));
     }
   }
@@ -792,6 +748,10 @@ export default class TemplateManager extends LightningElement {
     this.modalNotes = event.detail.value;
   }
 
+  handleUserChange(event) {
+    this.selectedUserId = event.detail.value;
+  }
+
   sendDocumentsToParent(documents) {
     if (!Array.isArray(documents) || documents.length === 0) {
       console.warn('Invalid or empty documents array:', documents);
@@ -799,35 +759,20 @@ export default class TemplateManager extends LightningElement {
     }
     const validDocuments = documents.filter(doc => doc && typeof doc === 'object' && doc.id);
     if (validDocuments.length !== documents.length) {
-      console.warn('Some documents are invalid, filtered out:', documents.filter(doc => !doc || typeof doc !== 'object' || !doc.id));
+      console.warn('Some documents are invalid:', documents.filter(doc => !doc || typeof doc !== 'object' || !doc.id));
     }
     this.dispatchEvent(new CustomEvent('templateitemsloaded', {
-      detail: {
-        documents: validDocuments,
-        append: true
-      }
+      detail: { documents: validDocuments, append: true }
     }));
   }
 
   showError(title, error) {
-    const message = (typeof error === 'string') ? error : (error.body?.message || 'An unknown error occurred.');
-    this.dispatchEvent(
-      new ShowToastEvent({
-        title,
-        message,
-        variant: 'error'
-      })
-    );
+    const message = typeof error === 'string' ? error : error.body?.message || 'An unknown error occurred.';
+    this.dispatchEvent(new ShowToastEvent({ title, message, variant: 'error' }));
   }
 
   showSuccess(title, message) {
-    this.dispatchEvent(
-      new ShowToastEvent({
-        title,
-        message,
-        variant: 'success'
-      })
-    );
+    this.dispatchEvent(new ShowToastEvent({ title, message, variant: 'success' }));
   }
 
   // New Category Modal Handlers
@@ -857,21 +802,17 @@ export default class TemplateManager extends LightningElement {
     }
     this.isLoading = true;
     createDocumentCategory({ name: categoryName })
-      .then((newCategory) => {
+      .then(newCategory => {
         this.refreshDocumentCategories();
         this.dispatchEvent(new CustomEvent('categorycreated', {
-          detail: {
-            category: newCategory
-          },
+          detail: { category: newCategory },
           bubbles: true,
           composed: true
         }));
         this.showSuccess('Success', `Category "${newCategory.name}" created.`);
         this.closeNewCategoryModal();
       })
-      .catch(error => {
-        this.showError('Error', error.body?.message || 'Failed to create category.');
-      })
+      .catch(error => this.showError('Error', error.body?.message || 'Failed to create category.'))
       .finally(() => (this.isLoading = false));
   }
 }

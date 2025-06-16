@@ -1,0 +1,42 @@
+.THIS .topnav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Space between logo and menu */
+    background-color: #ffffff;
+    border-bottom: 2px solid #00AD49;
+    padding: 10px 20px; /* Add padding for spacing */
+}
+
+.THIS .logo-container {
+    display: flex;
+    align-items: center;
+}
+
+.THIS .menu-container {
+    display: flex;
+    gap: 20px; /* Space between menu items */
+}
+
+.THIS .link-menu {
+    text-decoration: none;
+    font-size: 16px; /* Adjust font size */
+    color: #00AD49; /* Brand color for text */
+    padding: 10px 15px; /* Adjust padding for clickable area */
+    border-radius: 4px; /* Add some rounded corners */
+    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth hover effects */
+}
+
+.THIS .topnav a:hover {
+    background-color: #00AD49; /* Green background on hover */
+    color: #ffffff; /* White text on hover */
+}
+
+.THIS .company-logo {
+    width: 120px;
+    height: auto;
+}
+
+.THIS .topnav a.active {
+    background-color: #04AA6D; /* Active background */
+    color: #ffffff;
+}
