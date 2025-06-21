@@ -1,0 +1,66 @@
+<aura:component implements="force:hasRecordId,flexipage:availableForAllPageTypes,force:lightningQuickAction" controller="EmailNotificationController" access="global">
+    <aura:html tag="style">
+        .slds-modal__container{
+            width: 90%;
+            max-width: 100rem;
+        }
+        .slds-modal__content{
+            height: auto !important;
+            max-height: unset !important;
+        }
+    </aura:html>
+    <aura:attribute access="global" name="sendToBorrower" type="Boolean" default="false"/>
+    <aura:attribute access="global" name="sendToCoBorrower" type="Boolean" default="false"/>
+    <aura:attribute access="global" name="coBorrowerEmail" type="String" />
+    <aura:attribute access="global" name="borrowerEmail" type="String" />
+    <aura:attribute access="global" name="additionalEmail" type="String" />
+    <aura:attribute access="global" name="loading" type="Boolean" default="false"/>
+    <aura:attribute name="isRecipientSelected" type="Boolean" default="true"/>
+    <aura:attribute name="emailTemplateBody" type="String" default=""/>
+    <aura:attribute name="selectedTemplateName" type="String" default=""/>
+    <aura:attribute name="emailTemplateName" type="object[]" default="[]"/>
+    <aura:attribute name="emailSubjectLine" type="String"/>
+    <aura:attribute name="recordId" type="String"/>
+
+    <aura:registerEvent name="closeEvent" type="c:CloseEvent"/>
+
+    <aura:handler action="{!c.init}" name="init" value="{!this}" />
+
+    <aura:if isTrue="{!v.loading}">
+        <lightning:spinner variant="brand" size="large"/>
+    </aura:if>
+
+    <aura:if isTrue="{!v.emailTemplateBody}">
+        <span lass="slds-form-element__label"><span style="color:#ba0517">*</span> Email Body</span>
+        <lightning:inputRichText label="Email Body" required="true" value="{!v.emailTemplateBody}" />
+        <lightning:input aura:id="select1" label="Subject" type="text" required="true" value="{!v.emailSubjectLine}" ></lightning:input>
+    </aura:if>
+
+    <lightning:card class="wrapper slds-var-p-horizontal_large">
+        <lightning:layout horizontalAlign="spread" verticalAlign="center">
+            <lightning:layoutItem class="slds-var-p-around_small">
+                <lightning:input aura:id="recipient" type="checkbox" label="Send To Borrower" checked="{!v.sendToBorrower}" disabled="{!v.borrowerEmail == null}" /> 
+                <span>({!if(v.borrowerEmail != null, v.borrowerEmail, 'no borrower email')})</span>
+            </lightning:layoutItem>
+            <lightning:layoutItem class="slds-var-p-around_small">
+                <lightning:input aura:id="recipient" type="checkbox" label="Send To CoBorrower" checked="{!v.sendToCoBorrower}" disabled="{!v.coBorrowerEmail == null}" /> 
+                <span>({!if(v.coBorrowerEmail != null, v.coBorrowerEmail, 'no coBorrower email')})</span>
+            </lightning:layoutItem>
+            <lightning:layoutItem class="slds-var-p-around_small" size="4">
+                <lightning:input type="email" aura:id="recipient" value="{!v.additionalEmail}" label="Additional Email" class="input"/>
+            </lightning:layoutItem>
+        </lightning:layout>
+
+        <aura:if isTrue="{!not(v.isRecipientSelected)}">
+            <lightning:layout>
+                <lightning:layoutItem class="slds-var-p-left_small">
+                    <p class="slds-text-color_error">Please choose at least on recipient</p>
+                </lightning:layoutItem>
+            </lightning:layout>
+        </aura:if>
+
+        <lightning:layout horizontalAlign="center" class="slds-var-p-top_medium">
+            <lightning:button variant="brand" label="Send Email" onclick="{!c.sendEmail}" class="button"/>
+        </lightning:layout>
+    </lightning:card>
+</aura:component>

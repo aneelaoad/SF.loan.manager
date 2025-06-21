@@ -1,0 +1,3 @@
+<aura:component implements="force:lightningQuickAction,force:hasRecordId,lightning:isUrlAddressable" access="global">
+    <c:proposedrefinanceform recordId="{!v.recordId}" />
+</aura:component>

@@ -1,3 +1,11 @@
+:host {
+    --theme-primary: var(--lwc-primaryTheme, #f4f9ff); /* Fallback to default if not set */
+    --theme-secondary: var(--lwc-secondaryTheme, #eaf3ff); /* Fallback to default if not set */
+    --theme-text: var(--lwc-textTheme); /* Fallback to default if not set */
+    --theme-folder: var(--lwc-folderPanelTheme); /* Fallback to default if not set */
+    --theme-folder-text: var(--lwc-folderTextTheme); /* Fallback to default if not set */
+}
+
 .custom-container {
     color: black;
     height: 100vh !important;
@@ -6,7 +14,7 @@
 }
 
 .folder-panel {
-    background-color: #f4f9ff;
+    background-color: var(--theme-folder);
     border-right: 1px solid #c7d8ec;
 }
 
@@ -28,11 +36,11 @@
 }
 
 .upload-zone {
-    border: 2px dashed #8fbffb;
+    border: 2px dashed var(--theme-secondary);
     padding: 2rem;
     text-align: center;
     border-radius: 4px;
-    background-color: #eef6ff;
+    background-color: var(--theme-folder);
     color: #145ba3;
     display: flex;
     align-items: center;
@@ -41,7 +49,7 @@
 }
 
 .upload-zone:hover {
-    background-color: #dbeeff;
+    /* background-color: var(--theme-secondary); */
     transform: scale(1.01);
     box-shadow: 0 0 5px #9acbff;
 }
@@ -50,6 +58,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    color: var(--theme-folder-text);
 }
 
 .folder-name-wrapper {
@@ -88,10 +97,10 @@
     }
 }
 
-/* Header blue styling */
+/* Header styling */
 .header-purple {
-    background-color: #eaf3ff;
-    color: #1e4f91;
+    background-color: var(--theme-primary);
+    color: var(--theme-text);
     font-weight: 600;
     text-transform: uppercase;
     padding: 0.75rem;
@@ -99,7 +108,7 @@
 
 /* Subtle row hover styling */
 .table-row:hover {
-    background-color: #e6f3ff;
+    background-color: var(--theme-secondary);
     transition: background-color 0.3s ease;
 }
 
@@ -149,8 +158,8 @@
 
 /* Badge blue theme */
 .custom-badge {
-    background-color: #d2e6ff;
-    color: #004085;
+    background-color: var(--lwc-primaryTheme);
+    color: var(--theme-text);
     font-weight: 500;
     border-radius: 1rem;
     padding: 0.25rem 0.75rem;
@@ -190,6 +199,7 @@
         transform: rotate(360deg);
     }
 }
+
 /* Ensure table header height and alignment */
 .document-table thead th {
     height: 48px;
@@ -203,6 +213,7 @@
     height: 48px;
     vertical-align: middle;
 }
+
 /* Wrap table in scrollable container */
 .table-scroll-container {
     max-height: 400px; /* adjust as needed */
@@ -210,29 +221,28 @@
     display: block;
 }
 
-/* Ensure consistent row height */
-.document-table tbody tr {
-    height: 48px;
-    vertical-align: middle;
-}
-
 /* Sticky table header */
 .document-table thead th {
     position: sticky !important;
     top: 0;
-    background-color: #eaf3ff; /* match .header-purple */
+    background-color: var(--theme-primary);
     z-index: 1;
 }
-/* Ensure table header height and alignment */
-.document-table thead th {
-    height: 48px;
-    vertical-align: middle;
-    line-height: 1.2;
-    padding: 0.75rem;
+
+.table-scroll-container thead {
+    background-color: var(--theme-primary);
 }
 
-/* Fix consistent row height for all table rows */
-.document-table tbody tr {
-    height: 48px;
-    vertical-align: middle;
+tr:hover {
+    background-color: var(--theme-secondary);
+}
+
+tr.selected-row {
+    background-color: var(--theme-secondary);
+}
+
+.light-card {
+    background: var(--theme-primary);
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }

@@ -1,50 +1,73 @@
 .THIS {
     text-align: center;
-    background: #f5f7fa;
-    font-family: 'Segoe UI', sans-serif;
+    /* background: #1e1e2f; */
+    font-family: 'Inter', 'Segoe UI', sans-serif;
 }
 
 .THIS .tile-wrapper {
+    padding: 0;
     cursor: pointer;
-    transition: transform 0.3s ease-in, box-shadow 0.3s ease;
-    border-radius: 0.75rem;
-    margin: 2px;
-    background-color: white;
-    border: 1px solid #ddd;
-    width: 300px;
+    transition: all 0.3s ease-in-out;
+    /* border-radius: 8px; */
+    margin: 12px;
+    background: transparent;
+    border: 2px solid #4a4a5a; /* Stronger edge with darker border */
+    width: 280px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5); /* Enhanced shadow for depth */
 }
 
 .THIS .tile-wrapper:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 22px rgba(0, 0, 0, 0.4);
+    transform: translateY(-4px);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.6);
+    border-color: #5a5a6a; /* Slightly lighter border on hover */
 }
 
 .THIS .tile-box {
-    padding: 2rem 1rem;
-    border-radius: 0.75rem;
-    background: linear-gradient(145deg, #1c1c1c, #2f2f2f, #4c637d);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-    color: white;
-    text-align: center;
-    transition: background 0.3s ease;
-    background-blend-mode: overlay;
-}
-
-.THIS .tile-box:hover {
-    background: linear-gradient(145deg, #2a2a2a, #3e4b5a, #5b84a0);
-}
-
-.THIS .count-text {
-    font-size: 2.5rem;
-    font-weight: 700;
+    padding: 1.5rem;
+    background: linear-gradient(145deg, #0a0a0a, #343435);
     color: #ffffff;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
-    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.THIS .icon-container {
+    padding-left: 0.75rem;
+}
+
+.THIS .icon-container .slds-icon {
+    --slds-c-icon-color-foreground: #ffffff; /* White icons */
+}
+
+.THIS .count-container {
+    font-size: 2rem;
+    font-weight: 600;
+    padding-right: 0.75rem;
+    color: #b3c7ff;
+    color: #fff;
+}
+
+.THIS .tile-divider {
+    height: 1px;
+    background: #252525; 
+    /* background: linear-gradient(90deg, transparent, #4a4a5a, transparent);  */
 }
 
 .THIS .label-text {
+    background: linear-gradient(145deg, #0a0a0a, #2d2d31);
+    padding: 1rem;
     font-size: 1rem;
-    color: #cdd7e2;
-    letter-spacing: 0.5px;
-    margin-top: 0.25rem;
+    color: #d9e1ff;
+    color: #fff;
+    text-align: center;
+    font-weight: 500;
+    margin: 0;
+    transition: background 0.3s ease;
+}
+
+.THIS .label-text:hover {
+    background: linear-gradient(145deg, #2a2a3b, #35354a);
+}
+.THIS .count-text span{
+    font-size: 2rem;
 }

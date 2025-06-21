@@ -1,0 +1,4 @@
+<aura:component implements="force:lightningQuickAction,force:hasRecordId" access="global">
+    <aura:attribute name="recordId" type="Id" />
+    <c:toCompaignReferButton recordId="{!v.recordId}" />
+</aura:component>

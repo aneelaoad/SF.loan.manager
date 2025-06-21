@@ -2,7 +2,7 @@
   @description       : 
   @author            : ChangeMeIn@UserSettingsUnder.SFDoc
   @group             : 
-  @last modified on  : 06-14-2025
+  @last modified on  : 06-17-2025
   @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 -->
 <template>
@@ -69,14 +69,16 @@
                                         <strong>{recipient.name}</strong><br/>
                                         <span class="recipient-email">{recipient.email}</span>
                                         <div class="recipient-controls">
-                                            <lightning-button-icon icon-name="utility:edit" title="Edit"
+                                           
+                                            <lightning-icon size="x-small" icon-name="utility:edit" title="Edit"
                                                                    onclick={editRecipient}
+                                                                   cursor="pointer"
                                                                    data-recipient-id={recipient.id}
-                                                                   variant="bare"></lightning-button-icon>
-                                            <lightning-button-icon icon-name="utility:delete" title="Delete"
+                                                                   variant="brand"></lightning-icon>
+                                            <lightning-icon size="x-small" icon-name="utility:delete" cursor="pointer" title="Delete"
                                                                    onclick={deleteRecipient}
                                                                    data-recipient-id={recipient.id}
-                                                                   variant="bare"></lightning-button-icon>
+                                                                   variant="error"></lightning-icon>
                                         </div>
                                     </div>
                                 </th>
@@ -86,14 +88,16 @@
                     <tbody>
                         <template for:each={milestones} for:item="milestone">
                             <tr key={milestone.id} class="slds-hint-parent">
-                                <td>
+                                <td style="width: 600px;">
                                     <div class="slds-truncate" title={milestone.name}>{milestone.name}</div>
                                 </td>
 
                                 <template for:each={recipients} for:item="recipient">
                                     <td key={recipient.id} class="center-email-icons">
+
+
                                         <lightning-button-icon icon-name="utility:email" title="Send Email"
-                                                               variant="border-filled" onclick={sendEmail}
+                                                                onclick={sendEmail}
                                                                data-milestone-id={milestone.id}
                                                                data-recipient-id={recipient.id}
                                                                class="email-icon"></lightning-button-icon>

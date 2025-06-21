@@ -1,49 +1,79 @@
-<!--
-  @description       : 
+<!-- 
+  @description       : Elegant card component with strong edges and dark gradient for displaying record counts
   @author            : ChangeMeIn@UserSettingsUnder.SFDoc
   @group             : 
-  @last modified on  : 06-16-2025
+  @last modified on  : 06-19-2025
   @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 -->
-<aura:component controller="RecordCountController" 
-    implements="forceCommunity:availableForAllPageTypes,flexipage:availableForAllPageTypes,force:hasRecordId" 
+<aura:component controller="RecordCountController"
+    implements="forceCommunity:availableForAllPageTypes,flexipage:availableForAllPageTypes,force:hasRecordId"
     access="global">
-    
+
     <aura:attribute name="recordCounts" type="Map" />
-    <aura:handler name="init" value="{!this}" action="{!c.init}"/>
+    <aura:handler name="init" value="{!this}" action="{!c.init}" />
 
-    <div class="slds-grid slds-wrap slds-p-around_medium" style="display: flex; justify-content:space-around">
-        <div class="tile-wrapper slds-col slds-size_1-of-2 slds-large-size_3-of-12 slds-p-around_small" data-object="Account" onclick="{!c.navigateToListView}">
-            <div class="tile-box">
-                <!-- <h1>Accounts</h1> -->
-                <p class="count-text">{!v.recordCounts.Account}</p>
-                <p class="label-text">View all Accounts</p>
+    <div class="slds-grid slds-wrap slds-p-around_medium" style="display: flex; justify-content: space-around;">
+        <!-- Account Card -->
+        <div class="tile-wrapper slds-col slds-size_1-of-2 slds-large-size_3-of-12 slds-p-around_small"
+             data-object="Account" onclick="{!c.navigateToListView}">
+            <div class="tile-box slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
+                <div class="icon-container">
+                    <lightning:icon iconName="standard:account" size="large" alternativeText="Account Icon" />
+                </div>
+                <div class="count-container">
+                    <p class="count-text"> <span>{!v.recordCounts.Account}</span>  <br/> Accounts</p>
+                </div>
             </div>
+            <div class="tile-divider"></div>
+                     <p class="label-text">View all >></p>
+
         </div>
 
-        <div class="tile-wrapper slds-col slds-size_1-of-2 slds-large-size_3-of-12 slds-p-around_small" data-object="Lead" onclick="{!c.navigateToListView}">
-            <div class="tile-box">
-                <!-- <h1>Leads</h1> -->
-
-                <p class="count-text">{!v.recordCounts.Lead}</p>
-                <p class="label-text">View all Leads</p>
+        <!-- Lead Card -->
+        <div class="tile-wrapper slds-col slds-size_1-of-2 slds-large-size_3-of-12 slds-p-around_small"
+             data-object="Lead" onclick="{!c.navigateToListView}">
+            <div class="tile-box slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
+                <div class="icon-container">
+                    <lightning:icon iconName="standard:lead" size="large" alternativeText="Lead Icon" />
+                </div>
+                <div class="count-container">
+                    <p class="count-text"> <span>{!v.recordCounts.Lead}</span><br/>  Leads</p>
+                </div>
             </div>
+            <div class="tile-divider"></div>
+                      <p class="label-text">View all >></p>
+
         </div>
 
-        <div class="tile-wrapper slds-col slds-size_1-of-2 slds-large-size_3-of-12 slds-p-around_small" data-object="Opportunity" onclick="{!c.navigateToListView}">
-            <div class="tile-box">
-                <!-- <h1>Loans</h1> -->
-
-                <p class="count-text">{!v.recordCounts.Opportunity}</p>
-                <p class="label-text">View all Loans</p>
+        <!-- Opportunity Card -->
+        <div class="tile-wrapper slds-col slds-size_1-of-2 slds-large-size_3-of-12 slds-p-around_small"
+             data-object="Opportunity" onclick="{!c.navigateToListView}">
+            <div class="tile-box slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
+                <div class="icon-container">
+                    <lightning:icon iconName="standard:opportunity" size="large" alternativeText="Opportunity Icon" />
+                </div>
+                <div class="count-container">
+                    <p class="count-text"> <span>{!v.recordCounts.Opportunity}</span><br/>  Loans</p>
+                </div>
             </div>
+            <div class="tile-divider"></div>
+                      <p class="label-text">View all >></p>
+
         </div>
 
-        <div class="tile-wrapper slds-col slds-size_1-of-2 slds-large-size_3-of-12 slds-p-around_small" data-object="Case" onclick="{!c.navigateToListView}">
-            <div class="tile-box">
-                <p class="count-text">{!v.recordCounts.Case}</p>
-                <p class="label-text">View all Cases</p>
+        <!-- Case Card -->
+        <div class="tile-wrapper slds-col slds-size_1-of-2 slds-large-size_3-of-12 slds-p-around_small"
+             data-object="Case" onclick="{!c.navigateToListView}">
+            <div class="tile-box slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
+                <div class="icon-container">
+                    <lightning:icon iconName="standard:case" size="large" alternativeText="Case Icon" />
+                </div>
+                <div class="count-container">
+                    <p class="count-text"> <span>{!v.recordCounts.Case}</span><br/> Cases </p>
+                </div>
             </div>
+            <div class="tile-divider"></div>
+            <p class="label-text">View all >></p>
         </div>
     </div>
 </aura:component>

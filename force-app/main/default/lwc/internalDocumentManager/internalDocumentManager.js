@@ -25,10 +25,21 @@ export default class InternalDocumentManager extends NavigationMixin(LightningEl
     @track error;
     @track wiredFoldersResult;
     isLoading = true;
+   @api primaryTheme = '#f4f9ff'; // Default primary theme color
+    @api secondaryTheme = '#eaf3ff';
+    @api folderPanelTheme = '#eaf3ff';
+    @api textTheme = '#fff';
+    @api folderTextTheme = 'black'
     acceptedFormats = ['.pdf', '.png', '.jpg', '.jpeg', '.doc', '.docx'];
 
     async connectedCallback() {
-        try {
+     this.template.host.style.setProperty('--lwc-primaryTheme', this.primaryTheme);
+        this.template.host.style.setProperty('--lwc-secondaryTheme', this.secondaryTheme);
+        this.template.host.style.setProperty('--lwc-folderPanelTheme', this.folderPanelTheme);
+        this.template.host.style.setProperty('--lwc-textTheme', this.textTheme);
+        this.template.host.style.setProperty('--lwc-folderTextTheme', this.folderTextTheme);
+        
+             try {
             const context = await getCurrentUserContext();
             console.log('context:', context);
 

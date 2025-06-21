@@ -1,0 +1,41 @@
+/**
+ * Created by toma on 8/19/2022.
+ */
+
+ .THIS .container {
+    margin-top: 20px;
+    width: 150px;
+}
+
+.THIS.slds-button .slds-button_brand .button {
+    width: 30%;
+    margin: 10px;
+    padding: 10px;
+}
+
+.THIS.input {
+    width:50%;
+    margin:10px;
+}
+
+.THIS #input-246 {
+    width:30%;
+    margin:10px;
+}
+
+.THIS .iframe {
+    display: block;
+    border: none;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.THIS .slds-modal__container {
+    width: 70%;
+    max-width: 100rem;
+}
+
+.THIS .slds-modal__content{ 
+    height: auto !important;
+    max-height: unset !important;
+}

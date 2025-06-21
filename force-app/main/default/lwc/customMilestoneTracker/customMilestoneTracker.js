@@ -4,7 +4,7 @@ import deleteRecipientApex from '@salesforce/apex/MilestoneMarkerController.dele
 import sendMilestoneEmail from '@salesforce/apex/MilestoneMarkerController.sendMilestoneEmail';
 import updateRecipient from '@salesforce/apex/MilestoneMarkerController.updateRecipient';
 import addRecipient from '@salesforce/apex/MilestoneMarkerController.addRecipient';
-
+import { CurrentPageReference } from 'lightning/navigation';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { getPicklistValues, getObjectInfo } from 'lightning/uiObjectInfoApi';
 import RECIPIENT_OBJECT from '@salesforce/schema/Cust_Milestone_Recipient__c';
@@ -16,11 +16,13 @@ export default class CustomMilestoneTracker extends LightningElement {
     @track milestones = [];
     @track recipients = [];
     @track error;
-
+     @api primaryTheme = '#eaf3ff';
+    @api secondaryTheme = '#d9ecff';
+    @api textTheme = '#1e4f91';
     isModalOpen = false;
     @track isEditMode = false;
     @track editingRecipientId = null;
-
+    objectName = ''
     name = '';
     email = '';
     type = '';
@@ -56,9 +58,29 @@ export default class CustomMilestoneTracker extends LightningElement {
         }
     }
 
+     @wire(CurrentPageReference)
+  getPageReference(pageRef) {
+    if (pageRef && !this.isExperienceSite) {
+      console.log('CurrentPageReference:', pageRef);
+      this.recordId = pageRef.attributes.recordId;
+      this.objectName = pageRef.attributes.objectApiName;
+      console.log('Internal User: objectName:', this.objectName, 'recordId:', this.recordId);
+    }
+  }
     connectedCallback() {
         this.loadData();
+          if (this.primaryTheme) {
+            this.template.host.style.setProperty('--theme-primary', this.primaryTheme);
+        }
+        if (this.secondaryTheme) {
+            this.template.host.style.setProperty('--theme-secondary', this.secondaryTheme);
+        }
+        if(this.textTheme){
+            this.template.host.style.setProperty('--theme-text', this.textTheme);
+        }
+    
     }
+  
 
     loadData() {
         getMilestoneGridData({ loanId: this.recordId })

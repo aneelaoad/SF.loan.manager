@@ -1,0 +1,25 @@
+<aura:component implements="forceCommunity:availableForAllPageTypes" access="global">
+    <aura:attribute name="leftContent" type="String" description="Content for the left column" />
+    <aura:attribute name="flowApiName" type="String" description="API name of the Flow to call" />
+    <aura:attribute name="flowInputs" type="Map" description="Input parameters for the Flow" />
+
+    <!-- SLDS Grid for 8-4 Layout -->
+    <div class="slds-grid slds-gutters">
+        <!-- Left Column (8 Parts) -->
+        <div class="slds-col slds-size_8-of-12 slds-p-around_small">
+            <div class="slds-box slds-theme_default">
+                <h3>Left Content with Tabs (8 Columns)</h3>
+
+               
+            </div>
+        </div>
+
+        <!-- Right Column (4 Parts) -->
+        <div class="slds-col slds-size_4-of-12 slds-p-around_small">
+            <div class="slds-box slds-theme_default">
+                <!-- Embed Flow -->
+                <lightning:flow aura:id="flowData" />
+            </div>
+        </div>
+    </div>
+</aura:component>

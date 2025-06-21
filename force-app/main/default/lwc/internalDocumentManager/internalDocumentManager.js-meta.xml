@@ -1,9 +1,7 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
-    <masterLabel>Internal Document Manager</masterLabel>
     <apiVersion>62.0</apiVersion>
     <isExposed>true</isExposed>
-
     <targets>
         <target>lightning__AppPage</target>
         <target>lightning__HomePage</target>
@@ -11,12 +9,16 @@
         <target>lightningCommunity__Default</target>
         <target>lightningCommunity__Page</target>
     </targets>
-
     <targetConfigs>
-        <targetConfig targets="lightning__AppPage">
-            <supportedFormFactors>
-                <supportedFormFactor type="Large"/>
-            </supportedFormFactors>
+        <targetConfig targets="lightning__AppPage,lightning__RecordPage, lightningCommunity__Default">
+            
+            <property name="primaryTheme" type="String" default="#f4f9ff" label="Primary Theme Color" description="Primary color for document panel and table header"/>
+            <property name="secondaryTheme" type="String" default="#eaf3ff" label="Secondary Theme Color" description="Secondary color for folder panel"/>
+            <property name="folderPanelTheme" type="String" default="#f4f9ff" label="Folder Panel Theme Color" description="Primary color for document panel and table header"/>
+       <property name="textTheme" type="String" default="#f4f9ff" label="Text Theme Color" description="Primary color for document panel and table header"/>
+       <property name="folderTextTheme" type="String" default="#000" label="Folder Text Theme Color" description="Primary color for document panel and table header"/>
+    
         </targetConfig>
+    
     </targetConfigs>
 </LightningComponentBundle>

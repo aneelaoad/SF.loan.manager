@@ -1,0 +1,19 @@
+<aura:component implements="forceCommunity:availableForAllPageTypes" access="global" >
+   <aura:attribute name="communityUrl" type="String"/>
+    
+    <!-- Lightning Flow -->
+    <lightning:flow aura:id="flow" />
+    
+    <div class="slds-text-align_right">
+
+    <!-- First Button: Create Lead -->
+    <lightning:button variant="brand" label="Create Lead" onclick="{!c.handleMenuSelect}" title="Download action with brand variant" iconName="utility:add" class="slds-m-left_x-small"/>
+
+    <!-- Second Button: Create Applicant -->
+    <lightning:button variant="brand" label="Create Applicant" title="Download action with brand variant" iconName="utility:add" class="slds-m-left_x-small"/>
+
+    <!-- Third Button: Send Newsletter -->
+    <lightning:button variant="brand" label="Send Newsletter" onclick="{!c.handleButtonClick}" title="Download action with brand variant" iconName="utility:send" class="slds-m-left_x-small"/>
+   
+    </div>
+</aura:component>

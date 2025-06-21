@@ -1,13 +1,20 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
-	<masterLabel>Informechs - Miles Stone Tracker</masterLabel>
-	<apiVersion>62.0</apiVersion>
-	<isExposed>true</isExposed>
-	<targets>
-		<target>lightning__HomePage</target>
-		<target>lightning__RecordPage</target>
-		<target>lightning__Tab</target>
-			 <target>lightningCommunity__Default</target>
+    <apiVersion>62.0</apiVersion>
+    <isExposed>true</isExposed>
+    <targets>
+        <target>lightning__HomePage</target>
+        <target>lightning__RecordPage</target>
+        <target>lightning__Tab</target>
+        <target>lightningCommunity__Default</target>
         <target>lightningCommunity__Page</target>
-	</targets>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightning__RecordPage,lightningCommunity__Default">
+            <property name="primaryTheme" type="String" default="#eaf3ff" description="Primary theme color for table row background and email icon."/>
+            <property name="secondaryTheme" type="String" default="#d9ecff" description="Secondary theme color for table cell hover effect."/>
+            <property name="textTheme" type="String" default="#1e4f91" description="Text color for table row fonts."/>
+        </targetConfig>
+    </targetConfigs>
+    <description>Informechs - Miles Stone Tracker</description>
 </LightningComponentBundle>
